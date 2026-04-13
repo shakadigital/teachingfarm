@@ -1,0 +1,13 @@
+{
+  "name": "🥚 Data Harian Peternakan Ayam Petelur",
+  "short_name": "Data Petelur",
+  "description": "Aplikasi PWA untuk input data harian peternakan ayam petelur: telur, kematian, pakan, suhu. Stats HD%, mortalitas, offline.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "agriculture"],
+  "lang": "id-ID"
+}
+

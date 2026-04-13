@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sampling Berat Badan Anak Ayam</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1E88E5">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head>
+<body>
+  <div class="page">
+    <header class="appbar">
+      <h1>📊 Sampling BB Ayam</h1>
+    </header>
+
+    <main class="content">
+      <!-- Input Sampling -->
+      <div class="card">
+        <h2>Input Data Berat (gram)</h2>
+        <p style="margin-bottom: 16px; font-size: 14px; color: #666;">Max 50 sampel</p>
+        <div class="sampling-scroll" id="sampling-container">
+          <!-- Dynamic sampling rows -->
+        </div>
+        <div style="margin-top: 16px;">
+          <button id="clear-data" class="btn btn-outline">Hapus Semua</button>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="btn-group">
+        <button id="analyze-btn" class="btn btn-primary">🔬 Analisa Data</button>
+        <button id="export-btn" class="btn btn-accent">📥 Export CSV</button>
+      </div>
+
+      <!-- Results -->
+      <div id="results-section" class="results">
+        <div class="summary-bar">
+          <h3 style="margin-bottom: 12px; font-size: 16px;">Hasil Analisa</h3>
+          <div class="metric-grid" id="metric-grid">
+            <!-- Dynamic metrics -->
+          </div>
+        </div>
+        <div class="card">
+          <canvas id="chart-canvas"></canvas>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
