@@ -1,66 +1,73 @@
-// Service Worker untuk PWA Sampling Berat Badan Anak Ayam
-// Caching aset statis + Chart.js untuk offline
-
-const CACHE_NAME = 'sampling-pwa-v1';
-const urlsToCache = [
-  '/',
+const CACHE_NAME = 'peternakan-v3';
+const STATIC_ASSETS = [
   '/index.html',
-  '/style.css',
-  '/app.js',
+  '/supabase.js',
   '/manifest.json',
-  // Chart.js CDN - cache secara manual
-  'https://cdn.jsdelivr.net/npm/chart.js'
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Service Worker: Pre-caching aset');
-        return cache.addAll(urlsToCache);
-      })
+// Install — cache static assets
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache =>
+      // addAll tapi jangan gagal jika icon belum ada
+      Promise.allSettled(STATIC_ASSETS.map(url => cache.add(url)))
+    )
   );
+  self.skipWaiting();
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).then((fetchResponse) => {
-          // Clone response untuk cache
-          if (fetchResponse && fetchResponse.status === 200) {
-            const responseClone = fetchResponse.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => cache.put(event.request, responseClone));
-          }
-          return fetchResponse;
-        });
-      })
-      .catch(() => {
-        // Offline fallback untuk root
-        if (event.request.destination === 'document') {
-          return caches.match('/index.html');
-        }
-      })
+// Activate — hapus cache lama
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
+  self.clients.claim();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Hapus cache lama', cacheName);
-            return caches.delete(cacheName);
-          }
+// Fetch strategy:
+// - Supabase API → Network only (data harus fresh)
+// - Chart.js CDN → Cache first, fallback network
+// - Static files → Cache first, fallback network
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+
+  // Supabase API — selalu dari network
+  if (url.hostname.includes('supabase.co')) {
+    e.respondWith(fetch(e.request).catch(() => new Response('{"error":"offline"}', {
+      headers: {'Content-Type': 'application/json'}
+    })));
+    return;
+  }
+
+  // CDN resources — network first, cache fallback
+  if (url.hostname.includes('cdn.jsdelivr.net')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+          return res;
         })
-      );
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Static assets — cache first, network fallback
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+        }
+        return res;
+      });
     })
   );
 });
-
