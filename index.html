@@ -602,10 +602,12 @@
                 <div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Listrik, Tenaga kerja, Obat, dll."/></div>
                 <div class="field"><label>Kategori</label>
                   <select>
-                    <option value="tenaga_kerja">Tenaga Kerja</option>
+                    <option value="tenaga_harian">Tenaga Harian / Lembur</option>
+                    <option value="bbm_energi">BBM & Energi</option>
                     <option value="listrik_air">Listrik & Air</option>
-                    <option value="kesehatan">Kesehatan</option>
-                    <option value="peralatan">Peralatan</option>
+                    <option value="peralatan_farm">Peralatan Farm</option>
+                    <option value="mess_fasilitas">Mess & Fasilitas</option>
+                    <option value="kesehatan">Kesehatan Ternak</option>
                     <option value="transportasi">Transportasi</option>
                     <option value="lainnya">Lainnya</option>
                   </select>
@@ -2206,12 +2208,14 @@ function addBiayaRow(){
   const row=document.createElement('div');
   row.className='row biaya-row';
   row.innerHTML=
-    '<div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Listrik, Tenaga kerja..."/></div>'+
+    '<div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>'+
     '<div class="field"><label>Kategori</label><select>'+
-      '<option value="tenaga_kerja">Tenaga Kerja</option>'+
+      '<option value="tenaga_harian">Tenaga Harian / Lembur</option>'+
+      '<option value="bbm_energi">BBM & Energi</option>'+
       '<option value="listrik_air">Listrik & Air</option>'+
-      '<option value="kesehatan">Kesehatan</option>'+
-      '<option value="peralatan">Peralatan</option>'+
+      '<option value="peralatan_farm">Peralatan Farm</option>'+
+      '<option value="mess_fasilitas">Mess & Fasilitas</option>'+
+      '<option value="kesehatan">Kesehatan Ternak</option>'+
       '<option value="transportasi">Transportasi</option>'+
       '<option value="lainnya">Lainnya</option>'+
     '</select></div>'+
