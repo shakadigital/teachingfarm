@@ -7,10 +7,13 @@
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="Peternakan"/>
+  <meta name="apple-mobile-web-app-title" content="Teaching Farm UB"/>
   <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="icon-192.png"/>
-  <title>Peternakan Ayam Petelur</title>
+  <link rel="apple-touch-icon" href="favicon/apple-touch-icon.png"/>
+  <link rel="icon" type="image/svg+xml" href="favicon/favicon.svg"/>
+  <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png"/>
+  <link rel="shortcut icon" href="favicon/favicon.ico"/>
+  <title>Teaching Farm UB</title>
   <script src="supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -388,7 +391,7 @@
 <!-- LOGIN -->
 <div id="login-screen" style="display:none">
   <div class="logo">🐔</div>
-  <h1>Peternakan Ayam Petelur</h1>
+  <h1>Teaching Farm UB</h1>
   <p>Sistem Manajemen Terpadu</p>
   <div class="login-card">
     <label for="login-user">Username</label>
@@ -410,7 +413,7 @@
     <div class="hdr-left">
       <span style="font-size:1.5rem">🐔</span>
       <div>
-        <h1>Peternakan Ayam Petelur</h1>
+        <h1>Teaching Farm UB</h1>
         <div class="sub" id="hdr-kandang">—</div>
       </div>
     </div>
@@ -439,7 +442,7 @@
         <div class="ds-header">
           <div>
             <div class="ds-title">📊 Daily Performance Report</div>
-            <div class="ds-farm">Peternakan Ayam Petelur</div>
+            <div class="ds-farm">Teaching Farm UB</div>
           </div>
           <div style="text-align:right">
             <div class="ds-date" id="ds-date">—</div>
@@ -2826,7 +2829,7 @@ async function backupData(){
       dbGetUsers(),dbGetKandang(),dbGetInput({}),dbGetPenjualan({}),dbGetDaftarPakan(),dbGetKiriman({}),dbGetKas({})
     ]);
     const backup={
-      version:'1.0',exported_at:new Date().toISOString(),app:'Peternakan Ayam Petelur',
+      version:'1.0',exported_at:new Date().toISOString(),app:'Teaching Farm UB',
       data:{users,kandang,inputs,penjualan,daftar_pakan:daftarPakan,kiriman_pakan:kiriman,kas_operasional:kas}
     };
     const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});

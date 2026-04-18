@@ -1,10 +1,14 @@
-const CACHE_NAME = 'peternakan-v3';
+const CACHE_NAME = 'peternakan-v4';
 const STATIC_ASSETS = [
   '/index.html',
   '/supabase.js',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  '/favicon/favicon.ico',
+  '/favicon/favicon.svg',
+  '/favicon/favicon-96x96.png',
+  '/favicon/apple-touch-icon.png',
+  '/favicon/web-app-manifest-192x192.png',
+  '/favicon/web-app-manifest-512x512.png'
 ];
 
 // Install — cache static assets
