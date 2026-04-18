@@ -1,14 +1,13 @@
-const CACHE_NAME = 'peternakan-v4';
+const CACHE_NAME = 'teachingfarm-v1';
 const STATIC_ASSETS = [
   '/index.html',
   '/supabase.js',
   '/manifest.json',
-  '/favicon/favicon.ico',
-  '/favicon/favicon.svg',
-  '/favicon/favicon-96x96.png',
-  '/favicon/apple-touch-icon.png',
-  '/favicon/web-app-manifest-192x192.png',
-  '/favicon/web-app-manifest-512x512.png'
+  '/icon/favicon.ico',
+  '/icon/icon.svg',
+  '/icon/icon-96.png',
+  '/icon/icon-192.png',
+  '/icon/icon-512.png'
 ];
 
 // Install — cache static assets
