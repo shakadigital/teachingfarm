@@ -1115,6 +1115,24 @@
   </div>
 </div>
 
+<!-- MODAL KONFIRMASI DUPLIKAT INPUT -->
+<div class="modal-overlay" id="modal-duplikat" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header" style="background:#fef3c7;border-bottom:1px solid #fde68a">
+      <h3 style="color:#92400e">⚠️ Data Sudah Ada</h3>
+      <button class="modal-close" onclick="closeModal('modal-duplikat')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="duplikat-info" style="background:#fef3c7;border-radius:8px;padding:12px;margin-bottom:14px;font-size:.85rem;color:#78350f;border:1px solid #fde68a"></div>
+      <p style="font-size:.85rem;color:#555">Pilih tindakan yang ingin dilakukan:</p>
+    </div>
+    <div class="modal-footer" style="gap:8px;flex-wrap:wrap">
+      <button class="btn-secondary" onclick="closeModal('modal-duplikat')" style="flex:1">✕ Batal</button>
+      <button class="btn-primary" id="btn-timpa" style="flex:1;background:linear-gradient(135deg,#b45309,#d97706)" onclick="confirmTimpa()">✏️ Timpa Data</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script>
 // ═══ STORAGE (localStorage fallback untuk session saja) ═══
@@ -1380,11 +1398,13 @@ function addTag(type){
 }
 
 // ═══ SAVE INPUT HARIAN ═══
-async function saveInputData(){
+let _pendingInputData=null; // simpan sementara data yang menunggu konfirmasi
+
+function collectInputData(){
   const tgl=document.getElementById('tanggal').value;
   const knd=document.getElementById('kandang').value;
-  if(!tgl||!knd){showToast('⚠️ Pilih tanggal dan kandang!');return;}
-  const data={
+  if(!tgl||!knd){showToast('⚠️ Pilih tanggal dan kandang!');return null;}
+  return{
     tanggal:tgl,kandang:knd,user:currentUser?currentUser.username:'',
     deplesi:{mati:document.getElementById('mati').value,afkir:document.getElementById('afkir').value,total:document.getElementById('total_deplesi').value},
     sisa_ayam:document.getElementById('sisa_ayam').value,pct_deplesi:document.getElementById('pct_deplesi').value,
@@ -1405,9 +1425,76 @@ async function saveInputData(){
     catatan:document.getElementById('catatan').value,
     biaya_ops:canInputBiaya()?getBiayaRows():[]
   };
+}
+
+async function saveInputData(){
+  const data=collectInputData();
+  if(!data)return;
+
+  // ── Validasi duplikat ──
+  showToast('⏳ Memeriksa data...');
+  try{
+    const existing=await dbGetInput({tanggal:data.tanggal,kandang:data.kandang});
+    if(existing&&existing.length>0){
+      const prev=existing[0];
+      const prevUser=prev.data?.user||prev.user_input||'—';
+      const prevTime=prev.updated_at||prev.created_at||'';
+      const prevHDP=prev.data?.produksi?.hdp||'—';
+      const prevProd=prev.data?.produksi?.total?.butir||'—';
+      const timeStr=prevTime?new Date(prevTime).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+
+      // Cek apakah user yang sama atau berbeda
+      const sameUser=prevUser===currentUser?.username;
+      const roleNote=sameUser
+        ?'Anda sendiri yang menginput sebelumnya.'
+        :`Diinput oleh <strong>${esc(prevUser)}</strong>.`;
+
+      // Proteksi: Operator tidak bisa timpa data dari Supervisor/Manajer/Admin
+      const prevUserObj=(await dbGetUsers()).find(u=>u.username===prevUser);
+      const prevRole=prevUserObj?.role||'';
+      const higherRoles=['admin','manajer','supervisor'];
+      const currentRole=currentUser?.role||'';
+      const canOverwrite=currentRole==='admin'||(currentRole==='manajer')||
+        (currentRole==='supervisor'&&!['admin','manajer'].includes(prevRole))||
+        (currentRole==='operator'&&!higherRoles.includes(prevRole))||
+        sameUser;
+
+      document.getElementById('duplikat-info').innerHTML=
+        `<div style="font-weight:700;margin-bottom:6px">📅 ${data.tanggal} — ${esc(data.kandang)}</div>`+
+        `<div>Data sudah ada: ${roleNote}</div>`+
+        (prevRole?`<div style="font-size:.78rem;margin-top:2px">Role: <strong>${prevRole}</strong></div>`:'')+
+        `<div style="margin-top:6px;font-size:.8rem;color:#92400e">`+
+        `⏱ Waktu input: ${timeStr}<br>`+
+        `🥚 Produksi: ${prevProd} butir &nbsp;|&nbsp; 📈 HDP: ${prevHDP}%`+
+        `</div>`+
+        (!canOverwrite?`<div style="margin-top:8px;background:#fee2e2;border-radius:6px;padding:8px;font-size:.8rem;color:#dc2626;font-weight:600">🚫 Anda tidak memiliki izin untuk menimpa data dari ${prevRole}.</div>`:'');
+
+      _pendingInputData=canOverwrite?data:null;
+      const btnTimpa=document.getElementById('btn-timpa');
+      if(btnTimpa)btnTimpa.style.display=canOverwrite?'':'none';
+      document.getElementById('modal-duplikat').style.display='flex';
+      return;
+    }
+  }catch(e){
+    // Jika gagal cek, lanjut simpan langsung
+    console.warn('Duplikat check error:',e);
+  }
+
+  // Tidak ada duplikat — simpan langsung
+  await doSaveInput(data);
+}
+
+async function confirmTimpa(){
+  closeModal('modal-duplikat');
+  if(!_pendingInputData)return;
+  await doSaveInput(_pendingInputData);
+  _pendingInputData=null;
+}
+
+async function doSaveInput(data){
   showToast('⏳ Menyimpan...');
   try{
-    await dbSaveInput(tgl,knd,data);
+    await dbSaveInput(data.tanggal,data.kandang,data);
     showToast('✅ Data harian disimpan!');
     autoResetInputForm();
   }catch(e){showToast('❌ Gagal menyimpan: '+e.message);}
