@@ -142,6 +142,7 @@
     .btn-add:active{background:#2d6a4f;}
     .btn-del{background:#fee2e2;color:#dc2626;border:none;border-radius:5px;padding:4px 8px;cursor:pointer;font-size:.78rem;}
     .btn-del:active{background:#fecaca;}
+    .btn-del[data-no-access]{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;opacity:.6;}
     .btn-edit{background:#dbeafe;color:#1e40af;border:none;border-radius:5px;padding:4px 8px;cursor:pointer;font-size:.78rem;margin-right:4px;}
     .btn-edit:active{background:#bfdbfe;}
     .btn-primary{background:linear-gradient(135deg,#2d6a4f,#40916c);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:.9rem;font-weight:700;cursor:pointer;}
@@ -1115,6 +1116,24 @@
   </div>
 </div>
 
+<!-- MODAL KONFIRMASI HAPUS -->
+<div class="modal-overlay" id="modal-hapus" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header" style="background:#fee2e2;border-bottom:1px solid #fecaca">
+      <h3 style="color:#dc2626">🗑 Konfirmasi Hapus</h3>
+      <button class="modal-close" onclick="closeModal('modal-hapus')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="hapus-info" style="font-size:.88rem;color:#374151;margin-bottom:12px"></div>
+      <div id="hapus-warning" style="display:none;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px;font-size:.82rem;color:#92400e;margin-bottom:12px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-hapus')">Batal</button>
+      <button id="btn-hapus-confirm" class="btn-primary" style="background:linear-gradient(135deg,#dc2626,#ef4444)" onclick="executeHapus()">🗑 Hapus</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL KONFIRMASI DUPLIKAT INPUT -->
 <div class="modal-overlay" id="modal-duplikat" style="display:none">
   <div class="modal" style="max-width:400px">
@@ -1757,13 +1776,6 @@ async function saveStok(){
   try{await dbSaveDaftarPakan(obj);closeModal('modal-stok');await renderGudang();showToast('✅ Pakan disimpan!');}
   catch(e){showToast('❌ Gagal: '+e.message);}
 }
-async function deletePakan(id){
-  if(!can('KEUANGAN')){showToast('⚠️ Hanya Admin/Manajer yang bisa hapus pakan!');return;}
-  if(!confirm('Hapus pakan ini?'))return;
-  try{await dbDeleteDaftarPakan(id);await renderGudang();showToast('🗑 Pakan dihapus.');}
-  catch(e){showToast('❌ Gagal menghapus.');}
-}
-
 async function openKirimanModal(){
   const pakans=await dbGetDaftarPakan();
   if(!pakans.length){showToast('⚠️ Daftarkan pakan terlebih dahulu!');return;}
@@ -1801,13 +1813,6 @@ async function saveKiriman(){
     showToast(editId?'✅ Kiriman diperbarui!':'✅ Kiriman pakan dicatat!');
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
-async function deleteKiriman(id){
-  if(!can('KEUANGAN')){showToast('⚠️ Hanya Admin/Manajer yang bisa hapus kiriman!');return;}
-  if(!confirm('Hapus catatan kiriman ini?'))return;
-  try{await dbDeleteKiriman(id);await renderGudang();showToast('🗑 Kiriman dihapus.');}
-  catch(e){showToast('❌ Gagal menghapus.');}
-}
-
 // Edit kiriman — supervisor ke atas boleh
 async function openKirimanEditModal(id){
   if(!can('JUAL')){showToast('⚠️ Tidak ada akses!');return;}
@@ -2080,7 +2085,13 @@ async function renderKandangTable(){
     const days=cin?Math.floor((new Date()-cin)/86400000):0;
     const periode=k.chickin?(k.status==='Aktif'?'Hari ke-'+(days+1)+' (berjalan)':days+' hari'):'—';
     const tr=document.createElement('tr');
-    tr.innerHTML='<td><strong>'+esc(k.nama)+'</strong></td><td>'+(k.kapasitas||'—')+' ekor</td><td>'+(k.chickin||'—')+'</td><td>'+(k.umur_masuk?k.umur_masuk+' hari':'—')+'</td><td>'+(k.populasi||'—')+' ekor</td><td style="font-size:.8rem">'+periode+'</td><td>'+(k.status==='Aktif'?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Selesai</span>')+'</td><td style="white-space:nowrap"><button class="btn-edit" onclick="openKandangModal(\''+k.id+'\')">✏️</button><button class="btn-del" onclick="deleteKandang(\''+k.id+'\')">🗑</button><button class="btn-edit" style="background:#ede9fe;color:#6d28d9" onclick="showRingkasanSiklus(\''+esc(k.nama)+'\')">📋</button></td>';
+    tr.innerHTML='<td><strong>'+esc(k.nama)+'</strong></td><td>'+(k.kapasitas||'—')+' ekor</td><td>'+(k.chickin||'—')+'</td><td>'+(k.umur_masuk?k.umur_masuk+' hari':'—')+'</td><td>'+(k.populasi||'—')+' ekor</td><td style="font-size:.8rem">'+periode+'</td><td>'+(k.status==='Aktif'?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Selesai</span>')+'</td><td style="white-space:nowrap">'+
+      '<button class="btn-edit" onclick="openKandangModal(\''+k.id+'\')">✏️</button>'+
+      (can('KEUANGAN')
+        ?'<button class="btn-del" onclick="deleteKandang(\''+k.id+'\')" title="Hapus Kandang">🗑</button>'
+        :'<button class="btn-del" data-no-access onclick="deleteKandang(\''+k.id+'\')" title="Butuh izin Manajer/Admin">🔒</button>')+
+      '<button class="btn-edit" style="background:#ede9fe;color:#6d28d9" onclick="showRingkasanSiklus(\''+esc(k.nama)+'\')">📋</button>'+
+      '</td>';
     tbody.appendChild(tr);
   });
 }
@@ -2120,16 +2131,6 @@ async function saveKandang(){
     await populateKandangSelects();
     showToast('✅ Kandang disimpan!');
   }catch(e){showToast('❌ Gagal menyimpan: '+e.message);}
-}
-
-async function deleteKandang(id){
-  if(!confirm('Hapus kandang ini?'))return;
-  try{
-    await dbDeleteKandang(id);
-    await renderKandangTable();
-    await populateKandangSelects();
-    showToast('🗑 Kandang dihapus.');
-  }catch(e){showToast('❌ Gagal menghapus.');}
 }
 
 // ═══ SETTINGS — USER ═══
@@ -2174,16 +2175,6 @@ async function saveUser(){
     await renderUserTable();
     showToast('✅ User disimpan!');
   }catch(e){showToast('❌ Gagal: '+e.message);}
-}
-
-async function deleteUser(id,username){
-  if(username===currentUser.username){showToast('⚠️ Tidak bisa hapus akun sendiri!');return;}
-  if(!confirm('Hapus user '+username+'?'))return;
-  try{
-    await dbDeleteUser(id);
-    await renderUserTable();
-    showToast('🗑 User dihapus.');
-  }catch(e){showToast('❌ Gagal menghapus.');}
 }
 
 // ═══ UTILS ═══
@@ -2305,14 +2296,20 @@ async function renderRHarian(){
   rows.forEach(row=>{
     const d=row.data;if(!d)return;
     const totalPakan=((d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0)).toFixed(1);
+    const pemilik=d.user||row.user_input||'';
+    const sameUser=pemilik===currentUser?.username;
+    // Tombol hapus: tampil untuk semua, tapi warna berbeda jika tidak punya akses penuh
+    const canDel=sameUser||myLevel()>=3; // manajer ke atas atau milik sendiri
+    const delBtn=canDel
+      ?`<button class="btn-del" onclick="deleteInputHarian('${row.id}')" title="Hapus">🗑</button>`
+      :`<button class="btn-del" data-no-access onclick="deleteInputHarian('${row.id}')" title="Butuh izin atasan">🔒</button>`;
     const tr=document.createElement('tr');
     tr.innerHTML=
       '<td>'+esc(d.tanggal)+'</td><td>'+esc(d.kandang)+'</td>'+
       '<td>'+(d.sisa_ayam||0)+' ekor</td><td>'+(d.deplesi?d.deplesi.total:0)+' ekor</td>'+
       '<td>'+(d.produksi?d.produksi.total.butir:0)+' butir</td><td>'+(d.produksi?d.produksi.hdp:'—')+'</td>'+
       '<td>'+totalPakan+' kg</td><td>'+(d.air_liter||0)+' L</td>'+
-      '<td><button class="btn-edit" onclick="editInputHarian(\''+row.id+'\')">✏️</button>'+
-      '<button class="btn-del" onclick="deleteInputHarian(\''+row.id+'\')">🗑</button></td>';
+      '<td style="white-space:nowrap"><button class="btn-edit" onclick="editInputHarian(\''+row.id+'\')">✏️</button>'+delBtn+'</td>';
     tbody.appendChild(tr);
   });
 }
@@ -2375,10 +2372,140 @@ async function editInputHarian(id){
   },200);
 }
 
+// ═══ HAPUS UNIVERSAL — role-based ═══
+let _hapusFn=null; // fungsi yang akan dieksekusi setelah konfirmasi
+
+function showHapusModal({judul, deskripsi, warning, canDelete, onConfirm}){
+  document.getElementById('hapus-info').innerHTML=
+    `<strong>${judul}</strong><br><span style="color:#6b7280">${deskripsi}</span>`;
+  const warnEl=document.getElementById('hapus-warning');
+  if(warning){warnEl.style.display='block';warnEl.innerHTML=warning;}
+  else{warnEl.style.display='none';}
+  const btnConfirm=document.getElementById('btn-hapus-confirm');
+  btnConfirm.style.display=canDelete?'':'none';
+  _hapusFn=canDelete?onConfirm:null;
+  document.getElementById('modal-hapus').style.display='flex';
+}
+
+async function executeHapus(){
+  closeModal('modal-hapus');
+  if(_hapusFn)await _hapusFn();
+  _hapusFn=null;
+}
+
+// Helper: cek role lebih tinggi dari user lain
+const ROLE_LEVEL={staff:0,operator:1,supervisor:2,manajer:3,admin:4};
+function roleLevel(r){return ROLE_LEVEL[r]??0;}
+function myLevel(){return roleLevel(currentUser?.role);}
+
+// ── Hapus Input Harian ──
 async function deleteInputHarian(id){
-  if(!confirm('Hapus data input ini?'))return;
-  try{await dbDeleteInput(id);await renderRHarian();showToast('🗑 Data dihapus.');}
-  catch(e){showToast('❌ Gagal menghapus.');}
+  // Ambil data dulu untuk cek siapa yang input
+  const rows=await dbGetInput({});
+  const row=rows.find(r=>r.id===id);
+  const pemilik=row?.data?.user||row?.user_input||'—';
+  const tgl=row?.data?.tanggal||'';
+  const knd=row?.data?.kandang||'';
+  const sameUser=pemilik===currentUser?.username;
+  const pemilikLevel=roleLevel((await dbGetUsers()).find(u=>u.username===pemilik)?.role||'');
+  const canDelete=sameUser||(myLevel()>pemilikLevel)||(myLevel()>=3);
+
+  showHapusModal({
+    judul:`Hapus Input Harian`,
+    deskripsi:`📅 ${tgl} — ${knd}<br>Diinput oleh: <strong>${esc(pemilik)}</strong>`,
+    warning: !canDelete
+      ?`🚫 Anda tidak berwenang menghapus data yang diinput oleh <strong>${esc(pemilik)}</strong>. Hubungi Manajer atau Admin.`
+      :(!sameUser&&myLevel()<=2
+        ?`⚠️ Data ini diinput oleh <strong>${esc(pemilik)}</strong>. Pastikan sudah mendapat persetujuan atasan sebelum menghapus.`
+        :null),
+    canDelete,
+    onConfirm:async()=>{
+      try{await dbDeleteInput(id);await renderRHarian();showToast('🗑 Data dihapus.');}
+      catch(e){showToast('❌ Gagal menghapus.');}
+    }
+  });
+}
+
+// ── Hapus Kandang ──
+async function deleteKandang(id){
+  const list=cache.get('kandang_list')||await dbGetKandang();
+  const k=list.find(x=>x.id===id);
+  const canDelete=can('KEUANGAN'); // admin & manajer
+
+  showHapusModal({
+    judul:`Hapus Kandang`,
+    deskripsi:`🏠 <strong>${esc(k?.nama||id)}</strong><br>Populasi: ${k?.populasi||0} ekor · Status: ${k?.status||'—'}`,
+    warning: !canDelete
+      ?`🚫 Hanya Manajer dan Admin yang dapat menghapus kandang. Hubungi atasan Anda.`
+      :`⚠️ Menghapus kandang akan menghilangkan semua referensi kandang ini. Pastikan tidak ada data aktif.`,
+    canDelete,
+    onConfirm:async()=>{
+      try{
+        await dbDeleteKandang(id);
+        await renderKandangTable();
+        await populateKandangSelects();
+        showToast('🗑 Kandang dihapus.');
+      }catch(e){showToast('❌ Gagal menghapus.');}
+    }
+  });
+}
+
+// ── Hapus User ──
+async function deleteUser(id, username){
+  if(username===currentUser?.username){showToast('⚠️ Tidak bisa hapus akun sendiri!');return;}
+  const canDelete=currentUser?.role==='admin';
+  const users=await dbGetUsers();
+  const u=users.find(x=>x.id===id);
+
+  showHapusModal({
+    judul:`Hapus User`,
+    deskripsi:`👤 <strong>${esc(username)}</strong> · Role: ${u?.role||'—'}`,
+    warning: !canDelete
+      ?`🚫 Hanya Admin yang dapat menghapus user. Hubungi Admin sistem.`
+      :`⚠️ User yang dihapus tidak dapat login lagi. Tindakan ini tidak bisa dibatalkan.`,
+    canDelete,
+    onConfirm:async()=>{
+      try{
+        await dbDeleteUser(id);
+        await renderUserTable();
+        showToast('🗑 User dihapus.');
+      }catch(e){showToast('❌ Gagal menghapus.');}
+    }
+  });
+}
+
+// ── Hapus Daftar Pakan ──
+async function deletePakan(id){
+  if(!can('KEUANGAN')){showToast('⚠️ Hanya Admin/Manajer yang bisa hapus pakan!');return;}
+  const list=cache.get('daftar_pakan')||await dbGetDaftarPakan();
+  const p=list.find(x=>x.id===id);
+
+  showHapusModal({
+    judul:`Hapus Pakan`,
+    deskripsi:`🌾 <strong>${esc(p?.nama||id)}</strong><br>Min. stok: ${p?.min_stok||0} kg`,
+    warning:`⚠️ Menghapus pakan akan menghilangkan data dari semua dropdown input. Pastikan tidak ada stok aktif.`,
+    canDelete:true,
+    onConfirm:async()=>{
+      try{await dbDeleteDaftarPakan(id);await renderGudang();showToast('🗑 Pakan dihapus.');}
+      catch(e){showToast('❌ Gagal menghapus.');}
+    }
+  });
+}
+
+// ── Hapus Kiriman Pakan ──
+async function deleteKiriman(id){
+  if(!can('KEUANGAN')){showToast('⚠️ Hanya Admin/Manajer yang bisa hapus kiriman!');return;}
+
+  showHapusModal({
+    judul:`Hapus Kiriman Pakan`,
+    deskripsi:`🚚 Catatan kiriman pakan ini akan dihapus permanen.`,
+    warning:`⚠️ Menghapus kiriman akan mempengaruhi kalkulasi stok pakan secara otomatis.`,
+    canDelete:true,
+    onConfirm:async()=>{
+      try{await dbDeleteKiriman(id);await renderGudang();showToast('🗑 Kiriman dihapus.');}
+      catch(e){showToast('❌ Gagal menghapus.');}
+    }
+  });
 }
 
 async function exportRiwayat(){
