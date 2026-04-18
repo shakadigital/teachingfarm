@@ -330,6 +330,32 @@
     .backup-zone:hover{border-color:#40916c;}
     .backup-zone input[type=file]{display:none;}
 
+    /* ── CATEGORY PICKER ── */
+    .cat-picker-wrap{position:relative;}
+    .cat-picker-btn{width:100%;border:1.5px solid #e2e8f0;border-radius:7px;padding:8px 10px;font-size:.85rem;color:#1a202c;background:#fff;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:6px;transition:border-color .2s;}
+    .cat-picker-btn:focus{outline:none;border-color:#40916c;}
+    .cat-picker-btn .cpb-icon{font-size:1rem;flex-shrink:0;}
+    .cat-picker-btn .cpb-label{flex:1;font-size:.82rem;font-weight:600;}
+    .cat-picker-btn .cpb-arrow{font-size:.65rem;color:#aaa;}
+    .cat-dropdown{position:fixed;z-index:600;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:280px;overflow:hidden;border:1px solid #e2e8f0;}
+    .cat-dropdown.hidden{display:none;}
+    .cat-dropdown-header{padding:10px 14px;background:#f0fdf4;border-bottom:1px solid #d8f3dc;font-size:.72rem;font-weight:700;color:#2d6a4f;text-transform:uppercase;letter-spacing:.04em;}
+    .cat-option{padding:10px 14px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s;}
+    .cat-option:last-child{border-bottom:none;}
+    .cat-option:hover,.cat-option:focus{background:#f0fdf4;outline:none;}
+    .cat-option.selected{background:#d8f3dc;}
+    .cat-option .co-top{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+    .cat-option .co-icon{font-size:1.1rem;flex-shrink:0;}
+    .cat-option .co-name{font-size:.85rem;font-weight:700;color:#1b4332;}
+    .cat-option .co-desc{font-size:.72rem;color:#888;padding-left:27px;line-height:1.4;}
+    body.dark .cat-picker-btn{background:#0f172a;border-color:#334155;color:#e2e8f0;}
+    body.dark .cat-dropdown{background:#1e293b;border-color:#334155;}
+    body.dark .cat-dropdown-header{background:#1b4332;border-bottom-color:#2d6a4f;}
+    body.dark .cat-option{border-bottom-color:#334155;}
+    body.dark .cat-option:hover{background:#1b4332;}
+    body.dark .cat-option .co-name{color:#86efac;}
+    body.dark .cat-option .co-desc{color:#64748b;}
+
     /* ── LANG TOGGLE ── */
     .lang-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 9px;font-size:.75rem;cursor:pointer;font-weight:700;}
     .dark-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 9px;font-size:.85rem;cursor:pointer;}
@@ -599,18 +625,16 @@
           <div id="biaya-section">
             <div id="biaya-list">
               <div class="row biaya-row">
-                <div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Listrik, Tenaga kerja, Obat, dll."/></div>
+                <div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>
                 <div class="field"><label>Kategori</label>
-                  <select>
-                    <option value="tenaga_harian">Tenaga Harian / Lembur</option>
-                    <option value="bbm_energi">BBM & Energi</option>
-                    <option value="listrik_air">Listrik & Air</option>
-                    <option value="peralatan_farm">Peralatan Farm</option>
-                    <option value="mess_fasilitas">Mess & Fasilitas</option>
-                    <option value="kesehatan">Kesehatan Ternak</option>
-                    <option value="transportasi">Transportasi</option>
-                    <option value="lainnya">Lainnya</option>
-                  </select>
+                  <input type="hidden" class="biaya-kategori-val" value="tenaga_harian"/>
+                  <div class="cat-picker-wrap">
+                    <button type="button" class="cat-picker-btn" onclick="openCatPicker(this)">
+                      <span class="cpb-icon">👷</span>
+                      <span class="cpb-label">Tenaga Harian / Lembur</span>
+                      <span class="cpb-arrow">▼</span>
+                    </button>
+                  </div>
                 </div>
                 <div class="field"><label>Jumlah (Rp)</label><input type="number" min="0" step="1000" placeholder="0" oninput="calcTotalBiaya()"/></div>
                 <div style="display:flex;align-items:flex-end">
@@ -1115,6 +1139,43 @@
       <button class="btn-export" onclick="exportSiklus()">⬇️ Export CSV</button>
       <button class="btn-secondary" onclick="closeModal('modal-siklus')">Tutup</button>
     </div>
+  </div>
+</div>
+
+<!-- CATEGORY PICKER DROPDOWN -->
+<div class="cat-dropdown hidden" id="cat-dropdown">
+  <div class="cat-dropdown-header">Pilih Kategori Biaya</div>
+  <div class="cat-option" data-val="tenaga_harian" data-icon="👷" data-label="Tenaga Harian / Lembur" tabindex="0">
+    <div class="co-top"><span class="co-icon">👷</span><span class="co-name">Tenaga Harian / Lembur</span></div>
+    <div class="co-desc">Gaji harian lepas, upah lembur, tenaga borongan kandang</div>
+  </div>
+  <div class="cat-option" data-val="bbm_energi" data-icon="⛽" data-label="BBM & Energi" tabindex="0">
+    <div class="co-top"><span class="co-icon">⛽</span><span class="co-name">BBM & Energi</span></div>
+    <div class="co-desc">Solar genset, bensin motor tosa, pelumas, bahan bakar operasional</div>
+  </div>
+  <div class="cat-option" data-val="listrik_air" data-icon="💡" data-label="Listrik & Air" tabindex="0">
+    <div class="co-top"><span class="co-icon">💡</span><span class="co-name">Listrik & Air</span></div>
+    <div class="co-desc">Tagihan PLN, pompa air, meteran, instalasi listrik kandang</div>
+  </div>
+  <div class="cat-option selected" data-val="peralatan_farm" data-icon="🔧" data-label="Peralatan Farm" tabindex="0">
+    <div class="co-top"><span class="co-icon">🔧</span><span class="co-name">Peralatan Farm</span></div>
+    <div class="co-desc">Sekop, ember, selang, jaring, tempat pakan/minum, alat ringan kandang</div>
+  </div>
+  <div class="cat-option" data-val="mess_fasilitas" data-icon="🏠" data-label="Mess & Fasilitas" tabindex="0">
+    <div class="co-top"><span class="co-icon">🏠</span><span class="co-name">Mess & Fasilitas</span></div>
+    <div class="co-desc">Kebutuhan mess karyawan, dapur, gas LPG, sabun, perlengkapan tidur</div>
+  </div>
+  <div class="cat-option" data-val="kesehatan" data-icon="💊" data-label="Kesehatan Ternak" tabindex="0">
+    <div class="co-top"><span class="co-icon">💊</span><span class="co-name">Kesehatan Ternak</span></div>
+    <div class="co-desc">Pembelian obat, vitamin, vaksin, desinfektan kandang</div>
+  </div>
+  <div class="cat-option" data-val="transportasi" data-icon="🚛" data-label="Transportasi" tabindex="0">
+    <div class="co-top"><span class="co-icon">🚛</span><span class="co-name">Transportasi</span></div>
+    <div class="co-desc">Ongkos kirim telur/pakan, sewa kendaraan, biaya pengiriman</div>
+  </div>
+  <div class="cat-option" data-val="lainnya" data-icon="📦" data-label="Lainnya" tabindex="0">
+    <div class="co-top"><span class="co-icon">📦</span><span class="co-name">Lainnya</span></div>
+    <div class="co-desc">Biaya operasional di luar kategori di atas</div>
   </div>
 </div>
 
@@ -2203,22 +2264,94 @@ function initBiayaAccess(){
   if(can)calcTotalBiaya();
 }
 
+// ═══ CATEGORY PICKER ═══
+let _catPickerTarget=null;
+
+function openCatPicker(btn){
+  const dd=document.getElementById('cat-dropdown');
+  // Toggle — tutup jika sudah terbuka untuk tombol yang sama
+  if(_catPickerTarget===btn&&!dd.classList.contains('hidden')){
+    closeCatPicker();return;
+  }
+  _catPickerTarget=btn;
+  // Tandai selected sesuai nilai saat ini
+  const curVal=btn.closest('.cat-picker-wrap').previousElementSibling?.value||'tenaga_harian';
+  dd.querySelectorAll('.cat-option').forEach(o=>{
+    o.classList.toggle('selected',o.dataset.val===curVal);
+  });
+  // Posisi dropdown di bawah tombol
+  const rect=btn.getBoundingClientRect();
+  dd.style.top=(rect.bottom+window.scrollY+4)+'px';
+  dd.style.left=Math.min(rect.left+window.scrollX,window.innerWidth-290)+'px';
+  dd.classList.remove('hidden');
+  // Klik di luar = tutup
+  setTimeout(()=>document.addEventListener('click',outsideCatClick,{once:true}),10);
+}
+
+function outsideCatClick(e){
+  const dd=document.getElementById('cat-dropdown');
+  if(!dd.contains(e.target)&&e.target!==_catPickerTarget){
+    closeCatPicker();
+  }
+}
+
+function closeCatPicker(){
+  document.getElementById('cat-dropdown').classList.add('hidden');
+  _catPickerTarget=null;
+}
+
+function selectCatOption(el){
+  if(!_catPickerTarget)return;
+  const val=el.dataset.val;
+  const icon=el.dataset.icon;
+  const label=el.dataset.label;
+  // Update hidden input
+  const wrap=_catPickerTarget.closest('.cat-picker-wrap');
+  const hidden=wrap.previousElementSibling;
+  if(hidden)hidden.value=val;
+  // Update tombol tampilan
+  _catPickerTarget.querySelector('.cpb-icon').textContent=icon;
+  _catPickerTarget.querySelector('.cpb-label').textContent=label;
+  closeCatPicker();
+}
+
+// Pasang event ke semua option
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('.cat-option').forEach(o=>{
+    o.addEventListener('click',()=>selectCatOption(o));
+    o.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')selectCatOption(o);});
+  });
+});
+
+function makeCatPickerHTML(defaultVal='tenaga_harian'){
+  const cats={
+    tenaga_harian:{icon:'👷',label:'Tenaga Harian / Lembur'},
+    bbm_energi:{icon:'⛽',label:'BBM & Energi'},
+    listrik_air:{icon:'💡',label:'Listrik & Air'},
+    peralatan_farm:{icon:'🔧',label:'Peralatan Farm'},
+    mess_fasilitas:{icon:'🏠',label:'Mess & Fasilitas'},
+    kesehatan:{icon:'💊',label:'Kesehatan Ternak'},
+    transportasi:{icon:'🚛',label:'Transportasi'},
+    lainnya:{icon:'📦',label:'Lainnya'}
+  };
+  const c=cats[defaultVal]||cats.tenaga_harian;
+  return `<input type="hidden" class="biaya-kategori-val" value="${defaultVal}"/>
+    <div class="cat-picker-wrap">
+      <button type="button" class="cat-picker-btn" onclick="openCatPicker(this)">
+        <span class="cpb-icon">${c.icon}</span>
+        <span class="cpb-label">${c.label}</span>
+        <span class="cpb-arrow">▼</span>
+      </button>
+    </div>`;
+}
+
 function addBiayaRow(){
   const list=document.getElementById('biaya-list');
   const row=document.createElement('div');
   row.className='row biaya-row';
   row.innerHTML=
     '<div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>'+
-    '<div class="field"><label>Kategori</label><select>'+
-      '<option value="tenaga_harian">Tenaga Harian / Lembur</option>'+
-      '<option value="bbm_energi">BBM & Energi</option>'+
-      '<option value="listrik_air">Listrik & Air</option>'+
-      '<option value="peralatan_farm">Peralatan Farm</option>'+
-      '<option value="mess_fasilitas">Mess & Fasilitas</option>'+
-      '<option value="kesehatan">Kesehatan Ternak</option>'+
-      '<option value="transportasi">Transportasi</option>'+
-      '<option value="lainnya">Lainnya</option>'+
-    '</select></div>'+
+    '<div class="field"><label>Kategori</label>'+makeCatPickerHTML()+'</div>'+
     '<div class="field"><label>Jumlah (Rp)</label><input type="number" min="0" step="1000" placeholder="0" oninput="calcTotalBiaya()"/></div>'+
     '<div style="display:flex;align-items:flex-end"><button class="btn-del" onclick="removeBiayaRow(this)">✕</button></div>';
   list.appendChild(row);
@@ -2239,16 +2372,23 @@ function calcTotalBiaya(){
 
 function getBiayaRows(){
   return [...document.querySelectorAll('.biaya-row')].map(r=>{
-    const inputs=r.querySelectorAll('input');
-    const sel=r.querySelector('select');
-    return{ket:inputs[0].value,kategori:sel?sel.value:'lainnya',jumlah:parseFloat(inputs[1]?inputs[1].value:0)||0};
+    const inputs=r.querySelectorAll('input[type="text"],input[type="number"]');
+    const katInput=r.querySelector('.biaya-kategori-val');
+    return{ket:inputs[0]?.value||'',kategori:katInput?katInput.value:'lainnya',jumlah:parseFloat(inputs[1]?.value)||0};
   }).filter(b=>b.ket||b.jumlah);
 }
 
 function resetBiayaRows(){
   const list=document.getElementById('biaya-list');
   [...list.querySelectorAll('.biaya-row')].slice(1).forEach(r=>r.remove());
-  list.querySelector('.biaya-row').querySelectorAll('input').forEach(i=>i.value='');
+  const first=list.querySelector('.biaya-row');
+  if(first){
+    first.querySelectorAll('input[type="text"],input[type="number"]').forEach(i=>i.value='');
+    const katInput=first.querySelector('.biaya-kategori-val');
+    if(katInput){katInput.value='tenaga_harian';}
+    const btn=first.querySelector('.cat-picker-btn');
+    if(btn){btn.querySelector('.cpb-icon').textContent='👷';btn.querySelector('.cpb-label').textContent='Tenaga Harian / Lembur';}
+  }
   calcTotalBiaya();
 }
 
