@@ -720,7 +720,7 @@
         <div class="card-header"><div class="num">📊</div><h2>Riwayat Penjualan</h2></div>
         <div class="card-body">
           <div style="overflow-x:auto">
-            <table class="tbl"><thead><tr><th>Tanggal</th><th>Pelanggan</th><th>Grade</th><th>Butir</th><th>Kilo</th><th>Total</th></tr></thead>
+            <table class="tbl"><thead><tr><th>Tanggal</th><th>Pelanggan</th><th>Grade</th><th>Butir</th><th>Kilo</th><th>Total</th><th></th></tr></thead>
             <tbody id="riwayat-jual-tbody"></tbody></table>
           </div>
           <div id="riwayat-jual-empty" class="info-box" style="display:none">Belum ada riwayat penjualan.</div>
@@ -728,7 +728,6 @@
       </div>
 
       <div class="save-bar">
-        <button class="btn-reset" onclick="resetPenjualan()">🔄 Reset</button>
         <button class="btn-save" onclick="savePenjualan()">💾 Simpan Penjualan</button>
       </div>
     </div>
@@ -1732,13 +1731,33 @@ async function renderRiwayatJual(){
   tbody.innerHTML='';
   if(!all.length){empty.style.display='block';return;}
   empty.style.display='none';
+  const isAdmin=currentUser?.role==='admin';
   all.slice(0,60).forEach(rec=>{
-    (rec.rows||[]).forEach(r=>{
+    const rows=rec.rows||[];
+    rows.forEach((r,i)=>{
       const tr=document.createElement('tr');
-      tr.innerHTML='<td>'+fmtTgl(rec.tanggal)+'</td><td>'+esc(r.pelanggan||'—')+'</td><td>'+esc(r.grade||'—')+'</td><td>'+(r.butir||0)+' butir</td><td>'+(r.kilo||0)+' kg</td><td>'+esc(r.total||'Rp 0')+'</td>';
+      const aksiCell=isAdmin&&i===0
+        ?`<td rowspan="${rows.length}" style="text-align:center;vertical-align:middle">
+            <button onclick="hapusPenjualan('${rec.id}')" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#dc2626" title="Hapus transaksi ini">🗑️</button>
+           </td>`
+        :(isAdmin?'':'<td></td>');
+      tr.innerHTML='<td>'+fmtTgl(rec.tanggal)+'</td><td>'+esc(r.pelanggan||'—')+'</td><td>'+esc(r.grade||'—')+'</td><td>'+(r.butir||0)+' butir</td><td>'+(r.kilo||0)+' kg</td><td>'+esc(r.total||'Rp 0')+'</td>'+(i===0?aksiCell:'');
       tbody.appendChild(tr);
     });
   });
+}
+
+async function hapusPenjualan(id){
+  if(!currentUser||currentUser.role!=='admin'){showToast('⛔ Hanya Admin yang bisa menghapus data penjualan!');return;}
+  const konfirm=confirm('⚠️ Hapus transaksi penjualan ini?\n\nData yang dihapus tidak bisa dikembalikan.');
+  if(!konfirm)return;
+  try{
+    showToast('⏳ Menghapus...');
+    await dbDeletePenjualan(id);
+    await renderStokTelur();
+    await renderRiwayatJual();
+    showToast('✅ Transaksi penjualan dihapus!');
+  }catch(e){showToast('❌ Gagal menghapus: '+e.message);}
 }
 
 // ═══ GUDANG ═══
