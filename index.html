@@ -337,17 +337,24 @@
     .cat-picker-btn .cpb-icon{font-size:1rem;flex-shrink:0;}
     .cat-picker-btn .cpb-label{flex:1;font-size:.82rem;font-weight:600;}
     .cat-picker-btn .cpb-arrow{font-size:.65rem;color:#aaa;}
-    .cat-dropdown{position:fixed;z-index:600;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:280px;overflow:hidden;border:1px solid #e2e8f0;}
+    /* Bottom Sheet Overlay */
+    .cat-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1200;opacity:0;transition:opacity .22s;pointer-events:none;}
+    .cat-sheet-overlay.active{opacity:1;pointer-events:all;}
+    /* Bottom Sheet */
+    .cat-dropdown{position:fixed;bottom:0;left:0;right:0;z-index:1201;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -4px 32px rgba(0,0,0,.18);max-height:78vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+    .cat-dropdown.active{transform:translateY(0);}
     .cat-dropdown.hidden{display:none;}
-    .cat-dropdown-header{padding:10px 14px;background:#f0fdf4;border-bottom:1px solid #d8f3dc;font-size:.72rem;font-weight:700;color:#2d6a4f;text-transform:uppercase;letter-spacing:.04em;}
-    .cat-option{padding:10px 14px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s;}
+    .cat-dropdown-handle{width:40px;height:4px;background:#e2e8f0;border-radius:2px;margin:10px auto 4px;flex-shrink:0;}
+    .cat-dropdown-header{padding:8px 16px 12px;background:#f0fdf4;border-bottom:1px solid #d8f3dc;font-size:.75rem;font-weight:700;color:#2d6a4f;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;}
+    .cat-dropdown-list{overflow-y:auto;flex:1;padding-bottom:env(safe-area-inset-bottom,12px);}
+    .cat-option{padding:12px 16px;cursor:pointer;border-bottom:1px solid #f1f5f9;transition:background .12s;}
     .cat-option:last-child{border-bottom:none;}
     .cat-option:hover,.cat-option:focus{background:#f0fdf4;outline:none;}
     .cat-option.selected{background:#d8f3dc;}
     .cat-option .co-top{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
-    .cat-option .co-icon{font-size:1.1rem;flex-shrink:0;}
-    .cat-option .co-name{font-size:.85rem;font-weight:700;color:#1b4332;}
-    .cat-option .co-desc{font-size:.72rem;color:#888;padding-left:27px;line-height:1.4;}
+    .cat-option .co-icon{font-size:1.2rem;flex-shrink:0;}
+    .cat-option .co-name{font-size:.88rem;font-weight:700;color:#1b4332;}
+    .cat-option .co-desc{font-size:.73rem;color:#888;padding-left:30px;line-height:1.4;}
     body.dark .cat-picker-btn{background:#0f172a;border-color:#334155;color:#e2e8f0;}
     body.dark .cat-dropdown{background:#1e293b;border-color:#334155;}
     body.dark .cat-dropdown-header{background:#1b4332;border-bottom-color:#2d6a4f;}
@@ -1141,9 +1148,12 @@
   </div>
 </div>
 
-<!-- CATEGORY PICKER DROPDOWN -->
+<!-- CATEGORY PICKER BOTTOM SHEET -->
+<div class="cat-sheet-overlay" id="cat-sheet-overlay" onclick="closeCatPicker()"></div>
 <div class="cat-dropdown hidden" id="cat-dropdown">
+  <div class="cat-dropdown-handle"></div>
   <div class="cat-dropdown-header">Pilih Kategori Biaya</div>
+  <div class="cat-dropdown-list">
   <div class="cat-option" data-val="tenaga_harian" data-icon="👷" data-label="Tenaga Harian / Lembur" tabindex="0">
     <div class="co-top"><span class="co-icon">👷</span><span class="co-name">Tenaga Harian / Lembur</span></div>
     <div class="co-desc">Gaji harian lepas, upah lembur, tenaga borongan kandang</div>
@@ -1175,6 +1185,7 @@
   <div class="cat-option" data-val="lainnya" data-icon="📦" data-label="Lainnya" tabindex="0">
     <div class="co-top"><span class="co-icon">📦</span><span class="co-name">Lainnya</span></div>
     <div class="co-desc">Biaya operasional di luar kategori di atas</div>
+  </div>
   </div>
 </div>
 
@@ -2307,42 +2318,39 @@ let _catPickerTarget=null;
 
 function openCatPicker(btn){
   const dd=document.getElementById('cat-dropdown');
-  // Toggle — tutup jika sudah terbuka untuk tombol yang sama
+  const overlay=document.getElementById('cat-sheet-overlay');
   if(_catPickerTarget===btn&&!dd.classList.contains('hidden')){
     closeCatPicker();return;
   }
-  // Tutup dulu kalau ada yang terbuka
   document.removeEventListener('click',outsideCatClick);
   _catPickerTarget=btn;
-  // Tandai selected sesuai nilai saat ini
   const curVal=btn.closest('.cat-picker-wrap').previousElementSibling?.value||'tenaga_harian';
   dd.querySelectorAll('.cat-option').forEach(o=>{
     o.classList.toggle('selected',o.dataset.val===curVal);
   });
-  // Posisi dropdown di bawah tombol (fixed — tidak perlu scrollY)
-  const rect=btn.getBoundingClientRect();
-  const ddW=280;
-  let left=rect.left;
-  if(left+ddW>window.innerWidth-8) left=window.innerWidth-ddW-8;
-  dd.style.top=(rect.bottom+4)+'px';
-  dd.style.left=Math.max(8,left)+'px';
   dd.classList.remove('hidden');
-  // Klik di luar = tutup (delay agar event klik ini tidak langsung trigger)
-  setTimeout(()=>document.addEventListener('click',outsideCatClick),50);
+  overlay.classList.remove('hidden');
+  requestAnimationFrame(()=>{
+    dd.classList.add('active');
+    overlay.classList.add('active');
+  });
 }
 
 function outsideCatClick(e){
   const dd=document.getElementById('cat-dropdown');
-  // Abaikan klik di dalam dropdown atau pada tombol pemicu
   if(dd.contains(e.target)||(_catPickerTarget&&_catPickerTarget.contains(e.target)))return;
   document.removeEventListener('click',outsideCatClick);
   closeCatPicker();
 }
 
 function closeCatPicker(){
-  document.getElementById('cat-dropdown').classList.add('hidden');
+  const dd=document.getElementById('cat-dropdown');
+  const overlay=document.getElementById('cat-sheet-overlay');
+  dd.classList.remove('active');
+  overlay.classList.remove('active');
   document.removeEventListener('click',outsideCatClick);
   _catPickerTarget=null;
+  setTimeout(()=>{dd.classList.add('hidden');overlay.classList.add('hidden');},280);
 }
 
 function selectCatOption(el){
@@ -2360,12 +2368,16 @@ function selectCatOption(el){
   closeCatPicker();
 }
 
-// Pasang event ke semua option
-document.addEventListener('DOMContentLoaded',()=>{
-  document.querySelectorAll('.cat-option').forEach(o=>{
-    o.addEventListener('click',()=>selectCatOption(o));
-    o.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')selectCatOption(o);});
-  });
+// Pasang event ke cat-option via delegation (handle static + dynamic rows)
+document.addEventListener('click',e=>{
+  const o=e.target.closest('.cat-option');
+  if(o&&document.getElementById('cat-dropdown').contains(o))selectCatOption(o);
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key===' '){
+    const o=e.target.closest('.cat-option');
+    if(o&&document.getElementById('cat-dropdown').contains(o)){e.preventDefault();selectCatOption(o);}
+  }
 });
 
 function makeCatPickerHTML(defaultVal='tenaga_harian'){
