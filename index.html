@@ -2311,30 +2311,37 @@ function openCatPicker(btn){
   if(_catPickerTarget===btn&&!dd.classList.contains('hidden')){
     closeCatPicker();return;
   }
+  // Tutup dulu kalau ada yang terbuka
+  document.removeEventListener('click',outsideCatClick);
   _catPickerTarget=btn;
   // Tandai selected sesuai nilai saat ini
   const curVal=btn.closest('.cat-picker-wrap').previousElementSibling?.value||'tenaga_harian';
   dd.querySelectorAll('.cat-option').forEach(o=>{
     o.classList.toggle('selected',o.dataset.val===curVal);
   });
-  // Posisi dropdown di bawah tombol
+  // Posisi dropdown di bawah tombol (fixed — tidak perlu scrollY)
   const rect=btn.getBoundingClientRect();
-  dd.style.top=(rect.bottom+window.scrollY+4)+'px';
-  dd.style.left=Math.min(rect.left+window.scrollX,window.innerWidth-290)+'px';
+  const ddW=280;
+  let left=rect.left;
+  if(left+ddW>window.innerWidth-8) left=window.innerWidth-ddW-8;
+  dd.style.top=(rect.bottom+4)+'px';
+  dd.style.left=Math.max(8,left)+'px';
   dd.classList.remove('hidden');
-  // Klik di luar = tutup
-  setTimeout(()=>document.addEventListener('click',outsideCatClick,{once:true}),10);
+  // Klik di luar = tutup (delay agar event klik ini tidak langsung trigger)
+  setTimeout(()=>document.addEventListener('click',outsideCatClick),50);
 }
 
 function outsideCatClick(e){
   const dd=document.getElementById('cat-dropdown');
-  if(!dd.contains(e.target)&&e.target!==_catPickerTarget){
-    closeCatPicker();
-  }
+  // Abaikan klik di dalam dropdown atau pada tombol pemicu
+  if(dd.contains(e.target)||(_catPickerTarget&&_catPickerTarget.contains(e.target)))return;
+  document.removeEventListener('click',outsideCatClick);
+  closeCatPicker();
 }
 
 function closeCatPicker(){
   document.getElementById('cat-dropdown').classList.add('hidden');
+  document.removeEventListener('click',outsideCatClick);
   _catPickerTarget=null;
 }
 
