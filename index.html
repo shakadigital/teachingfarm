@@ -625,7 +625,6 @@
           <div id="biaya-section">
             <div id="biaya-list">
               <div class="row biaya-row">
-                <div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>
                 <div class="field"><label>Kategori</label>
                   <input type="hidden" class="biaya-kategori-val" value="tenaga_harian"/>
                   <div class="cat-picker-wrap">
@@ -636,6 +635,7 @@
                     </button>
                   </div>
                 </div>
+                <div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>
                 <div class="field"><label>Jumlah (Rp)</label><input type="number" min="0" step="1000" placeholder="0" oninput="calcTotalBiaya()"/></div>
                 <div style="display:flex;align-items:flex-end">
                   <button class="btn-del" onclick="removeBiayaRow(this)">✕</button>
@@ -2395,8 +2395,8 @@ function addBiayaRow(){
   const row=document.createElement('div');
   row.className='row biaya-row';
   row.innerHTML=
-    '<div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>'+
     '<div class="field"><label>Kategori</label>'+makeCatPickerHTML()+'</div>'+
+    '<div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>'+
     '<div class="field"><label>Jumlah (Rp)</label><input type="number" min="0" step="1000" placeholder="0" oninput="calcTotalBiaya()"/></div>'+
     '<div style="display:flex;align-items:flex-end"><button class="btn-del" onclick="removeBiayaRow(this)">✕</button></div>';
   list.appendChild(row);
@@ -2417,9 +2417,10 @@ function calcTotalBiaya(){
 
 function getBiayaRows(){
   return [...document.querySelectorAll('.biaya-row')].map(r=>{
-    const inputs=r.querySelectorAll('input[type="text"],input[type="number"]');
+    const ketInput=r.querySelector('input[type="text"]');
+    const jmlInput=r.querySelector('input[type="number"]');
     const katInput=r.querySelector('.biaya-kategori-val');
-    return{ket:inputs[0]?.value||'',kategori:katInput?katInput.value:'lainnya',jumlah:parseFloat(inputs[1]?.value)||0};
+    return{ket:ketInput?.value||'',kategori:katInput?katInput.value:'lainnya',jumlah:parseFloat(jmlInput?.value)||0};
   }).filter(b=>b.ket||b.jumlah);
 }
 
