@@ -997,8 +997,8 @@
           <div class="card-body"><div class="chart-wrap"><canvas id="chart-hdp"></canvas></div></div>
         </div>
         <div class="card">
-          <div class="card-header"><div class="num">🌾</div><h2>Stok Pakan vs Minimum (kg)</h2></div>
-          <div class="card-body"><div class="chart-wrap"><canvas id="chart-stok"></canvas></div></div>
+          <div class="card-header"><div class="num">📊</div><h2>Performa Rata-rata per Minggu (Umur Ayam)</h2></div>
+          <div class="card-body"><div class="chart-wrap"><canvas id="chart-performa"></canvas></div></div>
         </div>
       </div>
 
@@ -3004,7 +3004,7 @@ async function renderHomeAlerts(){
 }
 
 // ═══ GRAFIK (Chart.js) ═══
-let chartHDP=null,chartStok=null;
+let chartHDP=null,chartPerforma=null;
 
 async function renderGrafik(){
   const kandang=document.getElementById('g-kandang').value;
@@ -3016,7 +3016,6 @@ async function renderGrafik(){
 
   // ── HDP Chart ──
   const inputs=await dbGetInput({dari:dariStr,sampai:sampaiStr,kandang});
-  // Group by tanggal, ambil rata-rata HDP
   const hdpMap={};
   inputs.forEach(r=>{
     const tgl=r.tanggal;
@@ -3024,12 +3023,11 @@ async function renderGrafik(){
     if(!hdpMap[tgl]){hdpMap[tgl]={sum:0,count:0};}
     hdpMap[tgl].sum+=hdp;hdpMap[tgl].count++;
   });
-  // Generate label tanggal
   const labels=[];const hdpData=[];
   for(let i=0;i<days;i++){
     const d=new Date(dari);d.setDate(d.getDate()+i);
     const s=d.toISOString().split('T')[0];
-    labels.push(s.slice(5));// MM-DD
+    labels.push(s.slice(5));
     const v=hdpMap[s];
     hdpData.push(v?parseFloat((v.sum/v.count).toFixed(1)):null);
   }
@@ -3041,26 +3039,85 @@ async function renderGrafik(){
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y!==null?ctx.parsed.y+'%':'Tidak ada data'}}},scales:{y:{beginAtZero:false,ticks:{callback:v=>v+'%'}},x:{ticks:{maxTicksLimit:10}}}}
   });
 
-  // ── Stok Pakan Chart ──
-  const pakans=await dbGetDaftarPakan();
-  const stokLabels=[];const stokData=[];const minData=[];const barColors=[];
-  for(const p of pakans){
-    const stok=await calcStokPakan(p.nama);
-    const min=parseFloat(p.min_stok)||0;
-    stokLabels.push(p.nama);
-    stokData.push(parseFloat(stok.toFixed(1)));
-    minData.push(min);
-    barColors.push(stok<min?'rgba(220,38,38,.7)':'rgba(64,145,108,.7)');
+  // ── Performa Mingguan Chart (HD, FI, EW, FCR) ──
+  // Ambil semua data kandang yang dipilih, group per minggu umur ayam
+  const semuaKandang = await dbGetKandang();
+  const allKandangs = kandang ? semuaKandang.filter(k=>k.nama===kandang||k.id===kandang) : semuaKandang;
+  const weekMap = {}; // key: "Minggu X", value: {hd:[], fi:[], ew:[], fcr:[]}
+
+  for(const k of allKandangs){
+    if(!k || k.status==='selesai') continue;
+    const chickInDate = new Date(k.tanggal_chick_in);
+    const umurChickIn = parseInt(k.umur_chick_in)||0;
+    const allInputs = await dbGetInput({kandang: k.nama});
+    for(const r of allInputs){
+      const tgl = new Date(r.tanggal);
+      const hariKe = Math.floor((tgl - chickInDate)/(1000*60*60*24));
+      const umurHari = umurChickIn*7 + hariKe;
+      const minggu = Math.floor(umurHari/7)+1;
+      const key = `Mgg ${minggu}`;
+      if(!weekMap[key]) weekMap[key]={hd:[],fi:[],ew:[],fcr:[]};
+
+      const hdp = parseFloat(r.data?.produksi?.hdp)||null;
+      const populasi = parseFloat(r.data?.deplesi?.sisa_ayam)||parseFloat(k.populasi_masuk)||1;
+      // FI: total pakan hari itu (gram/ekor) — pakan dalam kg dibagi populasi * 1000
+      let totalPakan=0;
+      (r.data?.pakan||[]).forEach(p=>{ totalPakan+=parseFloat(p.jumlah)||0; });
+      const fi = populasi>0 ? parseFloat(((totalPakan*1000)/populasi).toFixed(1)) : null;
+      // EW: berat rata-rata telur (gram)
+      const ew = parseFloat(r.data?.produksi?.berat_rata2)||null;
+      // FCR: kg pakan / kg telur
+      const totalTelurKg = ((parseFloat(r.data?.produksi?.total_butir)||0) * (ew||0)) / 1000;
+      const fcr = totalTelurKg>0 ? parseFloat((totalPakan/totalTelurKg).toFixed(2)) : null;
+
+      if(hdp!==null) weekMap[key].hd.push(hdp);
+      if(fi!==null && fi>0) weekMap[key].fi.push(fi);
+      if(ew!==null && ew>0) weekMap[key].ew.push(ew);
+      if(fcr!==null && fcr>0 && fcr<10) weekMap[key].fcr.push(fcr);
+    }
   }
-  const ctxStok=document.getElementById('chart-stok').getContext('2d');
-  if(chartStok)chartStok.destroy();
-  chartStok=new Chart(ctxStok,{
-    type:'bar',
-    data:{labels:stokLabels,datasets:[
-      {label:'Stok (kg)',data:stokData,backgroundColor:barColors,borderRadius:4},
-      {label:'Minimum (kg)',data:minData,type:'line',borderColor:'#f59e0b',borderDash:[5,5],pointRadius:4,fill:false,borderWidth:2}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v+' kg'}}}}
+
+  // Sort minggu secara numerik
+  const avg = arr => arr.length ? parseFloat((arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2)) : null;
+  const weekKeys = Object.keys(weekMap).sort((a,b)=>{
+    return parseInt(a.replace('Mgg ','')) - parseInt(b.replace('Mgg ',''));
+  });
+  const wLabels = weekKeys;
+  const hdData  = weekKeys.map(k=>avg(weekMap[k].hd));
+  const fiData  = weekKeys.map(k=>avg(weekMap[k].fi));
+  const ewData  = weekKeys.map(k=>avg(weekMap[k].ew));
+  const fcrData = weekKeys.map(k=>avg(weekMap[k].fcr));
+
+  const ctxP=document.getElementById('chart-performa').getContext('2d');
+  if(chartPerforma)chartPerforma.destroy();
+  chartPerforma=new Chart(ctxP,{
+    type:'line',
+    data:{
+      labels:wLabels,
+      datasets:[
+        {label:'HD / HDP (%)',data:hdData,borderColor:'#40916c',backgroundColor:'rgba(64,145,108,.08)',tension:.3,fill:false,pointRadius:4,spanGaps:true,yAxisID:'y'},
+        {label:'FI (g/ekor)',data:fiData,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',tension:.3,fill:false,pointRadius:4,spanGaps:true,yAxisID:'y1'},
+        {label:'EW (g/butir)',data:ewData,borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.08)',tension:.3,fill:false,pointRadius:4,spanGaps:true,yAxisID:'y1'},
+        {label:'FCR',data:fcrData,borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.08)',tension:.3,fill:false,pointRadius:4,spanGaps:true,yAxisID:'y2',borderDash:[4,3]}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{
+        label:ctx=>{
+          const v=ctx.parsed.y;
+          if(v===null)return null;
+          const u=['%','g/ekor','g/butir',''];
+          return `${ctx.dataset.label}: ${v}${u[ctx.datasetIndex]||''}`;
+        }
+      }}},
+      scales:{
+        y:{position:'left',title:{display:true,text:'HD (%)'},ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,.05)'}},
+        y1:{position:'right',title:{display:true,text:'FI / EW (g)'},grid:{drawOnChartArea:false}},
+        y2:{position:'right',title:{display:true,text:'FCR'},grid:{drawOnChartArea:false},ticks:{callback:v=>v.toFixed(1)}}
+      }
+    }
   });
 }
 
