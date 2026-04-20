@@ -1826,9 +1826,9 @@ async function hapusPenjualan(id){
 
 // ═══ GUDANG ═══
 async function calcStokPakan(namaPakan){
-  const kiriman=await dbGetKiriman();
+  const kiriman=cache.get('kiriman_pakan')||await dbGetKiriman();
   const masuk=kiriman.filter(k=>k.nama_pakan===namaPakan).reduce((s,k)=>s+(parseFloat(k.jumlah)||0),0);
-  const inputs=await dbGetInput();
+  const inputs=cache.get('_all_inputs')||await dbGetInput();
   let keluar=0;
   inputs.forEach(row=>{
     const d=row.data;if(!d||!d.pakan)return;
@@ -1838,7 +1838,7 @@ async function calcStokPakan(namaPakan){
 }
 
 async function getHargaTerakhir(namaPakan){
-  const kiriman=await dbGetKiriman();
+  const kiriman=cache.get('kiriman_pakan')||await dbGetKiriman();
   const filtered=kiriman.filter(k=>k.nama_pakan===namaPakan);
   if(!filtered.length)return 0;
   filtered.sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
@@ -1848,19 +1848,38 @@ async function getHargaTerakhir(namaPakan){
 async function renderGudang(){
   const pakans=await dbGetDaftarPakan();
   cache.set('daftar_pakan',pakans);
+
+  // Fetch semua data sekali — tidak ada N+1
+  const kiriman=await dbGetKiriman();
+  const allInputs=await dbGetInput();
+  cache.set('_all_inputs',allInputs);
+
+  // Pre-compute stok & harga per pakan dari data yang sudah di-fetch
+  const stokMap={},hargaMap={};
+  kiriman.forEach(k=>{
+    if(!k.nama_pakan)return;
+    stokMap[k.nama_pakan]=(stokMap[k.nama_pakan]||0)+(parseFloat(k.jumlah)||0);
+  });
+  allInputs.forEach(row=>{
+    const d=row.data;if(!d||!d.pakan)return;
+    d.pakan.forEach(p=>{if(p.kode)stokMap[p.kode]=(stokMap[p.kode]||0)-(parseFloat(p.jumlah)||0);});
+  });
+  // Harga terakhir per pakan
+  const kirimanSorted=[...kiriman].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  kirimanSorted.forEach(k=>{if(k.nama_pakan&&!hargaMap[k.nama_pakan])hargaMap[k.nama_pakan]=parseFloat(k.harga_per_kg)||0;});
+
   const tbody=document.getElementById('stok-tbody');
   const empty=document.getElementById('stok-empty');
-  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:12px">⏳ Memuat data...</td></tr>';
-  if(!pakans.length){empty.style.display='block';tbody.innerHTML='';}
+  tbody.innerHTML='';
+  if(!pakans.length){empty.style.display='block';}
   else{
     empty.style.display='none';
-    tbody.innerHTML='';
-    for(const p of pakans){
-      const stok=await calcStokPakan(p.nama);
+    pakans.forEach(p=>{
+      const stok=Math.max(0,stokMap[p.nama]||0);
       const min=parseFloat(p.stok_minimal)||0;
       const low=stok<=min;
       const pct=min>0?Math.min(100,Math.round((stok/min)*100)):100;
-      const harga=await getHargaTerakhir(p.nama);
+      const harga=hargaMap[p.nama]||0;
       const tr=document.createElement('tr');
       tr.innerHTML=
         '<td><strong>'+esc(p.nama)+'</strong></td>'+
@@ -1873,9 +1892,10 @@ async function renderGudang(){
           (can('KEUANGAN')?'<button class="btn-del" onclick="deletePakan(\''+p.id+'\')">🗑</button>':'')+
         '</td>';
       tbody.appendChild(tr);
-    }
+    });
   }
-  const kiriman=await dbGetKiriman();
+
+  // Kiriman tabel — data sudah ada di kiriman
   const ktbody=document.getElementById('kiriman-tbody');
   const kempty=document.getElementById('kiriman-empty');
   ktbody.innerHTML='';
@@ -1893,9 +1913,10 @@ async function renderGudang(){
       ktbody.appendChild(tr);
     });
   }
-  const inputs=await dbGetInput();
+
+  // Riwayat pemakaian — dari allInputs yang sudah di-fetch
   const pemakaian=[];
-  inputs.forEach(row=>{const d=row.data;if(!d||!d.pakan)return;d.pakan.forEach(p=>{if(p.kode&&p.jumlah)pemakaian.push({tgl:d.tanggal,kandang:d.kandang,pakan:p.kode,jumlah:p.jumlah});});});
+  allInputs.forEach(row=>{const d=row.data;if(!d||!d.pakan)return;d.pakan.forEach(p=>{if(p.kode&&p.jumlah)pemakaian.push({tgl:d.tanggal,kandang:d.kandang,pakan:p.kode,jumlah:p.jumlah});});});
   pemakaian.sort((a,b)=>b.tgl.localeCompare(a.tgl));
   const ptbody=document.getElementById('pakai-tbody');
   const pempty=document.getElementById('pakai-empty');
@@ -3059,8 +3080,14 @@ async function exportLaporan(){
       csv+=`${d.tanggal},${d.kandang},${d.sisa_ayam||0},${d.produksi?d.produksi.total.butir:0},${d.produksi?d.produksi.total.kilo:0},${d.produksi?d.produksi.hdp:''},${d.deplesi?d.deplesi.total:0},${tp}\n`;
     });
   } else if(currentLTab==='labarugi'){
+    // Fetch kiriman sekali untuk harga lookup
+    const semuaKiriman=await dbGetKiriman({});
+    const getHargaOnDate=(namaPakan,tgl)=>{
+      const filtered=semuaKiriman.filter(k=>k.nama_pakan===namaPakan&&k.tanggal<=tgl).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+      return filtered.length?parseFloat(filtered[0].harga_per_kg)||0:0;
+    };
+
     if(isSupervisor){
-      // Supervisor: export biaya operasional & penjualan TANPA margin
       csv='Tanggal,Penjualan (Rp),Biaya Pakan (Rp),Biaya Operasional (Rp)\n';
       const juals=await dbGetPenjualan({dari,sampai});
       const pendMap={};
@@ -3069,7 +3096,11 @@ async function exportLaporan(){
       const biayaMap={},opsMap={};
       for(const row of inputs){
         const d=row.data;if(!d)continue;
-        let b=0;for(const p of (d.pakan||[])){b+=(parseFloat(p.jumlah)||0)*(await getHargaTerakhir(p.kode)||0);}
+        let b=0;
+        for(const p of (d.pakan||[])){
+          const namaPakan=p.kode||p.nama||'';
+          b+=(parseFloat(p.jumlah)||0)*getHargaOnDate(namaPakan,d.tanggal);
+        }
         biayaMap[d.tanggal]=(biayaMap[d.tanggal]||0)+b;
         const ops=(d.biaya_ops||[]).reduce((s,x)=>s+(parseFloat(x.jumlah)||0),0);
         opsMap[d.tanggal]=(opsMap[d.tanggal]||0)+ops;
@@ -3079,7 +3110,6 @@ async function exportLaporan(){
         csv+=`${tgl},${p},${Math.round(b)},${Math.round(o)}\n`;
       });
     } else {
-      // Manajer/Admin: export lengkap dengan laba/rugi
       csv='Tanggal,Pendapatan,Biaya Pakan,Biaya Ops,Laba/Rugi\n';
       const juals=await dbGetPenjualan({dari,sampai});
       const pendMap={};
@@ -3088,7 +3118,11 @@ async function exportLaporan(){
       const biayaMap={},opsMap={};
       for(const row of inputs){
         const d=row.data;if(!d)continue;
-        let b=0;for(const p of (d.pakan||[])){b+=(parseFloat(p.jumlah)||0)*(await getHargaTerakhir(p.kode)||0);}
+        let b=0;
+        for(const p of (d.pakan||[])){
+          const namaPakan=p.kode||p.nama||'';
+          b+=(parseFloat(p.jumlah)||0)*getHargaOnDate(namaPakan,d.tanggal);
+        }
         biayaMap[d.tanggal]=(biayaMap[d.tanggal]||0)+b;
         const ops=(d.biaya_ops||[]).reduce((s,x)=>s+(parseFloat(x.jumlah)||0),0);
         opsMap[d.tanggal]=(opsMap[d.tanggal]||0)+ops;

@@ -128,6 +128,7 @@ async function dbSaveInput(tanggal, kandang, data) {
     });
   }
   cache.del('input_harian');
+  cache.del('_all_inputs');
 }
 
 async function dbGetInput(filters = {}) {
@@ -137,13 +138,18 @@ async function dbGetInput(filters = {}) {
     if (filters.kandang) q += `&kandang=eq.${encodeURIComponent(filters.kandang)}`;
     if (filters.dari) q += `&tanggal=gte.${filters.dari}`;
     if (filters.sampai) q += `&tanggal=lte.${filters.sampai}`;
+    // Gunakan cache untuk query tanpa filter (all data)
+    const isAll = !filters.tanggal && !filters.kandang && !filters.dari && !filters.sampai;
+    if (isAll && cache.get('_all_inputs')) return cache.get('_all_inputs');
     const rows = await SB.select('input_harian', q);
+    if (isAll) cache.set('_all_inputs', rows || []);
     return rows || [];
   } catch { return []; }
 }
 
 async function dbDeleteInput(id) {
   await SB.delete('input_harian', `?id=eq.${id}`);
+  cache.del('_all_inputs');
 }
 
 // ── PENJUALAN ──────────────────────────────────────
