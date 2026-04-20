@@ -1087,7 +1087,7 @@
       <div class="field" style="margin-bottom:12px"><label>Password</label>
         <div class="pw-wrap"><input type="password" id="mu-password" placeholder="Masukkan password"/><button class="btn-eye" onclick="togglePwField('mu-password')">👁</button></div>
       </div>
-      <div class="field"><label>Role</label><select id="mu-role"><option value="staff">Staff</option><option value="supervisor">Supervisor</option><option value="manajer">Manajer</option><option value="operator">Operator</option><option value="admin">Admin</option></select></div>
+      <div class="field"><label>Role</label><select id="mu-role"><option value="viewer">Viewer</option><option value="staff">Staff</option><option value="operator">Operator</option><option value="supervisor">Supervisor</option><option value="manajer">Manajer</option><option value="admin">Admin</option></select></div>
     </div>
     <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-user')">Batal</button><button class="btn-primary" onclick="saveUser()">💾 Simpan</button></div>
   </div>
@@ -1287,10 +1287,10 @@ const ROLES={
   KAS_KELUAR:['superadmin','admin','manajer','supervisor'],
   KAS_VIEW:  ['superadmin','admin','manajer','supervisor'],
   INPUT:     ['superadmin','admin','manajer','supervisor','operator'],
-  ALL:       ['superadmin','admin','manajer','supervisor','operator','staff']
+  ALL:       ['superadmin','admin','manajer','supervisor','operator','staff','viewer']
 };
 function can(p){
-  if(currentUser?.role==='superadmin') return true; // superadmin akses penuh
+  if(currentUser?.role==='superadmin') return true;
   return currentUser&&ROLES[p]&&ROLES[p].includes(currentUser.role);
 }
 function applyRoleRestrictions(){
@@ -1593,8 +1593,8 @@ async function saveInputData(){
       const prevRole=prevUserObj?.role||'';
       const higherRoles=['admin','manajer','supervisor'];
       const currentRole=currentUser?.role||'';
-      const canOverwrite=currentRole==='admin'||(currentRole==='manajer')||
-        (currentRole==='supervisor'&&!['admin','manajer'].includes(prevRole))||
+      const canOverwrite=currentRole==='superadmin'||currentRole==='admin'||(currentRole==='manajer')||
+        (currentRole==='supervisor'&&!['admin','manajer','superadmin'].includes(prevRole))||
         (currentRole==='operator'&&!higherRoles.includes(prevRole))||
         sameUser;
 
@@ -1800,7 +1800,7 @@ async function renderRiwayatJual(){
   tbody.innerHTML='';
   if(!all.length){empty.style.display='block';return;}
   empty.style.display='none';
-  const isAdmin=currentUser?.role==='admin';
+  const isAdmin=currentUser?.role==='admin'||currentUser?.role==='superadmin';
   all.slice(0,60).forEach(rec=>{
     const rows=rec.rows||[];
     rows.forEach((r,i)=>{
@@ -1817,7 +1817,7 @@ async function renderRiwayatJual(){
 }
 
 async function hapusPenjualan(id){
-  if(!currentUser||currentUser.role!=='admin'){showToast('⛔ Hanya Admin yang bisa menghapus data penjualan!');return;}
+  if(!currentUser||!['admin','superadmin'].includes(currentUser.role)){showToast('⛔ Hanya Admin yang bisa menghapus data penjualan!');return;}
   const konfirm=confirm('⚠️ Hapus transaksi penjualan ini?\n\nData yang dihapus tidak bisa dikembalikan.');
   if(!konfirm)return;
   try{
@@ -2338,7 +2338,8 @@ async function renderUserTable(){
       manajer:'<span class="badge badge-green">Manajer</span>',
       supervisor:'<span class="badge" style="background:#ede9fe;color:#6d28d9">Supervisor</span>',
       operator:'<span class="badge badge-orange">Operator</span>',
-      staff:'<span class="badge badge-gray">Staff</span>'
+      staff:'<span class="badge badge-gray">Staff</span>',
+      viewer:'<span class="badge" style="background:#f1f5f9;color:#64748b">👁 Viewer</span>'
     };
     // superadmin tidak bisa dihapus oleh siapapun, dan tidak bisa diedit kecuali oleh dirinya sendiri
     const isSelf=u.username===currentUser.username;
@@ -2417,7 +2418,7 @@ function yesterdayISO(){const d=new Date();d.setDate(d.getDate()-1);return d.toI
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 // ═══ BIAYA OPERASIONAL ═══
-const BIAYA_ROLES=['admin','manajer','supervisor'];
+const BIAYA_ROLES=['superadmin','admin','manajer','supervisor'];
 
 function canInputBiaya(){
   return currentUser&&BIAYA_ROLES.includes(currentUser.role);
@@ -2779,7 +2780,7 @@ async function executeHapus(){
 }
 
 // Helper: cek role lebih tinggi dari user lain
-const ROLE_LEVEL={staff:0,operator:1,supervisor:2,manajer:3,admin:4,superadmin:5};
+const ROLE_LEVEL={viewer:0,staff:1,operator:2,supervisor:3,manajer:4,admin:5,superadmin:6};
 function roleLevel(r){return ROLE_LEVEL[r]??0;}
 function myLevel(){return roleLevel(currentUser?.role);}
 

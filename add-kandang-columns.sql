@@ -11,7 +11,7 @@ ALTER TABLE kandang DROP CONSTRAINT IF EXISTS kandang_status_check;
 ALTER TABLE kandang ADD CONSTRAINT kandang_status_check 
   CHECK (status IN ('Aktif', 'Selesai', 'aktif', 'kosong', 'maintenance'));
 
--- Fix constraint role users (tambah manajer, supervisor, staff)
+-- Fix constraint role users (tambah manajer, supervisor, staff, viewer)
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE users ADD CONSTRAINT users_role_check
   CHECK (role IN ('superadmin', 'admin', 'manajer', 'supervisor', 'operator', 'staff', 'viewer'));

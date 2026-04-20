@@ -2,14 +2,15 @@
 
 ## Role yang Tersedia
 
-| Role | Keterangan |
-|------|------------|
-| ⭐ Superadmin | Akses penuh, tidak bisa dihapus oleh siapapun |
-| Admin | Akses hampir penuh, bisa kelola user |
-| Manajer | Akses operasional & keuangan |
-| Supervisor | Akses operasional, terbatas keuangan |
-| Operator | Input data harian saja |
-| Staff | Hanya lihat data |
+| Role | Level | Keterangan |
+|------|:-----:|------------|
+| ⭐ Superadmin | 6 | Akses penuh, tidak bisa dihapus oleh siapapun |
+| Admin | 5 | Akses hampir penuh, bisa kelola user |
+| Manajer | 4 | Akses operasional & keuangan |
+| Supervisor | 3 | Akses operasional, terbatas keuangan |
+| Operator | 2 | Input data harian saja |
+| Staff | 1 | Hanya lihat data |
+| Viewer | 0 | Read-only, tidak bisa input apapun |
 
 ---
 
@@ -115,7 +116,7 @@
 ## Ringkasan Level Akses
 
 ```
-Superadmin (5) > Admin (4) > Manajer (3) > Supervisor (2) > Operator (1) > Staff (0)
+Superadmin (6) > Admin (5) > Manajer (4) > Supervisor (3) > Operator (2) > Staff (1) > Viewer (0)
 ```
 
 - **Superadmin** — bypass semua permission check, akses penuh tanpa pengecualian
@@ -123,4 +124,5 @@ Superadmin (5) > Admin (4) > Manajer (3) > Supervisor (2) > Operator (1) > Staff
 - **Manajer** — akses keuangan penuh + operasional
 - **Supervisor** — operasional + pengeluaran kas, terbatas di keuangan
 - **Operator** — hanya input data harian
-- **Staff** — read-only
+- **Staff** — read-only, tidak bisa input
+- **Viewer** — read-only, tidak bisa input apapun (sama seperti Staff tapi level lebih rendah)
