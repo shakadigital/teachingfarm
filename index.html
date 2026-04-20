@@ -16,6 +16,9 @@
   <title>Teaching Farm UB</title>
   <script src="supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh;}
@@ -950,7 +953,9 @@
         <input type="date" id="l-dari" style="display:none"/>
         <input type="date" id="l-sampai" style="display:none"/>
         <button class="btn-primary" style="padding:7px 16px;font-size:.85rem" onclick="renderLaporan()">Tampilkan</button>
-        <button class="btn-export" onclick="exportLaporan()">⬇️ Export CSV</button>
+        <button class="btn-export" onclick="exportLaporan('csv')">⬇️ CSV</button>
+        <button class="btn-export" onclick="exportLaporan('excel')" style="border-color:#1d6f42;color:#1d6f42">📊 Excel</button>
+        <button class="btn-export" onclick="exportLaporan('pdf')" style="border-color:#c0392b;color:#c0392b">📄 PDF</button>
       </div>
 
       <!-- Tab: Rekap Produksi -->
@@ -3064,78 +3069,117 @@ function sumCard(label,color,val){
   return'<div class="sum-card '+color+'"><div class="sl">'+label+'</div><div class="sv">'+val+'</div></div>';
 }
 
-async function exportLaporan(){
+async function exportLaporan(format='csv'){
   if(!can('EXPORT_LAP')){showToast('⚠️ Tidak ada akses export laporan!');return;}
-  let csv='';
   const{dari,sampai,kandang}=getLaporanRange();
   const isSupervisor=currentUser&&currentUser.role==='supervisor';
+  const fname='laporan_'+currentLTab+'_'+new Date().toISOString().split('T')[0];
+  showToast('⏳ Menyiapkan export...');
+
+  // ── Kumpulkan data ──
+  let headers=[], rows=[], title='';
 
   if(currentLTab==='rekap'){
-    // Rekap produksi — semua boleh export
-    csv='Tanggal,Kandang,Sisa Ayam,Prod Butir,Prod kg,HDP,Deplesi,Pakan kg\n';
-    const rows=await dbGetInput({dari,sampai,kandang});
-    rows.forEach(row=>{
+    title='Laporan Rekap Produksi';
+    headers=['Tanggal','Kandang','Sisa Ayam','Prod Butir','Prod kg','HDP (%)','Deplesi','Pakan kg'];
+    const data=await dbGetInput({dari,sampai,kandang});
+    data.forEach(row=>{
       const d=row.data;if(!d)return;
       const tp=((d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0)).toFixed(1);
-      csv+=`${d.tanggal},${d.kandang},${d.sisa_ayam||0},${d.produksi?d.produksi.total.butir:0},${d.produksi?d.produksi.total.kilo:0},${d.produksi?d.produksi.hdp:''},${d.deplesi?d.deplesi.total:0},${tp}\n`;
+      rows.push([d.tanggal,d.kandang,d.sisa_ayam||0,d.produksi?.total?.butir||0,d.produksi?.total?.kilo||0,d.produksi?.hdp||0,d.deplesi?.total||0,tp]);
     });
+
   } else if(currentLTab==='labarugi'){
-    // Fetch kiriman sekali untuk harga lookup
+    title='Laporan Laba Rugi';
     const semuaKiriman=await dbGetKiriman({});
     const getHargaOnDate=(namaPakan,tgl)=>{
-      const filtered=semuaKiriman.filter(k=>k.nama_pakan===namaPakan&&k.tanggal<=tgl).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
-      return filtered.length?parseFloat(filtered[0].harga_per_kg)||0:0;
+      const f=semuaKiriman.filter(k=>k.nama_pakan===namaPakan&&k.tanggal<=tgl).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+      return f.length?parseFloat(f[0].harga_per_kg)||0:0;
     };
-
+    const juals=await dbGetPenjualan({dari,sampai});
+    const pendMap={};
+    juals.forEach(rec=>{pendMap[rec.tanggal]=(pendMap[rec.tanggal]||0)+(parseInt(rec.grand_total)||0);});
+    const inputs=await dbGetInput({dari,sampai,kandang});
+    const biayaMap={},opsMap={};
+    for(const row of inputs){
+      const d=row.data;if(!d)continue;
+      let b=0;
+      for(const p of (d.pakan||[])){b+=(parseFloat(p.jumlah)||0)*getHargaOnDate(p.kode||p.nama||'',d.tanggal);}
+      biayaMap[d.tanggal]=(biayaMap[d.tanggal]||0)+b;
+      opsMap[d.tanggal]=(opsMap[d.tanggal]||0)+(d.biaya_ops||[]).reduce((s,x)=>s+(parseFloat(x.jumlah)||0),0);
+    }
     if(isSupervisor){
-      csv='Tanggal,Penjualan (Rp),Biaya Pakan (Rp),Biaya Operasional (Rp)\n';
-      const juals=await dbGetPenjualan({dari,sampai});
-      const pendMap={};
-      juals.forEach(rec=>{pendMap[rec.tanggal]=(pendMap[rec.tanggal]||0)+(parseInt(rec.grand_total)||0);});
-      const inputs=await dbGetInput({dari,sampai,kandang});
-      const biayaMap={},opsMap={};
-      for(const row of inputs){
-        const d=row.data;if(!d)continue;
-        let b=0;
-        for(const p of (d.pakan||[])){
-          const namaPakan=p.kode||p.nama||'';
-          b+=(parseFloat(p.jumlah)||0)*getHargaOnDate(namaPakan,d.tanggal);
-        }
-        biayaMap[d.tanggal]=(biayaMap[d.tanggal]||0)+b;
-        const ops=(d.biaya_ops||[]).reduce((s,x)=>s+(parseFloat(x.jumlah)||0),0);
-        opsMap[d.tanggal]=(opsMap[d.tanggal]||0)+ops;
-      }
+      headers=['Tanggal','Penjualan (Rp)','Biaya Pakan (Rp)','Biaya Ops (Rp)'];
       [...new Set([...Object.keys(pendMap),...Object.keys(biayaMap)])].sort().reverse().forEach(tgl=>{
-        const p=pendMap[tgl]||0,b=biayaMap[tgl]||0,o=opsMap[tgl]||0;
-        csv+=`${tgl},${p},${Math.round(b)},${Math.round(o)}\n`;
+        rows.push([tgl,pendMap[tgl]||0,Math.round(biayaMap[tgl]||0),Math.round(opsMap[tgl]||0)]);
       });
     } else {
-      csv='Tanggal,Pendapatan,Biaya Pakan,Biaya Ops,Laba/Rugi\n';
-      const juals=await dbGetPenjualan({dari,sampai});
-      const pendMap={};
-      juals.forEach(rec=>{pendMap[rec.tanggal]=(pendMap[rec.tanggal]||0)+(parseInt(rec.grand_total)||0);});
-      const inputs=await dbGetInput({dari,sampai,kandang});
-      const biayaMap={},opsMap={};
-      for(const row of inputs){
-        const d=row.data;if(!d)continue;
-        let b=0;
-        for(const p of (d.pakan||[])){
-          const namaPakan=p.kode||p.nama||'';
-          b+=(parseFloat(p.jumlah)||0)*getHargaOnDate(namaPakan,d.tanggal);
-        }
-        biayaMap[d.tanggal]=(biayaMap[d.tanggal]||0)+b;
-        const ops=(d.biaya_ops||[]).reduce((s,x)=>s+(parseFloat(x.jumlah)||0),0);
-        opsMap[d.tanggal]=(opsMap[d.tanggal]||0)+ops;
-      }
+      headers=['Tanggal','Pendapatan (Rp)','Biaya Pakan (Rp)','Biaya Ops (Rp)','Total Biaya (Rp)','Laba/Rugi (Rp)'];
       [...new Set([...Object.keys(pendMap),...Object.keys(biayaMap)])].sort().reverse().forEach(tgl=>{
-        const p=pendMap[tgl]||0,b=biayaMap[tgl]||0,o=opsMap[tgl]||0;
-        csv+=`${tgl},${p},${Math.round(b)},${Math.round(o)},${p-Math.round(b)-Math.round(o)}\n`;
+        const p=pendMap[tgl]||0,b=Math.round(biayaMap[tgl]||0),o=Math.round(opsMap[tgl]||0);
+        rows.push([tgl,p,b,o,b+o,p-b-o]);
       });
     }
   } else {
     showToast('⚠️ Pilih tab Rekap atau Laba Rugi untuk export.');return;
   }
-  downloadCSV(csv,'laporan_'+currentLTab+'_'+new Date().toISOString().split('T')[0]+'.csv');
+
+  if(!rows.length){showToast('⚠️ Tidak ada data untuk di-export.');return;}
+
+  if(format==='csv'){
+    const csv=[headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+    downloadCSV(csv,fname+'.csv');
+  } else if(format==='excel'){
+    exportExcel(title,headers,rows,fname+'.xlsx');
+  } else if(format==='pdf'){
+    exportPDF(title,headers,rows,fname+'.pdf',dari,sampai,kandang);
+  }
+}
+
+function exportExcel(title, headers, rows, filename){
+  const wb=XLSX.utils.book_new();
+  // Baris judul
+  const wsData=[[title],['Diekspor: '+new Date().toLocaleString('id-ID')],[''],[headers],...rows];
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+  // Style lebar kolom otomatis
+  ws['!cols']=headers.map((_,i)=>({wch:Math.max(headers[i].length,
+    ...rows.map(r=>String(r[i]||'').length))+2}));
+  // Merge judul
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:headers.length-1}}];
+  XLSX.utils.book_append_sheet(wb,ws,'Laporan');
+  XLSX.writeFile(wb,filename);
+  showToast('✅ Excel berhasil didownload!');
+}
+
+function exportPDF(title, headers, rows, filename, dari, sampai, kandang){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:rows[0]?.length>5?'landscape':'portrait',unit:'mm',format:'a4'});
+  // Header
+  doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('Teaching Farm UB',14,15);
+  doc.setFontSize(11);doc.setFont('helvetica','normal');
+  doc.text(title,14,22);
+  doc.setFontSize(9);doc.setTextColor(100);
+  doc.text(`Periode: ${dari||'—'} s/d ${sampai||'—'}  |  Kandang: ${kandang||'Semua'}  |  Diekspor: ${new Date().toLocaleString('id-ID')}`,14,28);
+  doc.setTextColor(0);
+  // Tabel
+  doc.autoTable({
+    head:[headers],
+    body:rows,
+    startY:33,
+    styles:{fontSize:8,cellPadding:2},
+    headStyles:{fillColor:[45,106,79],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[240,253,244]},
+    columnStyles:headers.reduce((acc,_,i)=>({...acc,[i]:{halign:i>0?'right':'left'}}),{}),
+    didDrawPage:(data)=>{
+      // Footer
+      doc.setFontSize(7);doc.setTextColor(150);
+      doc.text('Teaching Farm UB — '+new Date().toLocaleDateString('id-ID'),14,doc.internal.pageSize.height-8);
+      doc.text('Hal '+data.pageNumber,doc.internal.pageSize.width-20,doc.internal.pageSize.height-8);
+    }
+  });
+  doc.save(filename);
+  showToast('✅ PDF berhasil didownload!');
 }
 
 function downloadCSV(csv,filename){
