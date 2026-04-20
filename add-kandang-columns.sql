@@ -3,6 +3,9 @@ ALTER TABLE kandang ADD COLUMN IF NOT EXISTS chickin DATE;
 ALTER TABLE kandang ADD COLUMN IF NOT EXISTS umur_masuk INTEGER DEFAULT 0;
 ALTER TABLE kandang ADD COLUMN IF NOT EXISTS populasi INTEGER DEFAULT 0;
 
+-- Tambah kolom harga_per_kg di kiriman_pakan
+ALTER TABLE kiriman_pakan ADD COLUMN IF NOT EXISTS harga_per_kg NUMERIC DEFAULT 0;
+
 -- Fix constraint status kandang
 ALTER TABLE kandang DROP CONSTRAINT IF EXISTS kandang_status_check;
 ALTER TABLE kandang ADD CONSTRAINT kandang_status_check 
