@@ -1207,6 +1207,40 @@
   </div>
 </div>
 
+<!-- MODAL PREVIEW DATA SEBELUM EDIT -->
+<div class="modal-overlay" id="modal-edit-preview" style="display:none">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header" style="background:#dbeafe;border-bottom:1px solid #bfdbfe">
+      <h3 style="color:#1e40af">📝 Data Asli — Konfirmasi Edit</h3>
+      <button class="modal-close" onclick="closeModal('modal-edit-preview')">×</button>
+    </div>
+    <div class="modal-body" style="font-size:.88rem">
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:14px;font-size:.82rem;color:#92400e">
+        ⚠️ Berikut adalah data yang tersimpan saat ini. Pastikan sudah benar sebelum melanjutkan edit.
+      </div>
+      <table class="tbl" style="font-size:.83rem">
+        <tr><td style="color:#888;width:40%">Tanggal</td><td id="ep-tanggal" style="font-weight:700"></td></tr>
+        <tr><td style="color:#888">Kandang</td><td id="ep-kandang" style="font-weight:700"></td></tr>
+        <tr><td style="color:#888">Populasi</td><td id="ep-populasi"></td></tr>
+        <tr><td style="color:#888">Mati</td><td id="ep-mati"></td></tr>
+        <tr><td style="color:#888">Afkir</td><td id="ep-afkir"></td></tr>
+        <tr><td style="color:#888">Telur Normal</td><td id="ep-normal"></td></tr>
+        <tr><td style="color:#888">Telur Cream</td><td id="ep-cream"></td></tr>
+        <tr><td style="color:#888">Telur Retak</td><td id="ep-retak"></td></tr>
+        <tr><td style="color:#888">HDP</td><td id="ep-hdp"></td></tr>
+        <tr><td style="color:#888">Air</td><td id="ep-air"></td></tr>
+        <tr><td style="color:#888">Pakan</td><td id="ep-pakan"></td></tr>
+        <tr><td style="color:#888">Catatan</td><td id="ep-catatan"></td></tr>
+        <tr><td style="color:#888">Diinput oleh</td><td id="ep-user" style="font-size:.78rem;color:#888"></td></tr>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-edit-preview')">Batal</button>
+      <button class="btn-primary" onclick="confirmEditLanjut()">✏️ Lanjut Edit</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL KONFIRMASI DUPLIKAT INPUT -->
 <div class="modal-overlay" id="modal-duplikat" style="display:none">
   <div class="modal" style="max-width:400px">
@@ -1590,7 +1624,18 @@ async function confirmTimpa(){
 async function doSaveInput(data){
   showToast('⏳ Menyimpan...');
   try{
+    // Ambil data lama untuk log jika ini adalah edit
+    let dataLama=null;
+    if(_editRowId){
+      const rows=await dbGetInput({tanggal:data.tanggal,kandang:data.kandang});
+      if(rows&&rows.length>0) dataLama=rows[0].data;
+    }
     await dbSaveInput(data.tanggal,data.kandang,data);
+    // Catat activity log
+    const aksi=dataLama?'EDIT':'TAMBAH';
+    await dbSaveLog(aksi,'input_harian',_editRowId||null,dataLama,data,
+      `${aksi} data harian ${data.tanggal} kandang ${data.kandang}`);
+    _editRowId=null;
     showToast('✅ Data harian disimpan!');
     autoResetInputForm();
   }catch(e){showToast('❌ Gagal menyimpan: '+e.message);}
@@ -2577,11 +2622,40 @@ async function renderRKiriman(){
 
 function filterRiwayat(){renderRiwayat();}
 
+let _editRowId=null; // ID record yang sedang diedit
+
 async function editInputHarian(id){
   const rows=await dbGetInput({});
   const row=rows.find(r=>r.id===id);
   if(!row)return;
   const d=row.data;
+
+  // Tampilkan modal preview data asli sebelum edit
+  const modal=document.getElementById('modal-edit-preview');
+  if(modal){
+    document.getElementById('ep-tanggal').textContent=fmtTgl(d.tanggal)||'—';
+    document.getElementById('ep-kandang').textContent=d.kandang||'—';
+    document.getElementById('ep-populasi').textContent=(d.sisa_ayam||0)+' ekor';
+    document.getElementById('ep-mati').textContent=(d.deplesi?.mati||0)+' ekor';
+    document.getElementById('ep-afkir').textContent=(d.deplesi?.afkir||0)+' ekor';
+    document.getElementById('ep-normal').textContent=(d.produksi?.normal?.butir||0)+' butir / '+(d.produksi?.normal?.kilo||0)+' kg';
+    document.getElementById('ep-cream').textContent=(d.produksi?.cream?.butir||0)+' butir / '+(d.produksi?.cream?.kilo||0)+' kg';
+    document.getElementById('ep-retak').textContent=(d.produksi?.retak?.butir||0)+' butir / '+(d.produksi?.retak?.kilo||0)+' kg';
+    document.getElementById('ep-hdp').textContent=(d.produksi?.hdp||'—')+'%';
+    document.getElementById('ep-air').textContent=(d.air_liter||0)+' L';
+    document.getElementById('ep-pakan').textContent=((d.pakan||[]).map(p=>p.kode+' '+p.jumlah+'kg').join(', '))||'—';
+    document.getElementById('ep-catatan').textContent=d.catatan||'—';
+    document.getElementById('ep-user').textContent=(d.user||row.user_input||'—')+' · '+fmtTglWaktu(row.updated_at||row.created_at||'');
+    _editRowId=id;
+    modal.style.display='flex';
+    return;
+  }
+  // Fallback jika modal tidak ada
+  _loadEditToForm(d,id);
+}
+
+function _loadEditToForm(d,id){
+  _editRowId=id;
   switchPage('input');
   setTimeout(()=>{
     document.getElementById('tanggal').value=d.tanggal||'';
@@ -2600,6 +2674,14 @@ async function editInputHarian(id){
     updatePeriodBar();calcSisa();
     showToast('📝 Data dimuat untuk diedit. Simpan kembali setelah selesai.');
   },200);
+}
+
+async function confirmEditLanjut(){
+  closeModal('modal-edit-preview');
+  const rows=await dbGetInput({});
+  const row=rows.find(r=>r.id===_editRowId);
+  if(!row)return;
+  _loadEditToForm(row.data,_editRowId);
 }
 
 // ═══ HAPUS UNIVERSAL — role-based ═══

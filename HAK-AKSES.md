@@ -1,0 +1,126 @@
+# Tabel Hak Akses — Teaching Farm UB
+
+## Role yang Tersedia
+
+| Role | Keterangan |
+|------|------------|
+| ⭐ Superadmin | Akses penuh, tidak bisa dihapus oleh siapapun |
+| Admin | Akses hampir penuh, bisa kelola user |
+| Manajer | Akses operasional & keuangan |
+| Supervisor | Akses operasional, terbatas keuangan |
+| Operator | Input data harian saja |
+| Staff | Hanya lihat data |
+
+---
+
+## Hak Akses per Fitur
+
+### 🏠 Dashboard & Navigasi
+
+| Fitur | Superadmin | Admin | Manajer | Supervisor | Operator | Staff |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Lihat Dashboard | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Lihat Statistik Penjualan | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Lihat Saldo Kas | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Menu Penjualan (nav) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+
+---
+
+### 📋 Input Harian
+
+| Fitur | Superadmin | Admin | Manajer | Supervisor | Operator | Staff |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Input data harian | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Input biaya operasional | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Overwrite data orang lain | ✅ | ✅ | ✅ | ✅* | ❌ | ❌ |
+| Hapus input harian sendiri | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Hapus input harian orang lain | ✅ | ✅ | ✅ | ✅* | ❌ | ❌ |
+
+> *Supervisor hanya bisa overwrite/hapus data milik Operator & Staff, tidak bisa overwrite data Admin/Manajer
+
+---
+
+### 🛒 Penjualan
+
+| Fitur | Superadmin | Admin | Manajer | Supervisor | Operator | Staff |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Lihat data penjualan | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Tambah transaksi penjualan | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Hapus transaksi penjualan | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Export laporan penjualan | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+
+---
+
+### 🌾 Gudang & Pakan
+
+| Fitur | Superadmin | Admin | Manajer | Supervisor | Operator | Staff |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Lihat stok pakan | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Tambah/Edit daftar pakan | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Hapus daftar pakan | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Tambah kiriman pakan | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Edit kiriman pakan | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Hapus kiriman pakan | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+
+---
+
+### 💰 Kas Operasional
+
+| Fitur | Superadmin | Admin | Manajer | Supervisor | Operator | Staff |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Lihat saldo & riwayat kas | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Alokasi kas masuk | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Catat pengeluaran kas | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Hapus transaksi kas | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+
+---
+
+### 🏠 Kandang
+
+| Fitur | Superadmin | Admin | Manajer | Supervisor | Operator | Staff |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Lihat daftar kandang | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Tambah/Edit kandang | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Hapus kandang | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+
+---
+
+### 📊 Laporan
+
+| Fitur | Superadmin | Admin | Manajer | Supervisor | Operator | Staff |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Lihat laporan umum | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Lihat tab Laba/Rugi | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Lihat tab Penjualan | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Export laporan | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+
+---
+
+### ⚙️ Pengaturan & User Management
+
+| Fitur | Superadmin | Admin | Manajer | Supervisor | Operator | Staff |
+|-------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Lihat daftar user | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Tambah user baru | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Edit user lain | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Edit akun sendiri | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Hapus user | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Hapus/Edit Superadmin | ❌* | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Assign role Superadmin | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+> *Superadmin hanya bisa edit akunnya sendiri, tidak bisa dihapus oleh siapapun termasuk Superadmin lain
+
+---
+
+## Ringkasan Level Akses
+
+```
+Superadmin (5) > Admin (4) > Manajer (3) > Supervisor (2) > Operator (1) > Staff (0)
+```
+
+- **Superadmin** — bypass semua permission check, akses penuh tanpa pengecualian
+- **Admin** — kelola user & semua data, kecuali tidak bisa hapus/edit Superadmin
+- **Manajer** — akses keuangan penuh + operasional
+- **Supervisor** — operasional + pengeluaran kas, terbatas di keuangan
+- **Operator** — hanya input data harian
+- **Staff** — read-only

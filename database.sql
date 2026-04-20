@@ -107,6 +107,18 @@ CREATE TABLE kas_operasional (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE activity_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tanggal TIMESTAMPTZ DEFAULT NOW(),
+  user_input TEXT NOT NULL,
+  aksi TEXT NOT NULL,
+  tabel TEXT NOT NULL,
+  record_id TEXT,
+  data_lama JSONB,
+  data_baru JSONB,
+  keterangan TEXT
+);
+
 -- ── STEP 3: INDEXES ────────────────────────────────
 
 CREATE INDEX idx_users_username ON users(username);
@@ -119,6 +131,9 @@ CREATE INDEX idx_pakan_nama ON daftar_pakan(nama);
 CREATE INDEX idx_kiriman_tanggal ON kiriman_pakan(tanggal DESC);
 CREATE INDEX idx_kas_tanggal ON kas_operasional(tanggal DESC);
 CREATE INDEX idx_kas_kandang ON kas_operasional(kandang);
+CREATE INDEX idx_log_tanggal ON activity_log(tanggal DESC);
+CREATE INDEX idx_log_user ON activity_log(user_input);
+CREATE INDEX idx_log_tabel ON activity_log(tabel);
 
 -- ── STEP 4: RLS POLICIES ───────────────────────────
 
@@ -129,6 +144,7 @@ ALTER TABLE penjualan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daftar_pakan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kiriman_pakan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kas_operasional ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow all on users" ON users FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on kandang" ON kandang FOR ALL USING (true) WITH CHECK (true);
@@ -137,6 +153,7 @@ CREATE POLICY "Allow all on penjualan" ON penjualan FOR ALL USING (true) WITH CH
 CREATE POLICY "Allow all on daftar_pakan" ON daftar_pakan FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on kiriman_pakan" ON kiriman_pakan FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on kas_operasional" ON kas_operasional FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all on activity_log" ON activity_log FOR ALL USING (true) WITH CHECK (true);
 
 -- ── STEP 5: SEED DATA ──────────────────────────────
 

@@ -247,3 +247,32 @@ async function dbGetSaldoKas(kandang) {
   const keluar = list.filter(k => k.jenis === 'keluar').reduce((s, k) => s + (parseFloat(k.jumlah) || 0), 0);
   return { masuk, keluar, saldo: masuk - keluar, list };
 }
+
+// ── ACTIVITY LOG ───────────────────────────────────
+async function dbSaveLog(aksi, tabel, recordId, dataLama, dataBaru, keterangan = '') {
+  try {
+    await SB.insert('activity_log', {
+      id: crypto.randomUUID(),
+      user_input: window.currentUser?.username || '—',
+      aksi,       // 'EDIT' | 'HAPUS' | 'TAMBAH'
+      tabel,      // 'input_harian' | 'penjualan' | dst
+      record_id: recordId || null,
+      data_lama: dataLama || null,
+      data_baru: dataBaru || null,
+      keterangan: keterangan || null
+    });
+  } catch (e) {
+    console.warn('[activity_log] Gagal simpan log:', e);
+  }
+}
+
+async function dbGetLog(filters = {}) {
+  try {
+    let q = '?select=*&order=tanggal.desc&limit=200';
+    if (filters.user)  q += `&user_input=eq.${encodeURIComponent(filters.user)}`;
+    if (filters.tabel) q += `&tabel=eq.${encodeURIComponent(filters.tabel)}`;
+    if (filters.dari)  q += `&tanggal=gte.${filters.dari}`;
+    if (filters.sampai)q += `&tanggal=lte.${filters.sampai}`;
+    return await SB.select('activity_log', q) || [];
+  } catch { return []; }
+}
