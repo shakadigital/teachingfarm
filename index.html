@@ -999,7 +999,7 @@
           <button class="btn-primary" style="padding:7px 16px;font-size:.85rem" onclick="renderGrafik()">Tampilkan</button>
         </div>
         <div class="card">
-          <div class="card-header"><div class="num">📈</div><h2>Trend HDP Harian (%)</h2></div>
+          <div class="card-header"><div class="num">📈</div><h2>Trend HDP & FI Harian</h2></div>
           <div class="card-body"><div class="chart-wrap"><canvas id="chart-hdp"></canvas></div></div>
         </div>
         <div class="card">
@@ -3215,29 +3215,76 @@ async function renderGrafik(){
   const dariStr=dari.toISOString().split('T')[0];
   const sampaiStr=now.toISOString().split('T')[0];
 
-  // ── HDP Chart ──
+  // ── HDP + FI Chart (Dual Axis) ──
   const inputs=await dbGetInput({dari:dariStr,sampai:sampaiStr,kandang});
-  const hdpMap={};
+  
+  // Cari tanggal data pertama yang ada
+  const tanggalAda=inputs.map(r=>r.tanggal).sort();
+  const startDate=tanggalAda.length>0?new Date(tanggalAda[0]):dari;
+  
+  // Build map untuk HDP dan FI per tanggal
+  const dataMap={};
   inputs.forEach(r=>{
     const tgl=r.tanggal;
-    const hdp=parseFloat(r.data?.produksi?.hdp)||0;
-    if(!hdpMap[tgl]){hdpMap[tgl]={sum:0,count:0};}
-    hdpMap[tgl].sum+=hdp;hdpMap[tgl].count++;
+    const hdp=parseFloat(r.data?.produksi?.hdp)||null;
+    const populasi=parseFloat(r.data?.sisa_ayam)||1;
+    let totalPakanKg=0;
+    (r.data?.pakan||[]).forEach(p=>{totalPakanKg+=parseFloat(p.jumlah)||0;});
+    const fi=populasi>0&&totalPakanKg>0?parseFloat(((totalPakanKg*1000)/populasi).toFixed(1)):null;
+    
+    if(!dataMap[tgl])dataMap[tgl]={hdp:[],fi:[]};
+    if(hdp!==null&&hdp>0&&hdp<=100)dataMap[tgl].hdp.push(hdp);
+    if(fi!==null&&fi>0&&fi<=200)dataMap[tgl].fi.push(fi);
   });
-  const labels=[];const hdpData=[];
-  for(let i=0;i<days;i++){
-    const d=new Date(dari);d.setDate(d.getDate()+i);
+  
+  // Generate labels dan data dari startDate sampai now
+  const labels=[];const hdpData=[];const fiData=[];
+  let prevMonth=null;
+  for(let d=new Date(startDate);d<=now;d.setDate(d.getDate()+1)){
     const s=d.toISOString().split('T')[0];
-    labels.push(s.slice(8)); // Ambil DD saja (tanggal)
-    const v=hdpMap[s];
-    hdpData.push(v?parseFloat((v.sum/v.count).toFixed(1)):null);
+    const tanggal=d.getDate();
+    const bulan=d.getMonth();
+    // Label: tanggal saja, tapi reset ke 1 kalau pindah bulan
+    labels.push(prevMonth!==null&&bulan!==prevMonth?`1 (${(bulan+1).toString().padStart(2,'0')})`:tanggal.toString());
+    prevMonth=bulan;
+    
+    const v=dataMap[s];
+    const avgHdp=v&&v.hdp.length?parseFloat((v.hdp.reduce((a,b)=>a+b,0)/v.hdp.length).toFixed(1)):null;
+    const avgFi=v&&v.fi.length?parseFloat((v.fi.reduce((a,b)=>a+b,0)/v.fi.length).toFixed(1)):null;
+    hdpData.push(avgHdp);
+    fiData.push(avgFi);
   }
+  
   const ctxHDP=document.getElementById('chart-hdp').getContext('2d');
   if(chartHDP)chartHDP.destroy();
   chartHDP=new Chart(ctxHDP,{
     type:'line',
-    data:{labels,datasets:[{label:'HDP (%)',data:hdpData,borderColor:'#40916c',backgroundColor:'rgba(64,145,108,.1)',tension:.3,fill:true,pointRadius:3,spanGaps:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y!==null?ctx.parsed.y+'%':'Tidak ada data'}}},scales:{y:{beginAtZero:false,ticks:{callback:v=>v+'%'}},x:{ticks:{maxTicksLimit:10}}}}
+    data:{
+      labels,
+      datasets:[
+        {label:'HDP (%)',data:hdpData,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',tension:.3,fill:true,pointRadius:3,spanGaps:true,yAxisID:'yL'},
+        {label:'FI (g/ekor)',data:fiData,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',tension:.3,fill:false,pointRadius:3,spanGaps:true,yAxisID:'yR'}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'top',labels:{usePointStyle:true,padding:12}},
+        tooltip:{callbacks:{
+          label:ctx=>{
+            const label=ctx.dataset.label||'';
+            const val=ctx.parsed.y;
+            return val!==null?`${label}: ${val}${label.includes('HDP')?'%':' g/ekor'}`:'Tidak ada data';
+          }
+        }}
+      },
+      scales:{
+        yL:{type:'linear',position:'left',title:{display:true,text:'HDP (%)'},beginAtZero:false,ticks:{callback:v=>v+'%'}},
+        yR:{type:'linear',position:'right',title:{display:true,text:'FI (g/ekor)'},beginAtZero:false,grid:{drawOnChartArea:false}},
+        x:{ticks:{maxTicksLimit:15,autoSkip:true}}
+      }
+    }
   });
 
   // ── Performa Mingguan Chart (HD, FI, EW, FCR) ──
