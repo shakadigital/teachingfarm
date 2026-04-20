@@ -1827,7 +1827,7 @@ async function hapusPenjualan(id){
 // ═══ GUDANG ═══
 async function calcStokPakan(namaPakan){
   const kiriman=await dbGetKiriman();
-  const masuk=kiriman.filter(k=>k.pakan===namaPakan).reduce((s,k)=>s+(parseFloat(k.jumlah)||0),0);
+  const masuk=kiriman.filter(k=>k.nama_pakan===namaPakan).reduce((s,k)=>s+(parseFloat(k.jumlah)||0),0);
   const inputs=await dbGetInput();
   let keluar=0;
   inputs.forEach(row=>{
@@ -1839,7 +1839,7 @@ async function calcStokPakan(namaPakan){
 
 async function getHargaTerakhir(namaPakan){
   const kiriman=await dbGetKiriman();
-  const filtered=kiriman.filter(k=>k.pakan===namaPakan);
+  const filtered=kiriman.filter(k=>k.nama_pakan===namaPakan);
   if(!filtered.length)return 0;
   filtered.sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
   return filtered[0].harga||0;
@@ -1884,8 +1884,8 @@ async function renderGudang(){
     kempty.style.display='none';
     kiriman.slice(0,40).forEach(k=>{
       const tr=document.createElement('tr');
-      const total=(parseFloat(k.jumlah)||0)*(parseFloat(k.harga)||0);
-      tr.innerHTML='<td>'+fmtTgl(k.tanggal)+'</td><td>'+esc(k.pakan)+'</td><td>'+k.jumlah+' kg</td><td>Rp '+parseFloat(k.harga||0).toLocaleString('id-ID')+'</td><td>Rp '+total.toLocaleString('id-ID')+'</td><td>'+esc(k.keterangan||'—')+'</td>'+
+      const total=(parseFloat(k.jumlah)||0)*(parseFloat(k.harga_total)||0);
+      tr.innerHTML='<td>'+fmtTgl(k.tanggal)+'</td><td>'+esc(k.nama_pakan)+'</td><td>'+k.jumlah+' kg</td><td>Rp '+parseFloat(k.harga_total||0).toLocaleString('id-ID')+'</td><td>Rp '+total.toLocaleString('id-ID')+'</td><td>'+esc(k.keterangan||'—')+'</td>'+
         '<td>'+
           (can('JUAL')?'<button class="btn-edit" onclick="openKirimanEditModal(\''+k.id+'\')">✏️</button>':'')+
           (can('KEUANGAN')?'<button class="btn-del" onclick="deleteKiriman(\''+k.id+'\')">🗑</button>':'')+
@@ -1942,18 +1942,19 @@ function calcKirimanTotal(){
 }
 async function saveKiriman(){
   const tanggal=document.getElementById('mk2-tgl').value;
-  const pakan=document.getElementById('mk2-pakan').value;
+  const nama_pakan=document.getElementById('mk2-pakan').value;
   const jumlah=parseFloat(document.getElementById('mk2-jumlah').value)||0;
-  const harga=parseFloat(document.getElementById('mk2-harga').value)||0;
+  const harga_per_kg=parseFloat(document.getElementById('mk2-harga').value)||0;
+  const harga_total=jumlah*harga_per_kg;
+  const keterangan=document.getElementById('mk2-ket').value;
   const editId=document.getElementById('mk2-id').value;
-  if(!tanggal||!pakan||!jumlah){showToast('⚠️ Tanggal, pakan, dan jumlah wajib diisi!');return;}
+  if(!tanggal||!nama_pakan||!jumlah){showToast('⚠️ Tanggal, pakan, dan jumlah wajib diisi!');return;}
   try{
     if(editId){
-      // Update kiriman yang sudah ada
-      await SB.update('kiriman_pakan',{tanggal,pakan,jumlah,harga,keterangan:document.getElementById('mk2-ket').value},`?id=eq.${editId}`);
+      await SB.update('kiriman_pakan',{tanggal,nama_pakan,jumlah,harga_total,keterangan},`?id=eq.${editId}`);
       cache.del('kiriman_pakan');
     }else{
-      await dbSaveKiriman({tanggal,pakan,jumlah,harga,keterangan:document.getElementById('mk2-ket').value});
+      await dbSaveKiriman({tanggal,nama_pakan,jumlah,harga_total,keterangan,user_input:currentUser?.username||''});
     }
     closeModal('modal-kiriman');await renderGudang();
     showToast(editId?'✅ Kiriman diperbarui!':'✅ Kiriman pakan dicatat!');
@@ -1971,9 +1972,9 @@ async function openKirimanEditModal(id){
   pakans.forEach(p=>{const o=document.createElement('option');o.value=p.nama;o.textContent=p.nama;sel.appendChild(o);});
   document.getElementById('mk2-id').value=k.id;
   document.getElementById('mk2-tgl').value=k.tanggal||'';
-  sel.value=k.pakan||'';
+  sel.value=k.nama_pakan||'';
   document.getElementById('mk2-jumlah').value=k.jumlah||'';
-  document.getElementById('mk2-harga').value=k.harga||'';
+  document.getElementById('mk2-harga').value=k.harga_total||'';
   calcKirimanTotal();
   document.getElementById('mk2-ket').value=k.keterangan||'';
   document.getElementById('modal-kiriman').style.display='flex';
@@ -2631,9 +2632,9 @@ async function renderRKiriman(){
   const empty=document.getElementById('r-kiriman-empty');
   tbody.innerHTML='';let count=0;
   all.forEach(k=>{
-    const total=(parseFloat(k.jumlah)||0)*(parseFloat(k.harga)||0);
+    const total=parseFloat(k.harga_total)||0;
     const tr=document.createElement('tr');
-    tr.innerHTML='<td>'+fmtTgl(k.tanggal)+'</td><td>'+esc(k.pakan)+'</td><td>'+k.jumlah+' kg</td><td>Rp '+parseFloat(k.harga||0).toLocaleString('id-ID')+'</td><td>Rp '+total.toLocaleString('id-ID')+'</td><td>'+esc(k.keterangan||'—')+'</td>';
+    tr.innerHTML='<td>'+fmtTgl(k.tanggal)+'</td><td>'+esc(k.nama_pakan)+'</td><td>'+k.jumlah+' kg</td><td>—</td><td>Rp '+total.toLocaleString('id-ID')+'</td><td>'+esc(k.keterangan||'—')+'</td>';
     tbody.appendChild(tr);count++;
   });
   empty.style.display=count?'none':'block';
@@ -2860,8 +2861,8 @@ async function exportRiwayat(){
     csv='Tanggal,Pakan,Jumlah kg,Harga/kg,Total,Supplier\n';
     const kiriman=await dbGetKiriman({});
     kiriman.forEach(k=>{
-      const tot=(parseFloat(k.jumlah)||0)*(parseFloat(k.harga)||0);
-      csv+=`${k.tanggal},${k.pakan},${k.jumlah},${k.harga||0},${tot},${k.keterangan||''}\n`;
+      const tot=parseFloat(k.harga_total)||0;
+      csv+=`${k.tanggal},${k.nama_pakan},${k.jumlah},${tot},${k.keterangan||''}\n`;
     });
   }
   downloadCSV(csv,'riwayat_'+currentRTab+'_'+new Date().toISOString().split('T')[0]+'.csv');
