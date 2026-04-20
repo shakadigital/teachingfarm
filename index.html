@@ -1857,7 +1857,7 @@ async function renderGudang(){
     tbody.innerHTML='';
     for(const p of pakans){
       const stok=await calcStokPakan(p.nama);
-      const min=parseFloat(p.min_stok)||0;
+      const min=parseFloat(p.stok_minimal)||0;
       const low=stok<=min;
       const pct=min>0?Math.min(100,Math.round((stok/min)*100)):100;
       const harga=await getHargaTerakhir(p.nama);
@@ -1910,14 +1910,14 @@ async function openStokModal(id){
   document.getElementById('modal-stok-title').textContent=p?'Edit Pakan':'Daftarkan Pakan';
   document.getElementById('ms-id').value=p?p.id:'';
   document.getElementById('ms-nama').value=p?p.nama:'';
-  document.getElementById('ms-min').value=p?p.min_stok:'';
+  document.getElementById('ms-min').value=p?p.stok_minimal:'';
   document.getElementById('modal-stok').style.display='flex';
 }
 async function saveStok(){
   const nama=document.getElementById('ms-nama').value.trim();
   if(!nama){showToast('⚠️ Nama pakan wajib diisi!');return;}
   const id=document.getElementById('ms-id').value;
-  const obj={nama,min_stok:parseFloat(document.getElementById('ms-min').value)||0};
+  const obj={nama,stok_minimal:parseFloat(document.getElementById('ms-min').value)||0};
   if(id)obj.id=id;
   try{await dbSaveDaftarPakan(obj);closeModal('modal-stok');await renderGudang();showToast('✅ Pakan disimpan!');}
   catch(e){showToast('❌ Gagal: '+e.message);}
@@ -2815,7 +2815,7 @@ async function deletePakan(id){
 
   showHapusModal({
     judul:`Hapus Pakan`,
-    deskripsi:`🌾 <strong>${esc(p?.nama||id)}</strong><br>Min. stok: ${p?.min_stok||0} kg`,
+    deskripsi:`🌾 <strong>${esc(p?.nama||id)}</strong><br>Min. stok: ${p?.stok_minimal||0} kg`,
     warning:`⚠️ Menghapus pakan akan menghilangkan data dari semua dropdown input. Pastikan tidak ada stok aktif.`,
     canDelete:true,
     onConfirm:async()=>{
@@ -3128,7 +3128,7 @@ async function renderHomeAlerts(){
     const pakans=await dbGetDaftarPakan();
     for(const p of pakans){
       const stok=await calcStokPakan(p.nama);
-      const min=parseFloat(p.min_stok)||0;
+      const min=parseFloat(p.stok_minimal)||0;
       if(min>0&&stok<min){
         alerts.push({type:'danger',icon:'🌾',title:'Stok Pakan Rendah',desc:p.nama+': '+stok.toFixed(1)+' kg (min: '+min+' kg)'});
       }
