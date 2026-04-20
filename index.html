@@ -3381,7 +3381,7 @@ async function renderGrafik(){
   const weekKeys = Object.keys(weekMap).sort((a,b)=>parseInt(a)-parseInt(b));
   const wLabels = weekKeys;
   const hdData  = weekKeys.map(k=>avg(weekMap[k].hd));
-  const fiData  = weekKeys.map(k=>avg(weekMap[k].fi));
+  const wFiData  = weekKeys.map(k=>avg(weekMap[k].fi));
   const ewData  = weekKeys.map(k=>avg(weekMap[k].ew));
   const fcrData = weekKeys.map(k=>avg(weekMap[k].fcr));
 
@@ -3393,7 +3393,7 @@ async function renderGrafik(){
       labels:wLabels,
       datasets:[
         // urutan render: FI paling atas, HD tengah, EW bawah (semua sumbu kiri), FCR sumbu kanan
-        {label:'FI (g/ekor)',data:fiData,borderColor:'#2563eb',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true,yAxisID:'yL'},
+        {label:'FI (g/ekor)',data:wFiData,borderColor:'#2563eb',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true,yAxisID:'yL'},
         {label:'HD / HDP (%)',data:hdData,borderColor:'#16a34a',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true,yAxisID:'yL'},
         {label:'EW (g/butir)',data:ewData,borderColor:'#d97706',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true,yAxisID:'yL'},
         {label:'FCR',data:fcrData,borderColor:'#dc2626',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true,yAxisID:'yR',borderDash:[5,4]}
