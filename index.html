@@ -3228,7 +3228,7 @@ async function renderGrafik(){
   for(let i=0;i<days;i++){
     const d=new Date(dari);d.setDate(d.getDate()+i);
     const s=d.toISOString().split('T')[0];
-    labels.push(s.slice(5));
+    labels.push(s.slice(8)); // Ambil DD saja (tanggal)
     const v=hdpMap[s];
     hdpData.push(v?parseFloat((v.sum/v.count).toFixed(1)):null);
   }
@@ -3248,15 +3248,15 @@ async function renderGrafik(){
 
   for(const k of allKandangs){
     if(!k || k.status==='selesai') continue;
-    const chickInDate = new Date(k.tanggal_chick_in);
-    const umurChickIn = parseInt(k.umur_chick_in)||0;
+    const chickInDate = new Date(k.chickin);
+    const umurChickIn = parseInt(k.umur_masuk)||0;
     const allInputs = await dbGetInput({kandang: k.nama});
     for(const r of allInputs){
       const tgl = new Date(r.tanggal);
       const hariKe = Math.floor((tgl - chickInDate)/(1000*60*60*24));
-      const umurHari = umurChickIn*7 + hariKe;
+      const umurHari = umurChickIn + hariKe;
       const minggu = Math.floor(umurHari/7)+1;
-      const key = `Mgg ${minggu}`;
+      const key = `${minggu}`; // Label X axis: angka minggu saja (13, 14, 15...)
       if(!weekMap[key]) weekMap[key]={hd:[],fi:[],ew:[],fcr:[]};
 
       const hdp = parseFloat(r.data?.produksi?.hdp)||null;
@@ -3280,9 +3280,7 @@ async function renderGrafik(){
 
   // Sort minggu secara numerik
   const avg = arr => arr.length ? parseFloat((arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2)) : null;
-  const weekKeys = Object.keys(weekMap).sort((a,b)=>{
-    return parseInt(a.replace('Mgg ','')) - parseInt(b.replace('Mgg ',''));
-  });
+  const weekKeys = Object.keys(weekMap).sort((a,b)=>parseInt(a)-parseInt(b));
   const wLabels = weekKeys;
   const hdData  = weekKeys.map(k=>avg(weekMap[k].hd));
   const fiData  = weekKeys.map(k=>avg(weekMap[k].fi));
@@ -3340,7 +3338,7 @@ async function renderGrafik(){
           ticks:{color:'#dc2626',callback:v=>v.toFixed(1)}
         },
         x:{
-          title:{display:true,text:'Minggu Umur Ayam'},
+          title:{display:true,text:'Minggu Umur Ayam (Mgg ke-)'},
           ticks:{maxTicksLimit:20,color:'#374151'},
           grid:{color:'rgba(0,0,0,.04)'}
         }
