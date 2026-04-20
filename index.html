@@ -1842,7 +1842,7 @@ async function getHargaTerakhir(namaPakan){
   const filtered=kiriman.filter(k=>k.nama_pakan===namaPakan);
   if(!filtered.length)return 0;
   filtered.sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
-  return filtered[0].harga||0;
+  return parseFloat(filtered[0].harga_per_kg)||0;
 }
 
 async function renderGudang(){
@@ -2987,12 +2987,26 @@ async function renderLapLabaRugi(){
   const juals=await dbGetPenjualan({dari,sampai});
   juals.forEach(rec=>{pendMap[rec.tanggal]=(pendMap[rec.tanggal]||0)+(parseInt(rec.grand_total)||0);});
 
+  // Ambil kiriman pakan untuk hitung biaya berdasarkan harga_per_kg
+  const semuaKiriman=await dbGetKiriman({});
+  // Fungsi: cari harga per kg pakan pada tanggal tertentu (kiriman terdekat sebelum tanggal)
+  const getHargaOnDate=(namaPakan,tgl)=>{
+    const filtered=semuaKiriman
+      .filter(k=>k.nama_pakan===namaPakan&&k.tanggal<=tgl)
+      .sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+    return filtered.length?parseFloat(filtered[0].harga_per_kg)||0:0;
+  };
+
   const biayaMap={},opsMap={};
   const allInputs=await dbGetInput({dari,sampai,kandang});
   for(const row of allInputs){
     const d=row.data;if(!d)continue;
     let biaya=0;
-    for(const p of (d.pakan||[])){const h=await getHargaTerakhir(p.kode)||0;biaya+=(parseFloat(p.jumlah)||0)*h;}
+    for(const p of (d.pakan||[])){
+      const namaPakan=p.kode||p.nama||'';
+      const harga=getHargaOnDate(namaPakan,d.tanggal);
+      biaya+=(parseFloat(p.jumlah)||0)*harga;
+    }
     biayaMap[d.tanggal]=(biayaMap[d.tanggal]||0)+biaya;
     const ops=(d.biaya_ops||[]).reduce((s,b)=>s+(parseFloat(b.jumlah)||0),0);
     opsMap[d.tanggal]=(opsMap[d.tanggal]||0)+ops;
