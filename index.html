@@ -1059,8 +1059,12 @@
       <input type="hidden" id="mk-id"/>
       <div class="field" style="margin-bottom:12px"><label>Nama Kandang</label><input type="text" id="mk-nama" placeholder="Mis. Kandang A"/></div>
       <div class="field" style="margin-bottom:12px"><label>Kapasitas (ekor)</label><input type="number" id="mk-kapasitas" min="0" placeholder="0"/></div>
-      <div class="field" style="margin-bottom:12px"><label>Tanggal Chick In</label><input type="date" id="mk-chickin"/></div>
-      <div class="field" style="margin-bottom:12px"><label>Umur saat Chick In (hari)</label><input type="number" id="mk-umur" min="0" placeholder="Mis. 1 (DOC)"/></div>
+      <div class="field" style="margin-bottom:12px"><label>Tanggal Chick In</label><input type="date" id="mk-chickin" oninput="calcUmurKandang()"/></div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Umur saat Chick In (hari)</label>
+        <input type="number" id="mk-umur" min="0" placeholder="Mis. 1 (DOC)" oninput="calcUmurKandang()"/>
+        <div id="mk-umur-preview" style="margin-top:5px;font-size:.78rem;color:#2d6a4f;font-weight:700;min-height:18px"></div>
+      </div>
       <div class="field" style="margin-bottom:12px"><label>Populasi Masuk (ekor)</label><input type="number" id="mk-populasi" min="0" placeholder="0"/></div>
       <div class="field"><label>Status</label><select id="mk-status"><option value="Aktif">Aktif</option><option value="Selesai">Selesai</option></select></div>
     </div>
@@ -2246,10 +2250,25 @@ function openKandangModal(id){
   document.getElementById('mk-nama').value=k?k.nama:'';
   document.getElementById('mk-kapasitas').value=k?k.kapasitas:'';
   document.getElementById('mk-chickin').value=k?k.chickin:'';
-  document.getElementById('mk-umur').value=k?k.umur_masuk:'';
+  document.getElementById('mk-umur').value=k?(k.umur_masuk||0):0;
   document.getElementById('mk-populasi').value=k?k.populasi:'';
   document.getElementById('mk-status').value=k?k.status:'Aktif';
   document.getElementById('modal-kandang').style.display='flex';
+  calcUmurKandang();
+}
+
+function calcUmurKandang(){
+  const chickin=document.getElementById('mk-chickin').value;
+  const umurMasuk=parseInt(document.getElementById('mk-umur').value)||0;
+  const preview=document.getElementById('mk-umur-preview');
+  if(!chickin){preview.textContent='';return;}
+  const today=new Date();today.setHours(0,0,0,0);
+  const cin=new Date(chickin);cin.setHours(0,0,0,0);
+  const hariSejak=Math.floor((today-cin)/86400000);
+  const totalHari=umurMasuk+(hariSejak>=0?hariSejak:0);
+  const mg=Math.floor(totalHari/7);
+  const hr=totalHari%7;
+  preview.textContent=`📅 Umur hari ini: ${mg} mg ${hr} hari (${totalHari} hari total)`;
 }
 
 async function saveKandang(){
