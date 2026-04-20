@@ -3260,20 +3260,23 @@ async function renderGrafik(){
       if(!weekMap[key]) weekMap[key]={hd:[],fi:[],ew:[],fcr:[]};
 
       const hdp = parseFloat(r.data?.produksi?.hdp)||null;
-      const populasi = parseFloat(r.data?.deplesi?.sisa_ayam)||parseFloat(k.populasi_masuk)||1;
-      // FI: total pakan hari itu (gram/ekor) — pakan dalam kg dibagi populasi * 1000
-      let totalPakan=0;
-      (r.data?.pakan||[]).forEach(p=>{ totalPakan+=parseFloat(p.jumlah)||0; });
-      const fi = populasi>0 ? parseFloat(((totalPakan*1000)/populasi).toFixed(1)) : null;
-      // EW: berat rata-rata telur (gram)
-      const ew = parseFloat(r.data?.produksi?.berat_rata2)||null;
-      // FCR: kg pakan / kg telur
-      const totalTelurKg = ((parseFloat(r.data?.produksi?.total_butir)||0) * (ew||0)) / 1000;
-      const fcr = totalTelurKg>0 ? parseFloat((totalPakan/totalTelurKg).toFixed(2)) : null;
+      // Populasi: ambil dari sisa_ayam data harian, fallback ke populasi kandang
+      const populasi = parseFloat(r.data?.sisa_ayam)||parseFloat(k.populasi)||1;
+      // FI: total pakan hari itu (gram/ekor) — pakan dalam kg * 1000 / populasi
+      let totalPakanKg=0;
+      (r.data?.pakan||[]).forEach(p=>{ totalPakanKg+=parseFloat(p.jumlah)||0; });
+      const fi = populasi>0 && totalPakanKg>0
+        ? parseFloat(((totalPakanKg*1000)/populasi).toFixed(1))
+        : null;
+      // EW: berat rata-rata telur (gram/butir)
+      const ew = parseFloat(r.data?.produksi?.berat_rata)||null;
+      // FCR: kg pakan / kg telur produksi hari itu
+      const totalTelurKg = parseFloat(r.data?.produksi?.total?.kilo)||0;
+      const fcr = totalTelurKg>0 ? parseFloat((totalPakanKg/totalTelurKg).toFixed(2)) : null;
 
-      if(hdp!==null) weekMap[key].hd.push(hdp);
-      if(fi!==null && fi>0) weekMap[key].fi.push(fi);
-      if(ew!==null && ew>0) weekMap[key].ew.push(ew);
+      if(hdp!==null && hdp>0 && hdp<=100) weekMap[key].hd.push(hdp);
+      if(fi!==null && fi>0 && fi<=200) weekMap[key].fi.push(fi); // max 200gr/ekor wajar
+      if(ew!==null && ew>0 && ew<=80) weekMap[key].ew.push(ew);  // max 80gr/butir wajar
       if(fcr!==null && fcr>0 && fcr<10) weekMap[key].fcr.push(fcr);
     }
   }
