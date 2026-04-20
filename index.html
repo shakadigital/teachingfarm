@@ -886,7 +886,7 @@
           <div class="card-body">
             <div style="overflow-x:auto">
               <table class="tbl">
-                <thead><tr><th>Tanggal</th><th>Kandang</th><th>Populasi</th><th>Deplesi</th><th>Prod. (butir)</th><th>HDP</th><th>Pakan (kg)</th><th>Air (L)</th><th></th></tr></thead>
+                <thead><tr><th>Tanggal</th><th>Kandang</th><th>Populasi</th><th>Deplesi</th><th>Prod. (butir)</th><th>HDP</th><th>Pakan (kg)</th><th>Air (L)</th><th id="th-harian-user" style="display:none">Diinput Oleh</th><th></th></tr></thead>
                 <tbody id="r-harian-tbody"></tbody>
               </table>
             </div>
@@ -902,7 +902,7 @@
           <div class="card-body">
             <div style="overflow-x:auto">
               <table class="tbl">
-                <thead><tr><th>Tanggal</th><th>Pelanggan</th><th>Grade</th><th>Butir</th><th>Kilo (kg)</th><th>Harga/kg</th><th>Total</th></tr></thead>
+                <thead><tr><th>Tanggal</th><th>Pelanggan</th><th>Grade</th><th>Butir</th><th>Kilo (kg)</th><th>Harga/kg</th><th>Total</th><th id="th-jual-user" style="display:none">Diinput Oleh</th></tr></thead>
                 <tbody id="r-jual-tbody"></tbody>
               </table>
             </div>
@@ -918,7 +918,7 @@
           <div class="card-body">
             <div style="overflow-x:auto">
               <table class="tbl">
-                <thead><tr><th>Tanggal</th><th>Pakan</th><th>Jumlah (kg)</th><th>Harga/kg</th><th>Total</th><th>Supplier</th></tr></thead>
+                <thead><tr><th>Tanggal</th><th>Pakan</th><th>Jumlah (kg)</th><th>Harga/kg</th><th>Total</th><th>Supplier</th><th id="th-kiriman-user" style="display:none">Diinput Oleh</th></tr></thead>
                 <tbody id="r-kiriman-tbody"></tbody>
               </table>
             </div>
@@ -2585,6 +2585,9 @@ async function renderRHarian(){
   const rows=await dbGetInput(f);
   const tbody=document.getElementById('r-harian-tbody');
   const empty=document.getElementById('r-harian-empty');
+  const isSA=currentUser?.role==='superadmin';
+  const thUser=document.getElementById('th-harian-user');
+  if(thUser) thUser.style.display=isSA?'':'none';
   tbody.innerHTML='';
   if(!rows.length){empty.style.display='block';return;}
   empty.style.display='none';
@@ -2593,17 +2596,25 @@ async function renderRHarian(){
     const totalPakan=((d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0)).toFixed(1);
     const pemilik=d.user||row.user_input||'';
     const sameUser=pemilik===currentUser?.username;
-    // Tombol hapus: tampil untuk semua, tapi warna berbeda jika tidak punya akses penuh
-    const canDel=sameUser||myLevel()>=3; // manajer ke atas atau milik sendiri
+    const canDel=sameUser||myLevel()>=3;
     const delBtn=canDel
       ?`<button class="btn-del" onclick="deleteInputHarian('${row.id}')" title="Hapus">🗑</button>`
       :`<button class="btn-del" data-no-access onclick="deleteInputHarian('${row.id}')" title="Butuh izin atasan">🔒</button>`;
+    // Kolom tracking superadmin
+    const waktuEdit=row.updated_at||row.created_at||'';
+    const aksiLabel=row.updated_at&&row.updated_at!==row.created_at
+      ?'<span class="badge badge-orange">Edit</span>'
+      :'<span class="badge badge-green">Input</span>';
+    const userCell=isSA
+      ?`<td style="font-size:.75rem;white-space:nowrap">${aksiLabel} <strong>${esc(pemilik)}</strong><br><span style="color:#888">${fmtTglWaktu(waktuEdit)}</span></td>`
+      :'';
     const tr=document.createElement('tr');
     tr.innerHTML=
       '<td>'+fmtTgl(d.tanggal)+'</td><td>'+esc(d.kandang)+'</td>'+
       '<td>'+(d.sisa_ayam||0)+' ekor</td><td>'+(d.deplesi?d.deplesi.total:0)+' ekor</td>'+
       '<td>'+(d.produksi?d.produksi.total.butir:0)+' butir</td><td>'+(d.produksi?d.produksi.hdp:'—')+'</td>'+
       '<td>'+totalPakan+' kg</td><td>'+(d.air_liter||0)+' L</td>'+
+      userCell+
       '<td style="white-space:nowrap"><button class="btn-edit" onclick="editInputHarian(\''+row.id+'\')">✏️</button>'+delBtn+'</td>';
     tbody.appendChild(tr);
   });
@@ -2614,11 +2625,19 @@ async function renderRPenjualan(){
   const all=await dbGetPenjualan(f);
   const tbody=document.getElementById('r-jual-tbody');
   const empty=document.getElementById('r-jual-empty');
+  const isSA=currentUser?.role==='superadmin';
+  const thUser=document.getElementById('th-jual-user');
+  if(thUser) thUser.style.display=isSA?'':'none';
   tbody.innerHTML='';let count=0;
   all.forEach(rec=>{
-    (rec.rows||[]).forEach(r=>{
+    (rec.rows||[]).forEach((r,i)=>{
       const tr=document.createElement('tr');
-      tr.innerHTML='<td>'+fmtTgl(rec.tanggal)+'</td><td>'+esc(r.pelanggan||'—')+'</td><td>'+esc(r.grade||'—')+'</td><td>'+(r.butir||0)+'</td><td>'+(r.kilo||0)+' kg</td><td>Rp '+parseFloat(r.harga||0).toLocaleString('id-ID')+'</td><td>'+esc(r.total||'Rp 0')+'</td>';
+      const pemilik=rec.user_input||'—';
+      const waktu=rec.created_at||'';
+      const userCell=isSA&&i===0
+        ?`<td rowspan="${(rec.rows||[]).length}" style="font-size:.75rem;white-space:nowrap;vertical-align:middle"><span class="badge badge-green">Input</span> <strong>${esc(pemilik)}</strong><br><span style="color:#888">${fmtTglWaktu(waktu)}</span></td>`
+        :(isSA?'':'');
+      tr.innerHTML='<td>'+fmtTgl(rec.tanggal)+'</td><td>'+esc(r.pelanggan||'—')+'</td><td>'+esc(r.grade||'—')+'</td><td>'+(r.butir||0)+'</td><td>'+(r.kilo||0)+' kg</td><td>Rp '+parseFloat(r.harga||0).toLocaleString('id-ID')+'</td><td>'+esc(r.total||'Rp 0')+'</td>'+userCell;
       tbody.appendChild(tr);count++;
     });
   });
@@ -2630,11 +2649,19 @@ async function renderRKiriman(){
   const all=await dbGetKiriman(f);
   const tbody=document.getElementById('r-kiriman-tbody');
   const empty=document.getElementById('r-kiriman-empty');
+  const isSA=currentUser?.role==='superadmin';
+  const thUser=document.getElementById('th-kiriman-user');
+  if(thUser) thUser.style.display=isSA?'':'none';
   tbody.innerHTML='';let count=0;
   all.forEach(k=>{
     const total=parseFloat(k.harga_total)||0;
+    const pemilik=k.user_input||'—';
+    const waktu=k.created_at||'';
+    const userCell=isSA
+      ?`<td style="font-size:.75rem;white-space:nowrap"><span class="badge badge-green">Input</span> <strong>${esc(pemilik)}</strong><br><span style="color:#888">${fmtTglWaktu(waktu)}</span></td>`
+      :'';
     const tr=document.createElement('tr');
-    tr.innerHTML='<td>'+fmtTgl(k.tanggal)+'</td><td>'+esc(k.nama_pakan)+'</td><td>'+k.jumlah+' kg</td><td>Rp '+parseFloat(k.harga_per_kg||0).toLocaleString('id-ID')+'/kg</td><td>Rp '+total.toLocaleString('id-ID')+'</td><td>'+esc(k.keterangan||'—')+'</td>';
+    tr.innerHTML='<td>'+fmtTgl(k.tanggal)+'</td><td>'+esc(k.nama_pakan)+'</td><td>'+k.jumlah+' kg</td><td>Rp '+parseFloat(k.harga_per_kg||0).toLocaleString('id-ID')+'/kg</td><td>Rp '+total.toLocaleString('id-ID')+'</td><td>'+esc(k.keterangan||'—')+'</td>'+userCell;
     tbody.appendChild(tr);count++;
   });
   empty.style.display=count?'none':'block';
@@ -2752,7 +2779,10 @@ async function deleteInputHarian(id){
         :null),
     canDelete,
     onConfirm:async()=>{
-      try{await dbDeleteInput(id);await renderRHarian();showToast('🗑 Data dihapus.');}
+      try{
+        await dbSaveLog('HAPUS','input_harian',id,row?.data,null,`Hapus data harian ${tgl} kandang ${knd}`);
+        await dbDeleteInput(id);await renderRHarian();showToast('🗑 Data dihapus.');
+      }
       catch(e){showToast('❌ Gagal menghapus.');}
     }
   });
