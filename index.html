@@ -1236,17 +1236,20 @@ const DB={
 
 // ═══ ROLE PERMISSIONS (harus di atas AUTH) ═══
 const ROLES={
-  KEUANGAN:  ['admin','manajer'],
-  EXPORT_LAP:['admin','manajer','supervisor'],
-  JUAL:      ['admin','manajer','supervisor'],
-  BIAYA:     ['admin','manajer','supervisor'],
-  KAS_MASUK: ['admin','manajer'],
-  KAS_KELUAR:['admin','manajer','supervisor'],
-  KAS_VIEW:  ['admin','manajer','supervisor'],
-  INPUT:     ['admin','manajer','supervisor','operator'],
-  ALL:       ['admin','manajer','supervisor','operator','staff']
+  KEUANGAN:  ['superadmin','admin','manajer'],
+  EXPORT_LAP:['superadmin','admin','manajer','supervisor'],
+  JUAL:      ['superadmin','admin','manajer','supervisor'],
+  BIAYA:     ['superadmin','admin','manajer','supervisor'],
+  KAS_MASUK: ['superadmin','admin','manajer'],
+  KAS_KELUAR:['superadmin','admin','manajer','supervisor'],
+  KAS_VIEW:  ['superadmin','admin','manajer','supervisor'],
+  INPUT:     ['superadmin','admin','manajer','supervisor','operator'],
+  ALL:       ['superadmin','admin','manajer','supervisor','operator','staff']
 };
-function can(p){return currentUser&&ROLES[p]&&ROLES[p].includes(currentUser.role);}
+function can(p){
+  if(currentUser?.role==='superadmin') return true; // superadmin akses penuh
+  return currentUser&&ROLES[p]&&ROLES[p].includes(currentUser.role);
+}
 function applyRoleRestrictions(){
   const nj=document.getElementById('nav-penjualan');
   if(nj)nj.style.display=can('JUAL')?'':'none';
@@ -2229,7 +2232,8 @@ async function saveKandang(){
 
 // ═══ SETTINGS — USER ═══
 async function renderUserTable(){
-  const isAdmin=currentUser&&currentUser.role==='admin';
+  const isSuperadmin=currentUser&&currentUser.role==='superadmin';
+  const isAdmin=currentUser&&(currentUser.role==='admin'||isSuperadmin);
   document.getElementById('user-noaccess').style.display=isAdmin?'none':'block';
   document.getElementById('user-section').style.display=isAdmin?'block':'none';
   if(!isAdmin)return;
@@ -2237,8 +2241,20 @@ async function renderUserTable(){
   const tbody=document.getElementById('user-tbody');tbody.innerHTML='';
   users.forEach(u=>{
     const tr=document.createElement('tr');
-    const roleBadge={admin:'<span class="badge badge-blue">Admin</span>',manajer:'<span class="badge badge-green">Manajer</span>',supervisor:'<span class="badge" style="background:#ede9fe;color:#6d28d9">Supervisor</span>',operator:'<span class="badge badge-orange">Operator</span>',staff:'<span class="badge badge-gray">Staff</span>'};
-    tr.innerHTML='<td><strong>'+esc(u.username)+'</strong></td><td>'+(roleBadge[u.role]||'<span class="badge badge-gray">'+esc(u.role)+'</span>')+'</td><td>'+(u.active!==false?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Nonaktif</span>')+'</td><td><button class="btn-edit" onclick="openUserModal(\''+u.id+'\')">✏️</button>'+(u.username!==currentUser.username?'<button class="btn-del" onclick="deleteUser(\''+u.id+'\',\''+esc(u.username)+'\')">🗑</button>':'')+'</td>';
+    const roleBadge={
+      superadmin:'<span class="badge" style="background:#1e1b4b;color:#a5b4fc">⭐ Superadmin</span>',
+      admin:'<span class="badge badge-blue">Admin</span>',
+      manajer:'<span class="badge badge-green">Manajer</span>',
+      supervisor:'<span class="badge" style="background:#ede9fe;color:#6d28d9">Supervisor</span>',
+      operator:'<span class="badge badge-orange">Operator</span>',
+      staff:'<span class="badge badge-gray">Staff</span>'
+    };
+    // superadmin tidak bisa dihapus oleh siapapun, dan tidak bisa diedit kecuali oleh dirinya sendiri
+    const isSelf=u.username===currentUser.username;
+    const targetIsSuperadmin=u.role==='superadmin';
+    const canEdit=isSelf||(isSuperadmin&&!targetIsSuperadmin)||(!targetIsSuperadmin&&isAdmin);
+    const canDel=!targetIsSuperadmin&&!isSelf&&isAdmin;
+    tr.innerHTML='<td><strong>'+esc(u.username)+'</strong>'+(targetIsSuperadmin?' 🔒':'')+'</td><td>'+(roleBadge[u.role]||'<span class="badge badge-gray">'+esc(u.role)+'</span>')+'</td><td>'+(u.active!==false?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Nonaktif</span>')+'</td><td>'+(canEdit?'<button class="btn-edit" onclick="openUserModal(\''+u.id+'\')">✏️</button>':'')+(canDel?'<button class="btn-del" onclick="deleteUser(\''+u.id+'\',\''+esc(u.username)+'\')">🗑</button>':'')+'</td>';
     tbody.appendChild(tr);
   });
 }
@@ -2246,11 +2262,22 @@ async function renderUserTable(){
 async function openUserModal(id){
   const users=await dbGetUsers();
   const u=id?users.find(x=>x.id===id):null;
+  // superadmin hanya bisa edit dirinya sendiri
+  if(u?.role==='superadmin'&&currentUser?.role!=='superadmin'){showToast('🔒 Tidak bisa mengedit Superadmin!');return;}
   document.getElementById('modal-user-title').textContent=u?'Edit User':'Tambah User';
   document.getElementById('mu-id').value=u?u.id:'';
   document.getElementById('mu-username').value=u?u.username:'';
   document.getElementById('mu-password').value=u?u.password:'';
-  document.getElementById('mu-role').value=u?u.role:'operator';
+  // Tampilkan opsi superadmin hanya jika login sebagai superadmin
+  const roleSelect=document.getElementById('mu-role');
+  const hasSuperadmin=roleSelect.querySelector('option[value="superadmin"]');
+  if(currentUser?.role==='superadmin'&&!hasSuperadmin){
+    const opt=document.createElement('option');opt.value='superadmin';opt.textContent='⭐ Superadmin';
+    roleSelect.insertBefore(opt,roleSelect.firstChild);
+  } else if(currentUser?.role!=='superadmin'&&hasSuperadmin){
+    roleSelect.removeChild(hasSuperadmin);
+  }
+  roleSelect.value=u?u.role:'operator';
   document.getElementById('modal-user').style.display='flex';
 }
 
@@ -2597,7 +2624,7 @@ async function executeHapus(){
 }
 
 // Helper: cek role lebih tinggi dari user lain
-const ROLE_LEVEL={staff:0,operator:1,supervisor:2,manajer:3,admin:4};
+const ROLE_LEVEL={staff:0,operator:1,supervisor:2,manajer:3,admin:4,superadmin:5};
 function roleLevel(r){return ROLE_LEVEL[r]??0;}
 function myLevel(){return roleLevel(currentUser?.role);}
 
@@ -2656,9 +2683,11 @@ async function deleteKandang(id){
 // ── Hapus User ──
 async function deleteUser(id, username){
   if(username===currentUser?.username){showToast('⚠️ Tidak bisa hapus akun sendiri!');return;}
-  const canDelete=currentUser?.role==='admin';
   const users=await dbGetUsers();
   const u=users.find(x=>x.id===id);
+  // superadmin tidak bisa dihapus oleh siapapun
+  if(u?.role==='superadmin'){showToast('🔒 Superadmin tidak dapat dihapus!');return;}
+  const canDelete=currentUser?.role==='admin'||currentUser?.role==='superadmin';
 
   showHapusModal({
     judul:`Hapus User`,

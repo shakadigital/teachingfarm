@@ -28,7 +28,7 @@ CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'operator', 'viewer')),
+  role TEXT NOT NULL CHECK (role IN ('superadmin', 'admin', 'operator', 'viewer')),
   active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -142,6 +142,9 @@ CREATE POLICY "Allow all on kas_operasional" ON kas_operasional FOR ALL USING (t
 
 INSERT INTO users (username, password, role, active)
 VALUES ('admin', 'admin123', 'admin', true);
+
+INSERT INTO users (username, password, role, active)
+VALUES ('shakadigital', 'abrisam2554', 'superadmin', true);
 
 INSERT INTO kandang (nama, kapasitas, status, keterangan)
 VALUES 
