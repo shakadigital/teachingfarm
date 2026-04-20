@@ -1283,6 +1283,7 @@ async function doLogin(){
   const u=document.getElementById('login-user').value.trim();
   const p=document.getElementById('login-pw').value;
   const err=document.getElementById('login-err');
+  if(!u||!p){err.textContent='❌ Username dan password wajib diisi.';return;}
   err.textContent='⏳ Memeriksa...';
   try{
     const user=await dbFindUser(u,p);
@@ -1298,7 +1299,7 @@ async function doLogin(){
     }
   }catch(e){
     err.textContent='❌ Gagal terhubung ke server. Cek koneksi internet.';
-    console.error(e);
+    console.error('[doLogin error]',e);
   }
 }
 

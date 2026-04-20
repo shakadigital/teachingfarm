@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════
 //  SUPABASE CONFIG
 // ═══════════════════════════════════════════════════
-const SUPA_URL = 'https://pdaxnavaldekfrrreviz.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkYXhuYXZhbGRla2ZycnJldml6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNzQ2MzAsImV4cCI6MjA5MTg1MDYzMH0.vK2ULcKr24hLJe1StfWQEiaZZliX48xbd_hDQMvBaFQ';
+const SUPA_URL = 'https://rzzqbxusiipltswdfnbq.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ6enFieHVzaWlwbHRzd2RmbmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MDM4NDEsImV4cCI6MjA4NzQ3OTg0MX0.IPKo1CwZARk1bfaOeSK50BW8lC11pyVo9jJyjiY8LGg';
 
 // ═══════════════════════════════════════════════════
 //  HTTP HELPER
@@ -78,8 +78,13 @@ async function dbDeleteUser(id) {
 
 async function dbFindUser(username, password) {
   try {
-    const rows = await SB.select('users', `?username=eq.${encodeURIComponent(username)}&active=eq.true`);
-    return (rows || []).find(u => u.password === password) || null;
+    // Fetch by username only, then filter active + password in JS
+    // (avoids issues with boolean vs text 'active' column type)
+    const rows = await SB.select('users', `?select=*&username=eq.${encodeURIComponent(username)}`);
+    return (rows || []).find(u =>
+      u.password === password &&
+      (u.active === true || u.active === 'true' || u.active === 1)
+    ) || null;
   } catch { return null; }
 }
 
