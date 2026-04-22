@@ -526,7 +526,7 @@
       <div class="period-info" id="period-bar" style="display:none">
         <div class="pi-item"><div class="pi-label">Kandang</div><div class="pi-val" id="pi-kandang">—</div></div>
         <div class="pi-item"><div class="pi-label">Chick In</div><div class="pi-val" id="pi-chickin">—</div></div>
-        <div class="pi-item"><div class="pi-label">Umur Masuk</div><div class="pi-val" id="pi-umur">—</div></div>
+        <div class="pi-item"><div class="pi-label">Umur</div><div class="pi-val" id="pi-umur">—</div></div>
         <div class="pi-item"><div class="pi-label">Hari ke-</div><div class="pi-val" id="pi-hari">—</div></div>
         <div class="pi-item"><div class="pi-label">Populasi</div><div class="pi-val" id="pi-pop">—</div></div>
         <div class="pi-item"><div class="pi-label">Status</div><div class="pi-val" id="pi-status">—</div></div>
@@ -1429,7 +1429,6 @@ function updatePeriodBar(){
   bar.style.display='flex';
   document.getElementById('pi-kandang').textContent=k.nama;
   document.getElementById('pi-chickin').textContent=fmtTgl(k.chickin);
-  document.getElementById('pi-umur').textContent=k.umur_masuk?k.umur_masuk+' hari':'—';
   document.getElementById('pi-pop').textContent=k.populasi?k.populasi+' ekor':'—';
   document.getElementById('pi-status').innerHTML=k.status==='Aktif'?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Selesai</span>';
   document.getElementById('hdr-kandang').textContent=k.nama;
@@ -1440,11 +1439,17 @@ function updatePeriodBar(){
   renderKasSaldo();
   if(k.chickin){
     const today=new Date(document.getElementById('tanggal').value||new Date());
-    const cin=new Date(k.chickin);
-    const diff=Math.floor((today-cin)/86400000)+1;
-    const umurHari=(parseInt(k.umur_masuk)||0)+(diff>0?diff-1:0);
-    document.getElementById('pi-hari').textContent=diff>0?diff+' (umur '+umurHari+' hr)':'—';
-  }else document.getElementById('pi-hari').textContent='—';
+    const cin=new Date(k.chickin);cin.setHours(0,0,0,0);today.setHours(0,0,0,0);
+    const hariSejak=Math.floor((today-cin)/86400000);
+    const totalHari=(parseInt(k.umur_masuk)||0)+hariSejak;
+    const mg=Math.floor(totalHari/7);
+    const hr=totalHari%7;
+    document.getElementById('pi-umur').textContent=mg+' mg'+(hr>0?' '+hr+'hr':'');
+    document.getElementById('pi-hari').textContent=hariSejak>=0?'Hari ke-'+(hariSejak+1):'—';
+  }else{
+    document.getElementById('pi-umur').textContent='—';
+    document.getElementById('pi-hari').textContent='—';
+  }
 }
 
 // ═══ FORM CALC ═══
