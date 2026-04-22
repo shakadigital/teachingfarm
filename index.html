@@ -3749,10 +3749,11 @@ async function saveKas(){
   const jumlah=parseFloat(document.getElementById('mk3-jumlah').value)||0;
   const ket=document.getElementById('mk3-ket').value.trim();
   const kandang=document.getElementById('mk3-kandang').value;
+  const kategori=jenis==='masuk'?'Alokasi Dana':'Operasional';
   if(!tanggal||!jumlah){showToast('⚠️ Tanggal dan jumlah wajib diisi!');return;}
   showToast('⏳ Menyimpan...');
   try{
-    await dbSaveKas({tanggal,jenis,jumlah,keterangan:ket,kandang:kandang||null,user_input:currentUser?.username||''});
+    await dbSaveKas({tanggal,jenis,kategori,jumlah,keterangan:ket,kandang:kandang||null,user_input:currentUser?.username||''});
     closeModal('modal-kas');
     await renderKasSaldo();
     showToast(jenis==='masuk'?'✅ Alokasi kas disimpan!':'✅ Pengeluaran kas dicatat!');
