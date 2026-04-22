@@ -89,8 +89,28 @@ CREATE TABLE kiriman_pakan (
   jumlah NUMERIC NOT NULL,
   satuan TEXT DEFAULT 'kg',
   supplier TEXT,
+  harga_per_kg NUMERIC DEFAULT 0,
   harga_total NUMERIC,
+  status_bayar TEXT DEFAULT 'belum' CHECK (status_bayar IN ('belum', 'sebagian', 'lunas')),
+  sisa_tagihan NUMERIC DEFAULT 0,
   keterangan TEXT,
+  user_input TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE pembayaran (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tanggal DATE NOT NULL,
+  jenis TEXT NOT NULL CHECK (jenis IN ('pakan', 'pullet')),
+  supplier TEXT NOT NULL,
+  referensi_id UUID,
+  jumlah_tagihan NUMERIC NOT NULL DEFAULT 0,
+  jumlah_bayar NUMERIC NOT NULL,
+  sisa_tagihan NUMERIC NOT NULL DEFAULT 0,
+  metode TEXT NOT NULL CHECK (metode IN ('tunai', 'transfer', 'cek', 'giro')),
+  no_referensi TEXT,
+  keterangan TEXT,
+  kandang TEXT,
   user_input TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -131,6 +151,9 @@ CREATE INDEX idx_pakan_nama ON daftar_pakan(nama);
 CREATE INDEX idx_kiriman_tanggal ON kiriman_pakan(tanggal DESC);
 CREATE INDEX idx_kas_tanggal ON kas_operasional(tanggal DESC);
 CREATE INDEX idx_kas_kandang ON kas_operasional(kandang);
+CREATE INDEX idx_bayar_tanggal ON pembayaran(tanggal DESC);
+CREATE INDEX idx_bayar_jenis ON pembayaran(jenis);
+CREATE INDEX idx_bayar_supplier ON pembayaran(supplier);
 CREATE INDEX idx_log_tanggal ON activity_log(tanggal DESC);
 CREATE INDEX idx_log_user ON activity_log(user_input);
 CREATE INDEX idx_log_tabel ON activity_log(tabel);
@@ -154,6 +177,7 @@ CREATE POLICY "Allow all on daftar_pakan" ON daftar_pakan FOR ALL USING (true) W
 CREATE POLICY "Allow all on kiriman_pakan" ON kiriman_pakan FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on kas_operasional" ON kas_operasional FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on activity_log" ON activity_log FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all on pembayaran" ON pembayaran FOR ALL USING (true) WITH CHECK (true);
 
 -- ── STEP 5: SEED DATA ──────────────────────────────
 

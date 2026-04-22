@@ -777,7 +777,7 @@
         <div class="card-body">
           <div style="overflow-x:auto">
             <table class="tbl">
-              <thead><tr><th>Tanggal</th><th>Pakan</th><th>Jumlah (kg)</th><th>Harga/kg (Rp)</th><th>Total (Rp)</th><th>Keterangan</th><th></th></tr></thead>
+              <thead><tr><th>Tanggal</th><th>Pakan</th><th>Jumlah (kg)</th><th>Harga/kg (Rp)</th><th>Total (Rp)</th><th>Keterangan</th><th>Status</th><th></th></tr></thead>
               <tbody id="kiriman-tbody"></tbody>
             </table>
           </div>
@@ -797,6 +797,23 @@
             </table>
           </div>
           <div id="pakai-empty" class="info-box" style="display:none">Belum ada riwayat pemakaian.</div>
+        </div>
+      </div>
+
+      <!-- Pembayaran Pakan & Pullet (Manajer ke atas) -->
+      <div id="section-pembayaran" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="num">💳</div><h2>Pembayaran Pakan & Pullet</h2></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Tanggal</th><th>Jenis</th><th>Supplier</th><th>Jumlah (Rp)</th><th>Metode</th><th>Keterangan</th><th></th></tr></thead>
+                <tbody id="bayar-tbody"></tbody>
+              </table>
+            </div>
+            <div id="bayar-empty" class="info-box" style="display:none">Belum ada data pembayaran.</div>
+            <button class="btn-add" onclick="openBayarModal()">＋ Catat Pembayaran</button>
+          </div>
         </div>
       </div>
 
@@ -1123,12 +1140,91 @@
       <input type="hidden" id="mk2-id"/>
       <div class="field" style="margin-bottom:12px"><label>Tanggal Kiriman</label><input type="date" id="mk2-tgl"/></div>
       <div class="field" style="margin-bottom:12px"><label>Pakan</label><select id="mk2-pakan"></select></div>
-      <div class="field" style="margin-bottom:12px"><label>Jumlah (kg)</label><input type="number" id="mk2-jumlah" min="0" step="0.1" placeholder="0"/></div>
+      <div class="field" style="margin-bottom:12px"><label>Jumlah (kg)</label><input type="number" id="mk2-jumlah" min="0" step="0.1" placeholder="0" oninput="calcKirimanTotal()"/></div>
       <div class="field" style="margin-bottom:12px"><label>Harga per kg (Rp)</label><input type="number" id="mk2-harga" min="0" step="100" placeholder="0" oninput="calcKirimanTotal()"/></div>
-      <div class="field" style="margin-bottom:12px"><label>Total Harga (Rp)</label><input type="text" id="mk2-total" readonly style="background:#f0fdf4;color:#2d6a4f;font-weight:700"/></div>
-      <div class="field"><label>Keterangan / Supplier</label><input type="text" id="mk2-ket" placeholder="Nama supplier, no. nota, dll."/></div>
+      <div class="field" style="margin-bottom:12px"><label>Total Tagihan (Rp)</label><input type="text" id="mk2-total" readonly style="background:#fff3cd;color:#856404;font-weight:700"/></div>
+      <div class="field" style="margin-bottom:12px"><label>Supplier</label><input type="text" id="mk2-supplier" placeholder="Nama supplier..."/></div>
+      <div class="field"><label>Keterangan / No. Nota</label><input type="text" id="mk2-ket" placeholder="No. nota, dll."/></div>
     </div>
     <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-kiriman')">Batal</button><button class="btn-primary" onclick="saveKiriman()">💾 Simpan</button></div>
+  </div>
+</div>
+
+<!-- MODAL PEMBAYARAN PAKAN & PULLET -->
+<div class="modal-overlay" id="modal-bayar" style="display:none" onclick="if(event.target===this)closeModal('modal-bayar')">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header" style="background:#d8f3dc;border-bottom:1px solid #b7e4c7">
+      <h3 style="color:#1b4332">💳 Catat Pembayaran</h3>
+      <button class="modal-close" onclick="closeModal('modal-bayar')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mb-ref-id"/>
+      <div class="row">
+        <div class="field">
+          <label>Tanggal Bayar</label>
+          <input type="date" id="mb-tgl"/>
+        </div>
+        <div class="field">
+          <label>Jenis</label>
+          <select id="mb-jenis" onchange="onBayarJenisChange()">
+            <option value="pakan">🌾 Pakan</option>
+            <option value="pullet">🐔 Pullet</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Supplier</label>
+        <input type="text" id="mb-supplier" placeholder="Nama supplier..."/>
+      </div>
+      <!-- Pilih tagihan kiriman (untuk pakan) -->
+      <div id="mb-tagihan-wrap" style="margin-bottom:12px">
+        <label style="font-size:.72rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:6px">Tagihan Kiriman (opsional)</label>
+        <select id="mb-tagihan" style="border:1.5px solid #e2e8f0;border-radius:7px;padding:8px 10px;font-size:.85rem;width:100%;background:#fff" onchange="onTagihanSelect()">
+          <option value="">-- Pilih tagihan atau isi manual --</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Total Tagihan (Rp)</label>
+          <input type="number" id="mb-tagihan-total" min="0" step="1000" placeholder="0" readonly style="background:#fff3cd;color:#856404;font-weight:700"/>
+        </div>
+        <div class="field">
+          <label>Sisa Tagihan (Rp)</label>
+          <input type="number" id="mb-sisa" min="0" step="1000" placeholder="0" readonly style="background:#fee2e2;color:#dc2626;font-weight:700"/>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Jumlah Dibayar (Rp)</label>
+        <input type="number" id="mb-jumlah" min="0" step="1000" placeholder="0" oninput="calcSisaBayar()"/>
+      </div>
+      <div id="mb-sisa-setelah-wrap" style="background:#f0fdf4;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:none">
+        <div style="font-size:.78rem;color:#555">Sisa setelah pembayaran:</div>
+        <div id="mb-sisa-setelah" style="font-size:1.1rem;font-weight:800;color:#1b4332"></div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Metode Bayar</label>
+          <select id="mb-metode">
+            <option value="transfer">Transfer Bank</option>
+            <option value="tunai">Tunai</option>
+            <option value="cek">Cek</option>
+            <option value="giro">Giro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>No. Referensi</label>
+          <input type="text" id="mb-noref" placeholder="No. transfer / cek..."/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Keterangan</label>
+        <input type="text" id="mb-ket" placeholder="Keterangan tambahan..."/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-bayar')">Batal</button>
+      <button class="btn-primary" onclick="savePembayaran()">💾 Simpan Pembayaran</button>
+    </div>
   </div>
 </div>
 
@@ -1924,9 +2020,17 @@ async function renderGudang(){
     kiriman.slice(0,40).forEach(k=>{
       const tr=document.createElement('tr');
       const total=(parseFloat(k.jumlah)||0)*(parseFloat(k.harga_total)||0);
+      const statusBayar=k.status_bayar||'belum';
+      const statusBadge=statusBayar==='lunas'
+        ?'<span class="badge badge-green">Lunas</span>'
+        :statusBayar==='sebagian'
+          ?`<span class="badge badge-orange">Sisa Rp ${parseFloat(k.sisa_tagihan||0).toLocaleString('id-ID')}</span>`
+          :'<span class="badge badge-red">Belum Bayar</span>';
       tr.innerHTML='<td>'+fmtTgl(k.tanggal)+'</td><td>'+esc(k.nama_pakan)+'</td><td>'+k.jumlah+' kg</td><td>Rp '+parseFloat(k.harga_per_kg||0).toLocaleString('id-ID')+'/kg</td><td>Rp '+parseFloat(k.harga_total||0).toLocaleString('id-ID')+'</td><td>'+esc(k.keterangan||'—')+'</td>'+
-        '<td>'+
+        '<td>'+statusBadge+'</td>'+
+        '<td style="white-space:nowrap">'+
           (can('JUAL')?'<button class="btn-edit" onclick="openKirimanEditModal(\''+k.id+'\')">✏️</button>':'')+
+          (can('KEUANGAN')&&statusBayar!=='lunas'?'<button class="btn-add" style="padding:3px 8px;font-size:.75rem;margin:0 2px" onclick="openBayarModal(\''+k.id+'\')">💳 Bayar</button>':'')+
           (can('KEUANGAN')?'<button class="btn-del" onclick="deleteKiriman(\''+k.id+'\')">🗑</button>':'')+
         '</td>';
       ktbody.appendChild(tr);
@@ -1942,6 +2046,155 @@ async function renderGudang(){
   ptbody.innerHTML='';
   if(!pemakaian.length){pempty.style.display='block';}
   else{pempty.style.display='none';pemakaian.slice(0,40).forEach(p=>{const tr=document.createElement('tr');tr.innerHTML='<td>'+esc(p.tgl)+'</td><td>'+esc(p.kandang)+'</td><td>'+esc(p.pakan)+'</td><td>'+p.jumlah+' kg</td>';ptbody.appendChild(tr);});}
+
+  // Section pembayaran — hanya manajer ke atas
+  const canBayar=can('KEUANGAN');
+  const secBayar=document.getElementById('section-pembayaran');
+  if(secBayar) secBayar.style.display=canBayar?'block':'none';
+  if(canBayar) await renderPembayaran();
+}
+
+// ═══ PEMBAYARAN PAKAN & PULLET ═══
+async function renderPembayaran(){
+  const list=await dbGetPembayaran({});
+  const tbody=document.getElementById('bayar-tbody');
+  const empty=document.getElementById('bayar-empty');
+  if(!tbody)return;
+  tbody.innerHTML='';
+  if(!list.length){empty.style.display='block';return;}
+  empty.style.display='none';
+  list.slice(0,60).forEach(b=>{
+    const statusSisa=b.sisa_tagihan>0
+      ?`<span class="badge badge-orange">Sisa Rp ${parseFloat(b.sisa_tagihan).toLocaleString('id-ID')}</span>`
+      :'<span class="badge badge-green">Lunas</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td>'+fmtTgl(b.tanggal)+'</td>'+
+      '<td>'+(b.jenis==='pakan'?'🌾 Pakan':'🐔 Pullet')+'</td>'+
+      '<td>'+esc(b.supplier||'—')+'</td>'+
+      '<td style="font-weight:700;color:#1b4332">Rp '+parseFloat(b.jumlah_bayar).toLocaleString('id-ID')+'</td>'+
+      '<td><span class="badge badge-gray">'+esc(b.metode)+'</span></td>'+
+      '<td style="font-size:.8rem">'+esc(b.keterangan||'—')+'</td>'+
+      '<td>'+statusSisa+'<button class="btn-del" style="margin-left:4px" onclick="deletePembayaran(\''+b.id+'\')">🗑</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+async function openBayarModal(kirimanId){
+  if(!can('KEUANGAN')){showToast('⚠️ Hanya Manajer ke atas yang bisa catat pembayaran!');return;}
+  // Reset form
+  document.getElementById('mb-ref-id').value=kirimanId||'';
+  document.getElementById('mb-tgl').value=new Date().toISOString().split('T')[0];
+  document.getElementById('mb-jenis').value='pakan';
+  document.getElementById('mb-supplier').value='';
+  document.getElementById('mb-jumlah').value='';
+  document.getElementById('mb-noref').value='';
+  document.getElementById('mb-ket').value='';
+  document.getElementById('mb-tagihan-total').value='';
+  document.getElementById('mb-sisa').value='';
+  document.getElementById('mb-sisa-setelah-wrap').style.display='none';
+
+  // Populate dropdown tagihan kiriman belum lunas
+  const kiriman=await dbGetKiriman({});
+  const sel=document.getElementById('mb-tagihan');
+  sel.innerHTML='<option value="">-- Pilih tagihan atau isi manual --</option>';
+  kiriman.filter(k=>k.status_bayar!=='lunas').forEach(k=>{
+    const sisa=parseFloat(k.sisa_tagihan)||parseFloat(k.harga_total)||0;
+    const opt=document.createElement('option');
+    opt.value=k.id;
+    opt.dataset.total=k.harga_total||0;
+    opt.dataset.sisa=sisa;
+    opt.dataset.supplier=k.supplier||'';
+    opt.textContent=`${fmtTgl(k.tanggal)} — ${k.nama_pakan} ${k.jumlah}kg — Sisa Rp ${sisa.toLocaleString('id-ID')}`;
+    sel.appendChild(opt);
+  });
+
+  // Jika dipanggil dari tombol kiriman tertentu
+  if(kirimanId){
+    sel.value=kirimanId;
+    onTagihanSelect();
+  }
+  document.getElementById('modal-bayar').style.display='flex';
+}
+
+function onBayarJenisChange(){
+  const jenis=document.getElementById('mb-jenis').value;
+  document.getElementById('mb-tagihan-wrap').style.display=jenis==='pakan'?'block':'none';
+  if(jenis==='pullet'){
+    document.getElementById('mb-tagihan-total').removeAttribute('readonly');
+    document.getElementById('mb-sisa').removeAttribute('readonly');
+  } else {
+    document.getElementById('mb-tagihan-total').setAttribute('readonly','');
+    document.getElementById('mb-sisa').setAttribute('readonly','');
+  }
+}
+
+function onTagihanSelect(){
+  const sel=document.getElementById('mb-tagihan');
+  const opt=sel.options[sel.selectedIndex];
+  if(opt&&opt.value){
+    document.getElementById('mb-tagihan-total').value=opt.dataset.total||0;
+    document.getElementById('mb-sisa').value=opt.dataset.sisa||0;
+    document.getElementById('mb-supplier').value=opt.dataset.supplier||'';
+  } else {
+    document.getElementById('mb-tagihan-total').value='';
+    document.getElementById('mb-sisa').value='';
+  }
+  calcSisaBayar();
+}
+
+function calcSisaBayar(){
+  const sisa=parseFloat(document.getElementById('mb-sisa').value)||0;
+  const bayar=parseFloat(document.getElementById('mb-jumlah').value)||0;
+  const wrap=document.getElementById('mb-sisa-setelah-wrap');
+  const el=document.getElementById('mb-sisa-setelah');
+  if(bayar>0){
+    const sisaSetelah=Math.max(0,sisa-bayar);
+    wrap.style.display='block';
+    el.textContent='Rp '+sisaSetelah.toLocaleString('id-ID');
+    el.style.color=sisaSetelah<=0?'#16a34a':'#dc2626';
+  } else {
+    wrap.style.display='none';
+  }
+}
+
+async function savePembayaran(){
+  const tanggal=document.getElementById('mb-tgl').value;
+  const jenis=document.getElementById('mb-jenis').value;
+  const supplier=document.getElementById('mb-supplier').value.trim();
+  const jumlah_bayar=parseFloat(document.getElementById('mb-jumlah').value)||0;
+  const jumlah_tagihan=parseFloat(document.getElementById('mb-tagihan-total').value)||0;
+  const sisa_tagihan=Math.max(0,(parseFloat(document.getElementById('mb-sisa').value)||0)-jumlah_bayar);
+  const metode=document.getElementById('mb-metode').value;
+  const no_referensi=document.getElementById('mb-noref').value.trim();
+  const keterangan=document.getElementById('mb-ket').value.trim();
+  const refId=document.getElementById('mb-ref-id').value||document.getElementById('mb-tagihan').value||null;
+
+  if(!tanggal||!supplier||!jumlah_bayar){showToast('⚠️ Tanggal, supplier, dan jumlah wajib diisi!');return;}
+  showToast('⏳ Menyimpan...');
+  try{
+    await dbSavePembayaran({
+      tanggal,jenis,supplier,
+      referensi_id:refId||null,
+      jumlah_tagihan,jumlah_bayar,sisa_tagihan,
+      metode,no_referensi:no_referensi||null,
+      keterangan:keterangan||null,
+      user_input:currentUser?.username||''
+    });
+    // Update status tagihan di kiriman_pakan
+    if(refId) await dbUpdateStatusTagihan(refId,jumlah_bayar);
+    closeModal('modal-bayar');
+    await renderGudang();
+    showToast('✅ Pembayaran dicatat!');
+  }catch(e){showToast('❌ Gagal: '+e.message);}
+}
+
+async function deletePembayaran(id){
+  if(!can('KEUANGAN')){showToast('⚠️ Tidak ada akses!');return;}
+  if(!confirm('Hapus data pembayaran ini?'))return;
+  await dbDeletePembayaran(id);
+  await renderGudang();
+  showToast('🗑 Pembayaran dihapus.');
 }
 
 async function openStokModal(id){
@@ -1986,18 +2239,19 @@ async function saveKiriman(){
   const jumlah=parseFloat(document.getElementById('mk2-jumlah').value)||0;
   const harga_per_kg=parseFloat(document.getElementById('mk2-harga').value)||0;
   const harga_total=jumlah*harga_per_kg;
+  const supplier=document.getElementById('mk2-supplier').value.trim();
   const keterangan=document.getElementById('mk2-ket').value;
   const editId=document.getElementById('mk2-id').value;
   if(!tanggal||!nama_pakan||!jumlah){showToast('⚠️ Tanggal, pakan, dan jumlah wajib diisi!');return;}
   try{
     if(editId){
-      await SB.update('kiriman_pakan',{tanggal,nama_pakan,jumlah,harga_per_kg,harga_total,keterangan},`?id=eq.${editId}`);
+      await SB.update('kiriman_pakan',{tanggal,nama_pakan,jumlah,harga_per_kg,harga_total,supplier,keterangan,sisa_tagihan:harga_total},`?id=eq.${editId}`);
       cache.del('kiriman_pakan');
     }else{
-      await dbSaveKiriman({tanggal,nama_pakan,jumlah,harga_per_kg,harga_total,keterangan,user_input:currentUser?.username||''});
+      await dbSaveKiriman({tanggal,nama_pakan,jumlah,harga_per_kg,harga_total,supplier,keterangan,sisa_tagihan:harga_total,status_bayar:'belum',user_input:currentUser?.username||''});
     }
     closeModal('modal-kiriman');await renderGudang();
-    showToast(editId?'✅ Kiriman diperbarui!':'✅ Kiriman pakan dicatat!');
+    showToast(editId?'✅ Kiriman diperbarui!':'✅ Kiriman pakan dicatat sebagai tagihan!');
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
 // Edit kiriman — supervisor ke atas boleh
@@ -3030,7 +3284,6 @@ async function renderLapLabaRugi(){
 
   // Ambil kiriman pakan untuk hitung biaya berdasarkan harga_per_kg
   const semuaKiriman=await dbGetKiriman({});
-  // Fungsi: cari harga per kg pakan pada tanggal tertentu (kiriman terdekat sebelum tanggal)
   const getHargaOnDate=(namaPakan,tgl)=>{
     const filtered=semuaKiriman
       .filter(k=>k.nama_pakan===namaPakan&&k.tanggal<=tgl)
@@ -3053,6 +3306,13 @@ async function renderLapLabaRugi(){
     opsMap[d.tanggal]=(opsMap[d.tanggal]||0)+ops;
   }
 
+  // Hitung total pembayaran real (yang sudah dibayar)
+  const semuaBayar=await dbGetPembayaran({dari,sampai});
+  const totalBayarReal=semuaBayar.reduce((s,b)=>s+(parseFloat(b.jumlah_bayar)||0),0);
+  const totalTagihanBelumBayar=semuaKiriman
+    .filter(k=>k.status_bayar!=='lunas')
+    .reduce((s,k)=>s+(parseFloat(k.sisa_tagihan)||0),0);
+
   const allDates=[...new Set([...Object.keys(pendMap),...Object.keys(biayaMap),...Object.keys(opsMap)])].sort().reverse();
   let totalPend=0,totalBiaya=0,totalOps=0;
   const tbody=document.getElementById('lr-tbody');
@@ -3070,14 +3330,21 @@ async function renderLapLabaRugi(){
       tbody.appendChild(tr);
     });
   }
-  const totalSemua=totalBiaya+totalOps,totalLaba=totalPend-totalSemua;
+  const totalSemua=totalBiaya+totalOps;
+  const totalLaba=totalPend-totalSemua;
+  // Margin real = pendapatan - yang sudah dibayar - ops
+  const labaReal=totalPend-totalBayarReal-totalOps;
   document.getElementById('lr-summary').innerHTML=
     sumCard('💵 Total Pendapatan','green','Rp '+totalPend.toLocaleString('id-ID'))+
-    sumCard('🌾 Biaya Pakan','red','Rp '+totalBiaya.toLocaleString('id-ID'))+
+    sumCard('🌾 Biaya Pakan (Tagihan)','red','Rp '+totalBiaya.toLocaleString('id-ID'))+
     sumCard('🔧 Biaya Operasional','orange','Rp '+totalOps.toLocaleString('id-ID'))+
     sumCard('💸 Total Biaya','red','Rp '+totalSemua.toLocaleString('id-ID'))+
-    sumCard(totalLaba>=0?'📈 Total Laba':'📉 Total Rugi',totalLaba>=0?'green':'red','Rp '+Math.abs(totalLaba).toLocaleString('id-ID'))+
-    sumCard('📊 Margin',totalLaba>=0?'blue':'red',totalPend>0?(totalLaba/totalPend*100).toFixed(1)+'%':'—');
+    sumCard(totalLaba>=0?'📈 Laba (Tagihan)':'📉 Rugi (Tagihan)',totalLaba>=0?'green':'red','Rp '+Math.abs(totalLaba).toLocaleString('id-ID'))+
+    sumCard('📊 Margin Tagihan',totalLaba>=0?'blue':'red',totalPend>0?(totalLaba/totalPend*100).toFixed(1)+'%':'—')+
+    sumCard('💳 Total Dibayar','blue','Rp '+totalBayarReal.toLocaleString('id-ID'))+
+    sumCard('⏳ Sisa Tagihan Belum Bayar','orange','Rp '+totalTagihanBelumBayar.toLocaleString('id-ID'))+
+    sumCard(labaReal>=0?'✅ Laba Real (Kas)':'❌ Rugi Real (Kas)',labaReal>=0?'green':'red','Rp '+Math.abs(labaReal).toLocaleString('id-ID'))+
+    sumCard('📊 Margin Real',labaReal>=0?'blue':'red',totalPend>0?(labaReal/totalPend*100).toFixed(1)+'%':'—');
 }
 
 function sumCard(label,color,val){

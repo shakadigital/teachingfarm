@@ -282,3 +282,45 @@ async function dbGetLog(filters = {}) {
     return await SB.select('activity_log', q) || [];
   } catch { return []; }
 }
+
+// ── PEMBAYARAN ─────────────────────────────────────
+async function dbGetPembayaran(filters = {}) {
+  try {
+    let q = '?select=*&order=tanggal.desc';
+    if (filters.dari)    q += `&tanggal=gte.${filters.dari}`;
+    if (filters.sampai)  q += `&tanggal=lte.${filters.sampai}`;
+    if (filters.jenis)   q += `&jenis=eq.${filters.jenis}`;
+    if (filters.kandang) q += `&kandang=eq.${encodeURIComponent(filters.kandang)}`;
+    const rows = await SB.select('pembayaran', q);
+    cache.set('pembayaran_list', rows);
+    return rows || [];
+  } catch { return cache.get('pembayaran_list') || []; }
+}
+
+async function dbSavePembayaran(obj) {
+  obj.id = crypto.randomUUID();
+  await SB.insert('pembayaran', obj);
+  cache.del('pembayaran_list');
+}
+
+async function dbDeletePembayaran(id) {
+  await SB.delete('pembayaran', `?id=eq.${id}`);
+  cache.del('pembayaran_list');
+}
+
+// Update status_bayar & sisa_tagihan di kiriman_pakan setelah pembayaran
+async function dbUpdateStatusTagihan(kirimanId, jumlahBayar) {
+  try {
+    const rows = await SB.select('kiriman_pakan', `?id=eq.${kirimanId}`);
+    if (!rows || !rows.length) return;
+    const k = rows[0];
+    const totalTagihan = parseFloat(k.harga_total) || 0;
+    // Hitung total yang sudah dibayar sebelumnya
+    const bayarList = await SB.select('pembayaran', `?referensi_id=eq.${kirimanId}`);
+    const totalBayar = (bayarList || []).reduce((s, b) => s + (parseFloat(b.jumlah_bayar) || 0), 0);
+    const sisa = Math.max(0, totalTagihan - totalBayar);
+    const status = sisa <= 0 ? 'lunas' : totalBayar > 0 ? 'sebagian' : 'belum';
+    await SB.update('kiriman_pakan', { status_bayar: status, sisa_tagihan: sisa }, `?id=eq.${kirimanId}`);
+    cache.del('kiriman_pakan');
+  } catch (e) { console.warn('updateStatusTagihan error:', e); }
+}

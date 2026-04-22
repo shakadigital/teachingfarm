@@ -59,9 +59,11 @@
 | Lihat stok pakan | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Tambah/Edit daftar pakan | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Hapus daftar pakan | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Tambah kiriman pakan | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Tambah kiriman pakan (tagihan) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Edit kiriman pakan | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Hapus kiriman pakan | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Catat pembayaran pakan/pullet | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Hapus pembayaran | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 
 ---
 
