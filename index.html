@@ -70,6 +70,14 @@
     .hdr-right{display:flex;align-items:center;gap:8px;}
     .btn-hdr{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:6px 11px;font-size:.78rem;cursor:pointer;white-space:nowrap;}
     .btn-hdr:active{background:rgba(255,255,255,.25);}
+    .sync-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:6px 10px;font-size:.78rem;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s;}
+    .sync-btn:hover{background:rgba(255,255,255,.25);}
+    .sync-btn:active{transform:scale(.95);}
+    .sync-btn.syncing .sync-icon{animation:spin .8s linear infinite;}
+    .sync-btn.success{background:rgba(76,175,80,.3);border-color:rgba(76,175,80,.5);}
+    .sync-btn.error{background:rgba(244,67,54,.3);border-color:rgba(244,67,54,.5);}
+    .dark-btn,.lang-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:6px 10px;font-size:.9rem;cursor:pointer;}
+    .dark-btn:active,.lang-btn:active{background:rgba(255,255,255,.25);}
 
     /* BOTTOM NAV — 5 items */
     .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;display:flex;z-index:150;box-shadow:0 -2px 8px rgba(0,0,0,.06);}
@@ -473,6 +481,9 @@
     </div>
     <div class="hdr-right">
       <span id="hdr-user" style="font-size:.75rem;opacity:.85"></span>
+      <button class="sync-btn" id="btn-sync" onclick="manualSync()" title="Sync Data">
+        <span class="sync-icon">🔄</span>
+      </button>
       <button class="dark-btn" id="btn-dark" onclick="toggleDark()" title="Dark Mode">🌙</button>
       <button class="lang-btn" id="btn-lang" onclick="toggleLang()">EN</button>
       <button class="btn-hdr" onclick="doLogout()">⏻ <span data-i18n="keluar">Keluar</span></button>
@@ -1503,6 +1514,68 @@ function doLogout(){
   document.getElementById('login-user').value='';
   document.getElementById('login-pw').value='';
   document.getElementById('login-err').textContent='';
+}
+
+// ═══ MANUAL SYNC ═══
+async function manualSync(){
+  const btn=document.getElementById('btn-sync');
+  if(btn.classList.contains('syncing'))return; // Prevent double click
+  
+  btn.classList.add('syncing');
+  btn.title='Syncing...';
+  showToast('🔄 Memulai sync...');
+  
+  try{
+    // Cek mode database
+    if(window.DB_MODE!=='supabase'){
+      showToast('⚠️ Sync hanya tersedia di mode Supabase');
+      btn.classList.remove('syncing');
+      return;
+    }
+    
+    // Refresh semua data dari server
+    const results=await Promise.allSettled([
+      dbGetUsers(),
+      dbGetKandang(),
+      dbGetInput({}),
+      dbGetPenjualan({}),
+      dbGetDaftarPakan(),
+      dbGetKiriman({}),
+      dbGetKas({})
+    ]);
+    
+    // Cek hasil
+    const failed=results.filter(r=>r.status==='rejected');
+    if(failed.length>0){
+      console.error('Sync errors:',failed);
+      btn.classList.add('error');
+      setTimeout(()=>btn.classList.remove('error'),2000);
+      showToast('❌ Sync gagal: '+failed.length+' tabel error');
+    }else{
+      // Clear all cache setelah berhasil sync
+      if(typeof cache!=='undefined'&&cache._data){
+        Object.keys(cache._data).forEach(k=>cache.del(k));
+      }
+      
+      btn.classList.add('success');
+      setTimeout(()=>btn.classList.remove('success'),2000);
+      showToast('✅ Sync berhasil! Data diperbarui.');
+      
+      // Refresh tampilan jika di home
+      const activePage=document.querySelector('.page.active');
+      if(activePage&&activePage.id==='page-home'){
+        renderHome();
+      }
+    }
+  }catch(e){
+    console.error('Sync error:',e);
+    btn.classList.add('error');
+    setTimeout(()=>btn.classList.remove('error'),2000);
+    showToast('❌ Sync gagal: '+e.message);
+  }finally{
+    btn.classList.remove('syncing');
+    btn.title='Sync Data';
+  }
 }
 
 function checkSession(){
