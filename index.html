@@ -16,7 +16,7 @@
   <title>Teaching Farm UB</title>
   <script>
     (function(){
-      const m = localStorage.getItem('DB_MODE') || 'local';
+      const m = localStorage.getItem('DB_MODE') || 'supabase';
       window.DB_MODE = m;
       const s = document.createElement('script');
       s.src = (m === 'supabase') ? 'supabase.js' : 'db_local.js';
