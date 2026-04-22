@@ -550,16 +550,6 @@
         <div class="pi-item"><div class="pi-label">Populasi</div><div class="pi-val" id="pi-pop">—</div></div>
         <div class="pi-item"><div class="pi-label">Status</div><div class="pi-val" id="pi-status">—</div></div>
       </div>
-      <!-- Saldo Kas Operasional -->
-      <div id="kas-saldo-bar" class="kas-saldo-bar" style="display:none">
-        <div class="ks-item"><div class="ks-label">💰 Alokasi Kas</div><div class="ks-val" id="ks-masuk">Rp 0</div></div>
-        <div class="ks-item"><div class="ks-label">📤 Terpakai</div><div class="ks-val red" id="ks-keluar">Rp 0</div></div>
-        <div class="ks-item"><div class="ks-label">💵 Sisa Saldo</div><div class="ks-val" id="ks-saldo">Rp 0</div></div>
-        <div style="margin-left:auto;display:flex;gap:6px">
-          <button class="btn-add" style="margin-top:0;font-size:.78rem" id="btn-kas-masuk" onclick="openKasModal('masuk')">＋ Alokasi</button>
-          <button class="btn-add" style="margin-top:0;font-size:.78rem;background:#f59e0b" onclick="openKasModal('keluar')">− Pengeluaran</button>
-        </div>
-      </div>
       <div class="date-bar">
         <label>📅 Tanggal</label>
         <input type="date" id="tanggal" onchange="updatePeriodBar()"/>
@@ -802,6 +792,17 @@
   <!-- ══ PAGE: BIAYA OPERASIONAL ══ -->
   <div class="page" id="page-biaya">
     <div class="page-inner">
+      <!-- Saldo Kas Operasional -->
+      <div id="kas-saldo-bar" class="kas-saldo-bar">
+        <div class="ks-item"><div class="ks-label">💰 Alokasi Kas</div><div class="ks-val" id="ks-masuk">Rp 0</div></div>
+        <div class="ks-item"><div class="ks-label">📤 Terpakai</div><div class="ks-val red" id="ks-keluar">Rp 0</div></div>
+        <div class="ks-item"><div class="ks-label">💵 Sisa Saldo</div><div class="ks-val" id="ks-saldo">Rp 0</div></div>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn-add" style="margin-top:0;font-size:.78rem" id="btn-kas-masuk" onclick="openKasModal('masuk')">＋ Alokasi</button>
+          <button class="btn-add" style="margin-top:0;font-size:.78rem;background:#f59e0b" onclick="openKasModal('keluar')">− Pengeluaran</button>
+        </div>
+      </div>
+
       <div class="date-bar">
         <label>Tanggal</label>
         <input type="date" id="biaya-tanggal"/>
@@ -3078,6 +3079,7 @@ function initBiayaPage(){
   if(!document.getElementById('biaya-bulan').value)
     document.getElementById('biaya-bulan').value=new Date().toISOString().slice(0,7);
   populateBiayaKandang();
+  renderKasSaldo(); // Load saldo kas
 }
 
 async function populateBiayaKandang(){
@@ -3089,6 +3091,12 @@ async function populateBiayaKandang(){
     list.forEach(k=>sel.innerHTML+=`<option value="${esc(k.nama)}">${esc(k.nama)}</option>`);
     if(prev)sel.value=prev;
   });
+  // Add event listener untuk update saldo saat kandang berubah
+  const selKandang=document.getElementById('biaya-kandang');
+  if(selKandang&&!selKandang.dataset.listenerAdded){
+    selKandang.addEventListener('change',()=>renderKasSaldo());
+    selKandang.dataset.listenerAdded='true';
+  }
 }
 
 // ═══ RIWAYAT ═══
@@ -4257,15 +4265,16 @@ async function restoreData(input){
 }
 
 // ═══ KAS OPERASIONAL ═══
-async function renderKasSaldo(){
-  const kandang=(document.getElementById('kandang')?.value||'').trim();
+async function renderKasSaldo(kandangParam){
+  // Ambil kandang dari parameter atau dari dropdown biaya-kandang atau kandang input
+  const kandang=kandangParam||(document.getElementById('biaya-kandang')?.value||document.getElementById('kandang')?.value||'').trim();
   const bar=document.getElementById('kas-saldo-bar');
   if(!bar)return;
-  // Tampilkan untuk KAS_VIEW (supervisor ke atas) jika kandang dipilih
-  if(!kandang||!can('KAS_VIEW')){bar.style.display='none';return;}
+  // Tampilkan untuk KAS_VIEW (supervisor ke atas)
+  if(!can('KAS_VIEW')){bar.style.display='none';return;}
   bar.style.display='flex';
   try{
-    const list=await dbGetKas({kandang});
+    const list=await dbGetKas(kandang?{kandang}:{});
     const masuk=list.filter(k=>k.jenis==='masuk').reduce((s,k)=>s+(parseFloat(k.jumlah)||0),0);
     const keluar=list.filter(k=>k.jenis==='keluar').reduce((s,k)=>s+(parseFloat(k.jumlah)||0),0);
     const saldo=masuk-keluar;
@@ -4293,7 +4302,8 @@ async function openKasModal(jenis){
   const list=cache.get('kandang_list')||await dbGetKandang();
   sel.innerHTML='<option value="">Semua Kandang</option>';
   list.forEach(k=>{const o=document.createElement('option');o.value=k.nama;o.textContent=k.nama;sel.appendChild(o);});
-  const aktif=document.getElementById('kandang')?.value;
+  // Ambil kandang dari halaman biaya atau input harian
+  const aktif=document.getElementById('biaya-kandang')?.value||document.getElementById('kandang')?.value;
   if(aktif)sel.value=aktif;
   document.getElementById('modal-kas').style.display='flex';
 }
