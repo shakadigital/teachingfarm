@@ -4372,8 +4372,16 @@ async function saveKas(){
 }
 
 // ═══ BOOT ═══
-initUsers();
-setTimeout(checkSession,500);
+// Wait for DB script to load before initializing
+function bootApp(){
+  if(typeof dbGetUsers==='undefined'){
+    setTimeout(bootApp,100);
+    return;
+  }
+  initUsers();
+  setTimeout(checkSession,500);
+}
+bootApp();
 </script></body></html>
 
 
