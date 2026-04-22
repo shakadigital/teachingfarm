@@ -544,7 +544,6 @@
     <div class="page-inner">
       <div class="period-info" id="period-bar" style="display:none">
         <div class="pi-item"><div class="pi-label">Kandang</div><div class="pi-val" id="pi-kandang">—</div></div>
-        <div class="pi-item"><div class="pi-label">Chick In</div><div class="pi-val" id="pi-chickin">—</div></div>
         <div class="pi-item"><div class="pi-label">Umur</div><div class="pi-val" id="pi-umur">—</div></div>
         <div class="pi-item"><div class="pi-label">Hari ke-</div><div class="pi-val" id="pi-hari">—</div></div>
         <div class="pi-item"><div class="pi-label">Populasi</div><div class="pi-val" id="pi-pop">—</div></div>
@@ -705,7 +704,11 @@
 
       <!-- Riwayat -->
       <div class="card">
-        <div class="card-header"><div class="num">📊</div><h2>Riwayat Penjualan</h2></div>
+        <div class="card-header">
+          <div class="num">📊</div>
+          <h2>Riwayat Penjualan</h2>
+          <button class="btn-export" onclick="exportRiwayatJual()" style="margin-left:auto;display:none" id="btn-export-jual">⬇️ Download</button>
+        </div>
         <div class="card-body">
           <div style="overflow-x:auto">
             <table class="tbl"><thead><tr><th>Tanggal</th><th>Pelanggan</th><th>Grade</th><th>Butir</th><th>Kilo</th><th>Total</th><th></th></tr></thead>
@@ -977,7 +980,11 @@
       <!-- Tab: Penjualan -->
       <div id="rtab-content-penjualan" style="display:none">
         <div class="card">
-          <div class="card-header"><div class="num">🥚</div><h2>Riwayat Penjualan</h2></div>
+          <div class="card-header">
+            <div class="num">🥚</div>
+            <h2>Riwayat Penjualan</h2>
+            <button class="btn-export" onclick="exportRiwayatJual()" style="margin-left:auto;display:none" id="btn-export-jual-riwayat">⬇️ Download</button>
+          </div>
           <div class="card-body">
             <div style="overflow-x:auto">
               <table class="tbl">
@@ -1148,6 +1155,7 @@
         <div id="mk-umur-preview" style="margin-top:5px;font-size:.78rem;color:#2d6a4f;font-weight:700;min-height:18px"></div>
       </div>
       <div class="field" style="margin-bottom:12px"><label>Populasi Masuk (ekor)</label><input type="number" id="mk-populasi" min="0" placeholder="0"/></div>
+      <div class="field" style="margin-bottom:12px"><label>Harga Pullet per Ekor (Rp)</label><input type="number" id="mk-harga-pullet" min="0" step="100" placeholder="0"/></div>
       <div class="field"><label>Status</label><select id="mk-status"><option value="Aktif">Aktif</option><option value="Selesai">Selesai</option></select></div>
     </div>
     <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-kandang')">Batal</button><button class="btn-primary" onclick="saveKandang()">💾 Simpan</button></div>
@@ -1465,6 +1473,11 @@ function applyRoleRestrictions(){
   document.querySelectorAll('.btn-export').forEach(b=>{
     if(b.getAttribute('onclick')==='exportLaporan()')b.style.display=can('EXPORT_LAP')?'':'none';
   });
+  // Tombol export riwayat penjualan
+  const btnExportJual=document.getElementById('btn-export-jual');
+  if(btnExportJual)btnExportJual.style.display=can('EXPORT_LAP')?'':'none';
+  const btnExportJualRiwayat=document.getElementById('btn-export-jual-riwayat');
+  if(btnExportJualRiwayat)btnExportJualRiwayat.style.display=can('EXPORT_LAP')?'':'none';
   // Gudang — Daftarkan Pakan hanya admin/manajer
   const btnDaftar=document.getElementById('btn-daftar-pakan');
   if(btnDaftar)btnDaftar.style.display=can('KEUANGAN')?'':'none';
@@ -1640,7 +1653,6 @@ function updatePeriodBar(){
   if(!k){bar.style.display='none';return;}
   bar.style.display='flex';
   document.getElementById('pi-kandang').textContent=k.nama;
-  document.getElementById('pi-chickin').textContent=fmtTgl(k.chickin);
   document.getElementById('pi-pop').textContent=k.populasi?k.populasi+' ekor':'—';
   document.getElementById('pi-status').innerHTML=k.status==='Aktif'?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Selesai</span>';
   document.getElementById('hdr-kandang').textContent=k.nama;
@@ -2699,6 +2711,7 @@ function openKandangModal(id){
   document.getElementById('mk-chickin').value=k?k.chickin:'';
   document.getElementById('mk-umur').value=k?(k.umur_masuk||0):0;
   document.getElementById('mk-populasi').value=k?k.populasi:'';
+  document.getElementById('mk-harga-pullet').value=k?(k.harga_pullet||0):0;
   document.getElementById('mk-status').value=k?k.status:'Aktif';
   document.getElementById('modal-kandang').style.display='flex';
   calcUmurKandang();
@@ -2728,6 +2741,7 @@ async function saveKandang(){
     chickin:document.getElementById('mk-chickin').value||null,
     umur_masuk:parseInt(document.getElementById('mk-umur').value)||null,
     populasi:parseInt(document.getElementById('mk-populasi').value)||null,
+    harga_pullet:parseFloat(document.getElementById('mk-harga-pullet').value)||null,
     status:document.getElementById('mk-status').value
   };
   if(id)obj.id=id;
@@ -3071,6 +3085,33 @@ async function exportRekapBiaya(){
     a.click();
     showToast('✅ File CSV didownload!');
   }catch(e){showToast('❌ Gagal: '+e.message);}
+}
+
+async function exportRiwayatJual(){
+  if(!can('EXPORT_LAP')){showToast('⚠️ Hanya Supervisor ke atas yang bisa download!');return;}
+  showToast('⏳ Menyiapkan CSV...');
+  try{
+    const list=await dbGetPenjualan({});
+    if(list.length===0){showToast('⚠️ Tidak ada data penjualan');return;}
+    let csv='Tanggal,Pelanggan,Grade,Butir,Kilo (kg),Harga/kg (Rp),Total (Rp),Diinput Oleh\n';
+    list.forEach(p=>{
+      const items=p.items||[];
+      items.forEach(item=>{
+        csv+=`${p.tanggal},${item.pelanggan||''},${item.grade||''},${item.butir||0},${item.kilo||0},${item.harga||0},${item.total||0},${p.user_input||''}\n`;
+      });
+    });
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`Riwayat_Penjualan_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ File CSV didownload!');
+  }catch(e){
+    console.error('Export error:',e);
+    showToast('❌ Gagal export: '+e.message);
+  }
 }
 
 function initBiayaPage(){
