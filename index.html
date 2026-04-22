@@ -3336,15 +3336,15 @@ async function renderLapLabaRugi(){
   const labaReal=totalPend-totalBayarReal-totalOps;
   document.getElementById('lr-summary').innerHTML=
     sumCard('💵 Total Pendapatan','green','Rp '+totalPend.toLocaleString('id-ID'))+
-    sumCard('🌾 Biaya Pakan (Tagihan)','red','Rp '+totalBiaya.toLocaleString('id-ID'))+
+    sumCard('🌾 Biaya Pakan Terpakai','red','Rp '+totalBiaya.toLocaleString('id-ID'))+
     sumCard('🔧 Biaya Operasional','orange','Rp '+totalOps.toLocaleString('id-ID'))+
     sumCard('💸 Total Biaya','red','Rp '+totalSemua.toLocaleString('id-ID'))+
-    sumCard(totalLaba>=0?'📈 Laba (Tagihan)':'📉 Rugi (Tagihan)',totalLaba>=0?'green':'red','Rp '+Math.abs(totalLaba).toLocaleString('id-ID'))+
-    sumCard('📊 Margin Tagihan',totalLaba>=0?'blue':'red',totalPend>0?(totalLaba/totalPend*100).toFixed(1)+'%':'—')+
-    sumCard('💳 Total Dibayar','blue','Rp '+totalBayarReal.toLocaleString('id-ID'))+
+    sumCard(totalLaba>=0?'📈 Laba (Akrual)':'📉 Rugi (Akrual)',totalLaba>=0?'green':'red','Rp '+Math.abs(totalLaba).toLocaleString('id-ID'))+
+    sumCard('📊 Margin Akrual',totalLaba>=0?'blue':'red',totalPend>0?(totalLaba/totalPend*100).toFixed(1)+'%':'—')+
+    sumCard('💳 Total Dibayar ke Supplier','blue','Rp '+totalBayarReal.toLocaleString('id-ID'))+
     sumCard('⏳ Sisa Tagihan Belum Bayar','orange','Rp '+totalTagihanBelumBayar.toLocaleString('id-ID'))+
     sumCard(labaReal>=0?'✅ Laba Real (Kas)':'❌ Rugi Real (Kas)',labaReal>=0?'green':'red','Rp '+Math.abs(labaReal).toLocaleString('id-ID'))+
-    sumCard('📊 Margin Real',labaReal>=0?'blue':'red',totalPend>0?(labaReal/totalPend*100).toFixed(1)+'%':'—');
+    sumCard('📊 Margin Real (Kas)',labaReal>=0?'blue':'red',totalPend>0?(labaReal/totalPend*100).toFixed(1)+'%':'—');
 }
 
 function sumCard(label,color,val){
