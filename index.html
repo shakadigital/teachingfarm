@@ -14,7 +14,15 @@
   <link rel="icon" type="image/png" sizes="96x96" href="icon/icon-96.png"/>
   <link rel="shortcut icon" href="icon/favicon.ico"/>
   <title>Teaching Farm UB</title>
-  <script src="supabase.js"></script>
+  <script>
+    (function(){
+      const m = localStorage.getItem('DB_MODE') || 'local';
+      window.DB_MODE = m;
+      const s = document.createElement('script');
+      s.src = (m === 'supabase') ? 'supabase.js' : 'db_local.js';
+      document.head.appendChild(s);
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -631,50 +639,10 @@
           </div></div>
         </div>
       </div>
-      <!-- 7. Biaya Operasional -->
-      <div class="card" id="card-biaya">
-        <div class="card-header">
-          <div class="num">8</div>
-          <h2>Biaya Operasional <small id="biaya-role-note"></small></h2>
-        </div>
-        <div class="card-body">
-          <div id="biaya-noaccess" class="warn-box" style="display:none">
-            ⚠️ Hanya Supervisor, Manajer, dan Admin yang dapat menginput biaya operasional.
-          </div>
-          <div id="biaya-section">
-            <div id="biaya-list">
-              <div class="row biaya-row">
-                <div class="field"><label>Kategori</label>
-                  <input type="hidden" class="biaya-kategori-val" value="tenaga_harian"/>
-                  <div class="cat-picker-wrap">
-                    <button type="button" class="cat-picker-btn" onclick="openCatPicker(this)">
-                      <span class="cpb-icon">👷</span>
-                      <span class="cpb-label">Tenaga Harian / Lembur</span>
-                      <span class="cpb-arrow">▼</span>
-                    </button>
-                  </div>
-                </div>
-                <div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>
-                <div class="field"><label>Jumlah (Rp)</label><input type="number" min="0" step="1000" placeholder="0" oninput="calcTotalBiaya()"/></div>
-                <div style="display:flex;align-items:flex-end">
-                  <button class="btn-del" onclick="removeBiayaRow(this)">✕</button>
-                </div>
-              </div>
-            </div>
-            <button class="btn-add" onclick="addBiayaRow()">＋ Tambah Biaya</button>
-            <div class="row" style="margin-top:14px">
-              <div class="field">
-                <label>Total Biaya Operasional</label>
-                <input type="text" id="total_biaya" readonly style="font-size:1rem;font-weight:700;color:#dc2626"/>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- 8. Catatan -->
+      <!-- 7. Catatan -->
       <div class="card">
-        <div class="card-header"><div class="num">9</div><h2>Catatan Harian</h2></div>
+        <div class="card-header"><div class="num">7</div><h2>Catatan Harian</h2></div>
         <div class="card-body">
           <div class="field"><textarea id="catatan" placeholder="Tulis catatan harian di sini..."></textarea></div>
         </div>
@@ -814,6 +782,76 @@
             <div id="bayar-empty" class="info-box" style="display:none">Belum ada data pembayaran.</div>
             <button class="btn-add" onclick="openBayarModal()">＋ Catat Pembayaran</button>
           </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ PAGE: BIAYA OPERASIONAL ══ -->
+  <div class="page" id="page-biaya">
+    <div class="page-inner">
+      <div class="date-bar">
+        <label>Tanggal</label>
+        <input type="date" id="biaya-tanggal"/>
+        <label style="margin-left:12px">Kandang</label>
+        <select id="biaya-kandang"><option value="">Semua Kandang</option></select>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="num">💰</div><h2>Input Biaya Operasional</h2></div>
+        <div class="card-body">
+          <div id="biaya-list">
+            <div class="row biaya-row">
+              <div class="field"><label>Kategori</label>
+                <input type="hidden" class="biaya-kategori-val" value="tenaga_harian"/>
+                <div class="cat-picker-wrap">
+                  <button type="button" class="cat-picker-btn" onclick="openCatPicker(this)">
+                    <span class="cpb-icon">👷</span>
+                    <span class="cpb-label">Tenaga Harian / Lembur</span>
+                    <span class="cpb-arrow">▼</span>
+                  </button>
+                </div>
+              </div>
+              <div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>
+              <div class="field"><label>Jumlah (Rp)</label><input type="number" min="0" step="1000" placeholder="0" oninput="calcTotalBiaya()"/></div>
+              <div style="display:flex;align-items:flex-end">
+                <button class="btn-del" onclick="removeBiayaRow(this)">✕</button>
+              </div>
+            </div>
+          </div>
+          <button class="btn-add" onclick="addBiayaRow()">＋ Tambah Biaya</button>
+          <div class="row" style="margin-top:14px">
+            <div class="field">
+              <label>Total Biaya Operasional</label>
+              <input type="text" id="total_biaya" readonly style="font-size:1rem;font-weight:700;color:#dc2626"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="save-bar">
+        <button class="btn-save" onclick="saveBiayaData()">💾 Simpan Biaya</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="num">📊</div><h2>Rekap Biaya Bulanan</h2></div>
+        <div class="card-body">
+          <div class="row" style="margin-bottom:14px">
+            <div class="field">
+              <label>Bulan</label>
+              <input type="month" id="biaya-bulan"/>
+            </div>
+            <div class="field">
+              <label>Kandang</label>
+              <select id="biaya-rekap-kandang"><option value="">Semua Kandang</option></select>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:8px">
+              <button class="btn-primary" onclick="loadRekapBiaya()">📊 Tampilkan</button>
+              <button class="btn-export" onclick="exportRekapBiaya()">⬇️ Download</button>
+            </div>
+          </div>
+          <div id="rekap-biaya-result"></div>
         </div>
       </div>
 
@@ -1075,6 +1113,7 @@
     <button class="nav-item active" id="nav-home" onclick="switchPage('home')"><span class="ni">🏡</span>Home</button>
     <button class="nav-item" id="nav-input" onclick="switchPage('input')"><span class="ni">📋</span>Input</button>
     <button class="nav-item" id="nav-penjualan" onclick="switchPage('penjualan')"><span class="ni">🥚</span>Jual</button>
+    <button class="nav-item" id="nav-biaya" onclick="switchPage('biaya')"><span class="ni">💰</span>Biaya</button>
     <button class="nav-item" id="nav-gudang" onclick="switchPage('gudang')"><span class="ni">📦</span>Gudang</button>
     <button class="nav-item" id="nav-laporan" onclick="switchPage('laporan')"><span class="ni">📊</span>Laporan</button>
     <button class="nav-item" id="nav-riwayat" onclick="switchPage('riwayat')"><span class="ni">🗂️</span>Riwayat</button>
@@ -1401,6 +1440,8 @@ function can(p){
 function applyRoleRestrictions(){
   const nj=document.getElementById('nav-penjualan');
   if(nj)nj.style.display=can('JUAL')?'':'none';
+  const nb=document.getElementById('nav-biaya');
+  if(nb)nb.style.display=can('BIAYA')?'':'none';
   const hp=document.getElementById('hs-penjualan')?.closest('.stat-card');
   if(hp)hp.style.display=can('KEUANGAN')?'':'none';
   const hk=document.getElementById('hs-kas-card');
@@ -1477,6 +1518,7 @@ function togglePwField(id){const i=document.getElementById(id);i.type=i.type==='
 // ═══ NAVIGATION ═══
 function switchPage(name){
   if(name==='penjualan'&&!can('JUAL')){showToast('Tidak ada akses ke halaman Penjualan');return;}
+  if(name==='biaya'&&!can('BIAYA')){showToast('Tidak ada akses ke halaman Biaya Operasional');return;}
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -1485,6 +1527,7 @@ function switchPage(name){
   if(name==='settings')renderSettings();
   if(name==='gudang')renderGudang();
   if(name==='penjualan'){renderStokTelur();renderRiwayatJual();}
+  if(name==='biaya'){initBiayaPage();}
   if(name==='riwayat')renderRiwayat();
   if(name==='laporan'){populateLaporanKandang();renderLaporan();}
 }
@@ -1497,7 +1540,6 @@ async function initApp(){
   await populateAllPakanSelects();
   updatePeriodBar();
   calcSisa();calcSaleTotal();
-  initBiayaAccess();
   renderHome();
 }
 
@@ -1671,8 +1713,7 @@ function collectInputData(){
       obat:[...document.querySelectorAll('#tags_obat .tag')].map(t=>t.childNodes[0].textContent.trim()),
       vaksin:[...document.querySelectorAll('#tags_vaksin .tag')].map(t=>t.childNodes[0].textContent.trim())
     },
-    catatan:document.getElementById('catatan').value,
-    biaya_ops:canInputBiaya()?getBiayaRows():[]
+    catatan:document.getElementById('catatan').value
   };
 }
 
@@ -1743,16 +1784,53 @@ async function confirmTimpa(){
 async function doSaveInput(data){
   showToast('⏳ Menyimpan...');
   try{
-    // Ambil data lama untuk log jika ini adalah edit
-    let dataLama=null;
-    if(_editRowId){
-      const rows=await dbGetInput({tanggal:data.tanggal,kandang:data.kandang});
-      if(rows&&rows.length>0) dataLama=rows[0].data;
+    // Ambil data lama — untuk log DAN untuk merge
+    const existingRows=await dbGetInput({tanggal:data.tanggal,kandang:data.kandang});
+    const dataLama=existingRows&&existingRows.length>0?existingRows[0].data:null;
+
+    // Helper
+    const hasVal=v=>v!==null&&v!==undefined&&v!==''&&v!=='0'&&parseFloat(v)!==0;
+    const hasArr=a=>Array.isArray(a)&&a.length>0;
+    const jsonEq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+
+    let mergedData=data;
+    if(dataLama){
+      if(_editRowId){
+        // ── MODE AUDIT/EDIT: hanya timpa field yang benar-benar berubah dari data lama ──
+        const deplesi=!jsonEq(data.deplesi,dataLama.deplesi)?data.deplesi:dataLama.deplesi;
+        const sisa_ayam=data.sisa_ayam!==dataLama.sisa_ayam?data.sisa_ayam:dataLama.sisa_ayam;
+        const pct_deplesi=data.pct_deplesi!==dataLama.pct_deplesi?data.pct_deplesi:dataLama.pct_deplesi;
+        const pakan=!jsonEq(data.pakan,dataLama.pakan)?data.pakan:dataLama.pakan;
+        const air_liter=data.air_liter!==dataLama.air_liter?data.air_liter:dataLama.air_liter;
+        const produksi=!jsonEq(data.produksi,dataLama.produksi)?data.produksi:dataLama.produksi;
+        const kesehatan=!jsonEq(data.kesehatan,dataLama.kesehatan)?data.kesehatan:dataLama.kesehatan;
+        const catatan=data.catatan!==dataLama.catatan?data.catatan:dataLama.catatan;
+        mergedData={...dataLama,tanggal:data.tanggal,kandang:data.kandang,user:data.user,
+          deplesi,sisa_ayam,pct_deplesi,pakan,air_liter,produksi,kesehatan,catatan};
+      } else {
+        // ── MODE INPUT BARU (data sudah ada dari user lain): merge independen per-field ──
+        const deplesi=(hasVal(data.deplesi?.mati)||hasVal(data.deplesi?.afkir))
+          ?data.deplesi:dataLama.deplesi;
+        const prodAda=hasVal(data.produksi?.total?.butir)||hasVal(data.produksi?.total?.kilo);
+        const produksi=prodAda?data.produksi:dataLama.produksi;
+        const sisa_ayam=(hasVal(data.deplesi?.mati)||hasVal(data.deplesi?.afkir))
+          ?data.sisa_ayam:dataLama.sisa_ayam;
+        const pct_deplesi=(hasVal(data.deplesi?.mati)||hasVal(data.deplesi?.afkir))
+          ?data.pct_deplesi:dataLama.pct_deplesi;
+        const pakan=hasArr(data.pakan)?data.pakan:dataLama.pakan;
+        const air_liter=hasVal(data.air_liter)?data.air_liter:dataLama.air_liter;
+        const kesAda=hasArr(data.kesehatan?.vitamin)||hasArr(data.kesehatan?.obat)||hasArr(data.kesehatan?.vaksin);
+        const kesehatan=kesAda?data.kesehatan:dataLama.kesehatan;
+        const catatan=data.catatan||dataLama.catatan||'';
+        mergedData={...dataLama,tanggal:data.tanggal,kandang:data.kandang,user:data.user,
+          deplesi,sisa_ayam,pct_deplesi,pakan,air_liter,produksi,kesehatan,catatan};
+      }
     }
-    await dbSaveInput(data.tanggal,data.kandang,data);
+
+    await dbSaveInput(data.tanggal,data.kandang,mergedData);
     // Catat activity log
     const aksi=dataLama?'EDIT':'TAMBAH';
-    await dbSaveLog(aksi,'input_harian',_editRowId||null,dataLama,data,
+    await dbSaveLog(aksi,'input_harian',_editRowId||null,dataLama,mergedData,
       `${aksi} data harian ${data.tanggal} kandang ${data.kandang}`);
     _editRowId=null;
     showToast('✅ Data harian disimpan!');
@@ -2692,14 +2770,6 @@ function canInputBiaya(){
   return currentUser&&BIAYA_ROLES.includes(currentUser.role);
 }
 
-function initBiayaAccess(){
-  const can=canInputBiaya();
-  document.getElementById('biaya-noaccess').style.display=can?'none':'block';
-  document.getElementById('biaya-section').style.display=can?'block':'none';
-  const note=document.getElementById('biaya-role-note');
-  note.textContent=can?'('+currentUser.role+')':'(Supervisor/Manajer/Admin)';
-  if(can)calcTotalBiaya();
-}
 
 // ═══ CATEGORY PICKER ═══
 let _catPickerTarget=null;
@@ -2790,15 +2860,18 @@ function makeCatPickerHTML(defaultVal='tenaga_harian'){
     </div>`;
 }
 
+function buildBiayaRowHTML(kategori='tenaga_harian'){
+  return '<div class="field"><label>Kategori</label>'+makeCatPickerHTML(kategori)+'</div>'+
+    '<div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>'+
+    '<div class="field"><label>Jumlah (Rp)</label><input type="number" min="0" step="1000" placeholder="0" oninput="calcTotalBiaya()"/></div>'+
+    '<div style="display:flex;align-items:flex-end"><button class="btn-del" onclick="removeBiayaRow(this)">✕</button></div>';
+}
+
 function addBiayaRow(){
   const list=document.getElementById('biaya-list');
   const row=document.createElement('div');
   row.className='row biaya-row';
-  row.innerHTML=
-    '<div class="field"><label>Kategori</label>'+makeCatPickerHTML()+'</div>'+
-    '<div class="field" style="flex:2"><label>Keterangan</label><input type="text" placeholder="Mis. Gaji harian, BBM genset, dll."/></div>'+
-    '<div class="field"><label>Jumlah (Rp)</label><input type="number" min="0" step="1000" placeholder="0" oninput="calcTotalBiaya()"/></div>'+
-    '<div style="display:flex;align-items:flex-end"><button class="btn-del" onclick="removeBiayaRow(this)">✕</button></div>';
+  row.innerHTML=buildBiayaRowHTML();
   list.appendChild(row);
 }
 
@@ -2836,6 +2909,113 @@ function resetBiayaRows(){
     if(btn){btn.querySelector('.cpb-icon').textContent='👷';btn.querySelector('.cpb-label').textContent='Tenaga Harian / Lembur';}
   }
   calcTotalBiaya();
+}
+
+// ═══ BIAYA OPERASIONAL PAGE ═══
+async function saveBiayaData(){
+  const tanggal=document.getElementById('biaya-tanggal').value;
+  const kandang=document.getElementById('biaya-kandang').value;
+  if(!tanggal){showToast('⚠️ Pilih tanggal!');return;}
+  const biayaRows=getBiayaRows();
+  if(biayaRows.length===0){showToast('⚠️ Tambahkan minimal 1 biaya!');return;}
+  showToast('⏳ Menyimpan...');
+  try{
+    for(const b of biayaRows){
+      await dbSaveKas({
+        tanggal,
+        jenis:'keluar',
+        kategori:b.kategori||'lainnya',
+        jumlah:b.jumlah,
+        keterangan:b.ket,
+        kandang:kandang||null,
+        user_input:currentUser?.username||''
+      });
+    }
+    showToast('✅ Biaya operasional disimpan!');
+    resetBiayaRows();
+    document.getElementById('biaya-tanggal').value=new Date().toISOString().split('T')[0];
+  }catch(e){showToast('❌ Gagal: '+e.message);}
+}
+
+async function loadRekapBiaya(){
+  const bulan=document.getElementById('biaya-bulan').value;
+  const kandang=document.getElementById('biaya-rekap-kandang').value;
+  if(!bulan){showToast('⚠️ Pilih bulan!');return;}
+  const[tahun,bln]=bulan.split('-');
+  const dari=`${tahun}-${bln}-01`;
+  const sampai=`${tahun}-${bln}-${new Date(tahun,bln,0).getDate()}`;
+  showToast('⏳ Memuat rekap...');
+  try{
+    const list=await dbGetKas({dari,sampai,kandang:kandang||undefined});
+    const keluar=list.filter(k=>k.jenis==='keluar');
+    if(keluar.length===0){
+      document.getElementById('rekap-biaya-result').innerHTML='<div class="info-box">Tidak ada data biaya untuk periode ini.</div>';
+      return;
+    }
+    // Group by kategori
+    const byKat={};
+    keluar.forEach(k=>{
+      const kat=k.kategori||'lainnya';
+      if(!byKat[kat])byKat[kat]={total:0,items:[]};
+      byKat[kat].total+=parseFloat(k.jumlah)||0;
+      byKat[kat].items.push(k);
+    });
+    const total=keluar.reduce((s,k)=>s+(parseFloat(k.jumlah)||0),0);
+    let html='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Kategori</th><th>Jumlah (Rp)</th><th>%</th></tr></thead><tbody>';
+    Object.keys(byKat).forEach(kat=>{
+      const pct=((byKat[kat].total/total)*100).toFixed(1);
+      html+=`<tr><td>${esc(kat)}</td><td>Rp ${byKat[kat].total.toLocaleString('id-ID')}</td><td>${pct}%</td></tr>`;
+    });
+    html+=`<tr style="font-weight:700;background:#f0fdf4"><td>TOTAL</td><td>Rp ${total.toLocaleString('id-ID')}</td><td>100%</td></tr>`;
+    html+='</tbody></table></div>';
+    document.getElementById('rekap-biaya-result').innerHTML=html;
+    showToast('✅ Rekap dimuat!');
+  }catch(e){showToast('❌ Gagal: '+e.message);}
+}
+
+async function exportRekapBiaya(){
+  const bulan=document.getElementById('biaya-bulan').value;
+  const kandang=document.getElementById('biaya-rekap-kandang').value;
+  if(!bulan){showToast('⚠️ Pilih bulan!');return;}
+  const[tahun,bln]=bulan.split('-');
+  const dari=`${tahun}-${bln}-01`;
+  const sampai=`${tahun}-${bln}-${new Date(tahun,bln,0).getDate()}`;
+  showToast('⏳ Mengekspor...');
+  try{
+    const list=await dbGetKas({dari,sampai,kandang:kandang||undefined});
+    const keluar=list.filter(k=>k.jenis==='keluar');
+    if(keluar.length===0){showToast('⚠️ Tidak ada data untuk diekspor');return;}
+    let csv='Tanggal,Kategori,Keterangan,Kandang,Jumlah (Rp)\n';
+    keluar.forEach(k=>{
+      csv+=`${k.tanggal},${k.kategori||''},${k.keterangan||''},${k.kandang||''},${k.jumlah}\n`;
+    });
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`Biaya_Operasional_${bulan}${kandang?'_'+kandang:''}.csv`;
+    a.click();
+    showToast('✅ File CSV didownload!');
+  }catch(e){showToast('❌ Gagal: '+e.message);}
+}
+
+function initBiayaPage(){
+  if(!document.getElementById('biaya-tanggal').value)
+    document.getElementById('biaya-tanggal').value=new Date().toISOString().split('T')[0];
+  if(!document.getElementById('biaya-bulan').value)
+    document.getElementById('biaya-bulan').value=new Date().toISOString().slice(0,7);
+  populateBiayaKandang();
+}
+
+async function populateBiayaKandang(){
+  const list=cache.get('kandang_list')||await dbGetKandang();
+  ['biaya-kandang','biaya-rekap-kandang'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const prev=sel.value;
+    sel.innerHTML='<option value="">Semua Kandang</option>';
+    list.forEach(k=>sel.innerHTML+=`<option value="${esc(k.nama)}">${esc(k.nama)}</option>`);
+    if(prev)sel.value=prev;
+  });
 }
 
 // ═══ RIWAYAT ═══
@@ -3013,7 +3193,37 @@ function _loadEditToForm(d,id){
     document.getElementById('p_retak_butir').value=d.produksi?d.produksi.retak.butir:0;
     document.getElementById('p_retak_kilo').value=d.produksi?d.produksi.retak.kilo:0;
     document.getElementById('catatan').value=d.catatan||'';
-    updatePeriodBar();calcSisa();
+
+    // Load pakan rows
+    const pakanList=document.getElementById('pakan-list');
+    pakanList.innerHTML=''; // clear existing
+    if(d.pakan&&d.pakan.length>0){
+      d.pakan.forEach(p=>{
+        const row=document.createElement('div');row.className='row pakan-row';
+        row.innerHTML='<div class="field"><label>Kode Pakan</label><select class="pakan-select" style="border:1.5px solid #e2e8f0;border-radius:7px;padding:8px 10px;font-size:.9rem;width:100%;background:#fff"><option value="">-- Pilih Pakan --</option></select></div><div class="field"><label>Jumlah (kg)</label><input type="number" min="0" step="0.1" placeholder="0" oninput="calcAir()"/></div><div style="display:flex;align-items:flex-end"><button class="btn-del" onclick="removeRow(this,\'pakan-list\',\'pakan-row\')">✕</button></div>';
+        pakanList.appendChild(row);
+        populatePakanSelect(row.querySelector('.pakan-select'));
+        row.querySelector('.pakan-select').value=p.kode||'';
+        row.querySelector('input[type="number"]').value=p.jumlah||0;
+      });
+    } else {
+      addPakan(); // minimal 1 row kosong
+    }
+
+    // Load kesehatan tags
+    ['vitamin','obat','vaksin'].forEach(t=>{
+      const container=document.getElementById('tags_'+t);
+      container.innerHTML='';
+      if(d.kesehatan&&d.kesehatan[t]){
+        d.kesehatan[t].forEach(val=>{
+          const tag=document.createElement('div');tag.className='tag';
+          tag.innerHTML=val+' <button onclick="this.parentElement.remove()" title="Hapus">×</button>';
+          container.appendChild(tag);
+        });
+      }
+    });
+
+    updatePeriodBar();calcSisa();calcAir();calcProduksi();
     showToast('📝 Data dimuat untuk diedit. Simpan kembali setelah selesai.');
   },200);
 }
