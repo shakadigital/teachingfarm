@@ -3124,19 +3124,24 @@ function initBiayaPage(){
 }
 
 async function populateBiayaKandang(){
-  const list=cache.get('kandang_list')||await dbGetKandang();
-  ['biaya-kandang','biaya-rekap-kandang'].forEach(id=>{
-    const sel=document.getElementById(id);
-    const prev=sel.value;
-    sel.innerHTML='<option value="">Semua Kandang</option>';
-    list.forEach(k=>sel.innerHTML+=`<option value="${esc(k.nama)}">${esc(k.nama)}</option>`);
-    if(prev)sel.value=prev;
-  });
-  // Add event listener untuk update saldo saat kandang berubah
-  const selKandang=document.getElementById('biaya-kandang');
-  if(selKandang&&!selKandang.dataset.listenerAdded){
-    selKandang.addEventListener('change',()=>renderKasSaldo());
-    selKandang.dataset.listenerAdded='true';
+  try{
+    const list=cache.get('kandang_list')||await dbGetKandang();
+    ['biaya-kandang','biaya-rekap-kandang'].forEach(id=>{
+      const sel=document.getElementById(id);
+      if(!sel)return;
+      const prev=sel.value;
+      sel.innerHTML='<option value="">Semua Kandang</option>';
+      list.forEach(k=>sel.innerHTML+=`<option value="${esc(k.nama)}">${esc(k.nama)}</option>`);
+      if(prev)sel.value=prev;
+    });
+    // Add event listener untuk update saldo saat kandang berubah
+    const selKandang=document.getElementById('biaya-kandang');
+    if(selKandang&&!selKandang.dataset.listenerAdded){
+      selKandang.addEventListener('change',()=>renderKasSaldo());
+      selKandang.dataset.listenerAdded='true';
+    }
+  }catch(e){
+    console.error('populateBiayaKandang error:',e);
   }
 }
 
