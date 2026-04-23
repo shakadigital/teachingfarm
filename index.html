@@ -91,7 +91,7 @@
     .settings-menu button:active{background:#e8e8e8;}
     .settings-menu button span{display:inline-block;}
 
-    /* BOTTOM NAV — 5 items */
+    /* BOTTOM NAV — 7 items */
     .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;display:flex;z-index:150;box-shadow:0 -2px 8px rgba(0,0,0,.06);}
     .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 2px 6px;cursor:pointer;border:none;background:none;color:#999;font-size:.6rem;gap:2px;transition:color .15s;}
     .nav-item .ni{font-size:1.25rem;line-height:1;}
@@ -503,6 +503,9 @@
       <div class="settings-dropdown">
         <button class="settings-btn" onclick="toggleSettings()" title="Pengaturan">⚙️</button>
         <div class="settings-menu" id="settings-menu">
+          <button onclick="switchPage('settings');toggleSettings()">
+            <span>⚙️</span> <span>Kandang & User</span>
+          </button>
           <button onclick="toggleDark();toggleSettings()">
             <span id="dark-icon">🌙</span> <span id="dark-text">Mode Gelap</span>
           </button>
@@ -1163,7 +1166,6 @@
     <button class="nav-item" id="nav-gudang" onclick="switchPage('gudang')"><span class="ni">📦</span>Gudang</button>
     <button class="nav-item" id="nav-laporan" onclick="switchPage('laporan')"><span class="ni">📊</span>Laporan</button>
     <button class="nav-item" id="nav-riwayat" onclick="switchPage('riwayat')"><span class="ni">🗂️</span>Riwayat</button>
-    <button class="nav-item" id="nav-settings" onclick="switchPage('settings')"><span class="ni">⚙️</span>Atur</button>
   </nav>
 </div>
 
@@ -3904,7 +3906,7 @@ function applyLang(){
   const btn=document.getElementById('btn-lang');
   if(btn)btn.textContent=currentLang==='id'?'EN':'ID';
   // Nav labels
-  const navMap={home:'Home',input:'Input',penjualan:L.jual,gudang:L.gudang,laporan:L.laporan,riwayat:L.riwayat,settings:L.atur};
+  const navMap={home:'Home',input:'Input',penjualan:L.jual,biaya:'Biaya',gudang:L.gudang,laporan:L.laporan,riwayat:L.riwayat};
   Object.entries(navMap).forEach(([id,label])=>{
     const el=document.getElementById('nav-'+id);
     if(el)el.childNodes[el.childNodes.length-1].textContent=label;
