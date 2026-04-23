@@ -1,15 +1,16 @@
 {
-  "name": "Teaching Farm UB",
-  "short_name": "TeachingFarm",
-  "description": "Sistem Manajemen Terpadu Peternakan Ayam Petelur - Teaching Farm UB",
+  "name": "Teaching Farm UB V2.0",
+  "short_name": "TeachingFarm V2.0",
+  "description": "Sistem Manajemen Terpadu Peternakan Ayam Petelur - Teaching Farm UB V2.0 dengan fitur Offline, Mobile UX, dan Real-time Updates",
+  "version": "2.0.0",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#000000",
+  "background_color": "#2d6a4f",
   "theme_color": "#2d6a4f",
   "lang": "id",
-  "categories": ["productivity", "utilities"],
+  "categories": ["productivity", "utilities", "business"],
   "icons": [
     {
       "src": "icon/icon-96.png",
@@ -46,16 +47,39 @@
     {
       "name": "Input Harian",
       "short_name": "Input",
-      "description": "Input data harian kandang",
+      "description": "Input data harian kandang dengan mode offline",
       "url": "/index.html#input",
       "icons": [{ "src": "icon/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Laporan",
       "short_name": "Laporan",
-      "description": "Lihat laporan produksi",
+      "description": "Lihat laporan produksi real-time",
       "url": "/index.html#laporan",
       "icons": [{ "src": "icon/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Penjualan",
+      "short_name": "Penjualan",
+      "description": "Catat penjualan dengan sync otomatis",
+      "url": "/index.html#penjualan",
+      "icons": [{ "src": "icon/icon-192.png", "sizes": "192x192" }]
     }
+  ],
+  "screenshots": [
+    {
+      "src": "icon/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Teaching Farm UB V2.0 Dashboard"
+    }
+  ],
+  "features": [
+    "offline-support",
+    "real-time-updates", 
+    "mobile-gestures",
+    "haptic-feedback",
+    "pull-to-refresh"
   ]
 }

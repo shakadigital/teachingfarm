@@ -1,7 +1,14 @@
-const CACHE_NAME = 'teachingfarm-v2.1';
+const CACHE_NAME = 'teachingfarm-v2.4';
 const STATIC_ASSETS = [
   '/index.html',
   '/supabase.js',
+  '/offline-db.js',
+  '/offline-manager.js',
+  '/mobile-gestures.js',
+  '/pull-to-refresh.js',
+  '/mobile-forms.js',
+  '/realtime-manager.js',
+  '/install-prompt.js',
   '/manifest.json',
   '/icon/favicon.ico',
   '/icon/icon.svg',
