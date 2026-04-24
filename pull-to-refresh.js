@@ -132,45 +132,27 @@ class PullToRefresh {
     const icon = this.refreshElement.querySelector('.ptr-icon');
     const text = this.refreshElement.querySelector('.ptr-text');
     
-    // Show refreshing state
     icon.innerHTML = '<div class="spinner-small"></div>';
     text.textContent = 'Memuat ulang...';
     this.refreshElement.style.transform = 'translateY(0px)';
     
-    // Add haptic feedback
-    if (window.hapticFeedback) {
-      window.hapticFeedback('medium');
-    }
+    if (window.hapticFeedback) window.hapticFeedback('medium');
 
     try {
-      // Determine current page and refresh accordingly
       const currentPage = this.getCurrentPage();
       await this.refreshCurrentPage(currentPage);
-      
-      // Show success feedback
       icon.textContent = '✓';
       text.textContent = 'Berhasil dimuat ulang';
-      
-      if (window.hapticFeedback) {
-        window.hapticFeedback('success');
-      }
-      
+      if (window.hapticFeedback) window.hapticFeedback('success');
     } catch (error) {
       console.error('Refresh failed:', error);
-      
-      // Show error feedback
       icon.textContent = '✗';
       text.textContent = 'Gagal memuat ulang';
-      
-      if (window.hapticFeedback) {
-        window.hapticFeedback('error');
-      }
+      if (window.hapticFeedback) window.hapticFeedback('error');
+    } finally {
+      this.isRefreshing = false;
+      setTimeout(() => this.resetPull(), 1000);
     }
-
-    // Hide refresh indicator after delay
-    setTimeout(() => {
-      this.resetPull();
-    }, 1000);
   }
 
   async refreshCurrentPage(page) {
@@ -209,7 +191,7 @@ class PullToRefresh {
     }
 
     // Also trigger offline sync if available
-    if (window.offlineManager && window.offlineManager.checkAndSyncIfNeeded) {
+    if (window.offlineManager && window.offlineManager.checkAndSyncIfNeeded && !window.offlineManager.syncInProgress) {
       await window.offlineManager.checkAndSyncIfNeeded();
     }
   }

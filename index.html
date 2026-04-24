@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <meta name="theme-color" content="#2d6a4f"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -97,7 +97,7 @@
     .shaka-brand span{color:#fff;font-size:.7rem;font-weight:600;letter-spacing:.03em;text-shadow:0 1px 3px rgba(0,0,0,.4);}
 
     /* APP SHELL */
-    #app{display:none;min-height:100vh;padding-bottom:60px;}
+    #app{display:none;min-height:100vh;padding-bottom:calc(60px + env(safe-area-inset-bottom, 0px));}
     header{background:linear-gradient(135deg,#2d6a4f,#40916c);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
     .hdr-left{display:flex;align-items:center;gap:10px;}
     header h1{font-size:1.05rem;font-weight:700;}
@@ -646,8 +646,6 @@
     .field input.mobile-focused, .field textarea.mobile-focused, .field select.mobile-focused {
       border-color: #40916c;
       box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.1);
-      transform: scale(1.02);
-      transition: all 0.2s ease;
     }
     
     .field input.valid {

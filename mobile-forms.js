@@ -115,54 +115,42 @@ class MobileFormsUX {
 
   addSwipeToCloseModal(modalOverlay) {
     let startY = 0;
-    let currentY = 0;
     let isDragging = false;
     
     const modal = modalOverlay.querySelector('.modal');
     if (!modal) return;
 
-    modal.addEventListener('touchstart', (e) => {
+    // Only allow swipe-to-close from modal header
+    const header = modal.querySelector('.modal-header');
+    const dragHandle = header || modal;
+
+    dragHandle.addEventListener('touchstart', (e) => {
       startY = e.touches[0].clientY;
       isDragging = false;
     }, { passive: true });
 
-    modal.addEventListener('touchmove', (e) => {
+    dragHandle.addEventListener('touchmove', (e) => {
       if (startY === 0) return;
-      
-      currentY = e.touches[0].clientY;
-      const deltaY = currentY - startY;
-      
-      // Only allow downward swipe from top of modal
-      if (deltaY > 0 && modal.scrollTop === 0) {
+      const deltaY = e.touches[0].clientY - startY;
+      if (deltaY > 10) {
         isDragging = true;
-        modal.style.transform = `translateY(${Math.min(deltaY * 0.5, 100)}px)`;
-        modal.style.opacity = Math.max(1 - (deltaY / 300), 0.5);
+        modal.style.transform = `translateY(${Math.min(deltaY * 0.4, 80)}px)`;
+        modal.style.opacity = String(Math.max(1 - deltaY / 300, 0.6));
       }
     }, { passive: true });
 
-    modal.addEventListener('touchend', (e) => {
-      if (!isDragging) return;
-      
-      const deltaY = currentY - startY;
-      
-      if (deltaY > 100) {
-        // Close modal
+    dragHandle.addEventListener('touchend', (e) => {
+      if (!isDragging) { startY = 0; return; }
+      const deltaY = e.changedTouches[0].clientY - startY;
+      if (deltaY > 80) {
         const modalId = modalOverlay.id;
-        if (typeof closeModal === 'function') {
-          closeModal(modalId);
-        }
-        
-        if (window.hapticFeedback) {
-          window.hapticFeedback('medium');
-        }
+        if (typeof closeModal === 'function') closeModal(modalId);
+        if (window.hapticFeedback) window.hapticFeedback('medium');
       } else {
-        // Snap back
-        modal.style.transform = 'translateY(0)';
-        modal.style.opacity = '1';
+        modal.style.transform = '';
+        modal.style.opacity = '';
       }
-      
       startY = 0;
-      currentY = 0;
       isDragging = false;
     }, { passive: true });
   }
@@ -174,31 +162,6 @@ class MobileFormsUX {
     // Add mobile-specific classes
     if (window.innerWidth <= 768) {
       modal.classList.add('mobile-modal');
-    }
-
-    // Handle keyboard appearance on mobile
-    window.addEventListener('resize', () => {
-      if (modalOverlay.style.display !== 'none') {
-        this.adjustModalForKeyboard(modal);
-      }
-    });
-  }
-
-  adjustModalForKeyboard(modal) {
-    // Adjust modal position when keyboard appears
-    const viewportHeight = window.visualViewport?.height || window.innerHeight;
-    const windowHeight = window.innerHeight;
-    
-    if (viewportHeight < windowHeight * 0.75) {
-      // Keyboard is likely open
-      modal.style.maxHeight = `${viewportHeight - 40}px`;
-      modal.style.top = '20px';
-      modal.style.transform = 'translateX(-50%)';
-    } else {
-      // Keyboard is closed
-      modal.style.maxHeight = 'calc(100vh - 40px)';
-      modal.style.top = '50%';
-      modal.style.transform = 'translate(-50%, -50%)';
     }
   }
 

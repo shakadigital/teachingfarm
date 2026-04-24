@@ -197,27 +197,29 @@ class MobileGestures {
   }
 
   observePageChanges() {
-    // Tunggu DOM siap sebelum observe
-    const startObserving = () => {
-      if (!document.body) return;
-      const observer = new MutationObserver(() => {
-        const activePage = document.querySelector('.page.active');
-        if (activePage) {
-          this.currentPage = activePage.id.replace('page-', '');
-        }
-      });
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['class']
-      });
+    // Update current page saat switchPage dipanggil
+    // Lebih ringan dari MutationObserver pada seluruh body
+    const updatePage = () => {
+      const activePage = document.querySelector('.page.active');
+      if (activePage) {
+        this.currentPage = activePage.id.replace('page-', '');
+      }
     };
 
+    // Patch switchPage untuk update currentPage
+    const origSwitchPage = window.switchPage;
+    if (typeof origSwitchPage === 'function') {
+      window.switchPage = (name) => {
+        origSwitchPage(name);
+        this.currentPage = name;
+      };
+    }
+
+    // Fallback: cek saat DOMContentLoaded
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', startObserving);
+      document.addEventListener('DOMContentLoaded', updatePage);
     } else {
-      startObserving();
+      updatePage();
     }
   }
 

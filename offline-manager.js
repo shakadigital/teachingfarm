@@ -58,17 +58,24 @@ class OfflineManager {
   // Handle app visibility changes (mobile-friendly)
   handleVisibilityChange() {
     if (!document.hidden && this.isOnline) {
-      // App became visible and we're online - check for pending sync
-      this.checkAndSyncIfNeeded();
+      this._debouncedSyncCheck();
     }
   }
 
   // Handle app focus (desktop/mobile)
   handleAppFocus() {
     if (this.isOnline) {
-      // App got focus and we're online - check for pending sync
-      setTimeout(() => this.checkAndSyncIfNeeded(), 500);
+      this._debouncedSyncCheck();
     }
+  }
+
+  // Debounced sync check — max 1x per 10 detik
+  _debouncedSyncCheck() {
+    if (this._syncCheckTimer) clearTimeout(this._syncCheckTimer);
+    this._syncCheckTimer = setTimeout(() => {
+      this._syncCheckTimer = null;
+      this.checkAndSyncIfNeeded();
+    }, 10000);
   }
 
   // Handle app blur (stop unnecessary operations)
