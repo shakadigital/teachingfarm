@@ -1824,7 +1824,7 @@
             <div class="card-body">
               <div style="overflow-x:auto">
                 <table class="tbl">
-                  <thead><tr><th>Kode</th><th>Nama Supplier</th><th>Kategori</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
+                  <thead><tr><th>Kode</th><th>Nama Supplier</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
                   <tbody id="m-supplier-tbody"></tbody>
                 </table>
               </div>
@@ -6243,13 +6243,11 @@ async function renderMasterSupplier(){
   tbody.innerHTML = '';
   if(!list.length){ empty.style.display='block'; return; }
   empty.style.display = 'none';
-  const katBadge = {pakan:'badge-green',vitamin:'badge-blue',obat:'badge-orange',vaksin:'badge-red',umum:'badge-gray'};
   list.forEach(s=>{
     const tr = document.createElement('tr');
     tr.innerHTML =
       `<td><span class="badge badge-gray" style="font-family:monospace">${esc(s.kode)}</span></td>`+
       `<td><strong>${esc(s.nama)}</strong></td>`+
-      `<td><span class="badge ${katBadge[s.kategori]||'badge-gray'}">${esc(s.kategori)}</span></td>`+
       `<td>${esc(s.telepon||'—')}</td>`+
       `<td><span class="badge ${s.active===false?'badge-gray':'badge-green'}">${s.active===false?'Nonaktif':'Aktif'}</span></td>`+
       `<td>`+
@@ -6346,16 +6344,6 @@ const MASTER_FORMS = {
     <div class="field" style="margin-bottom:12px">
       <label>Nama Supplier <span style="color:#dc2626">*</span></label>
       <input type="text" id="mf-nama" value="${esc(d.nama||'')}" placeholder="Nama perusahaan/toko"/>
-    </div>
-    <div class="field" style="margin-bottom:12px">
-      <label>Kategori <span style="color:#dc2626">*</span></label>
-      <select id="mf-kategori">
-        <option value="pakan"   ${d.kategori==='pakan'  ?'selected':''}>🌾 Pakan</option>
-        <option value="vitamin" ${d.kategori==='vitamin'?'selected':''}>💊 Vitamin</option>
-        <option value="obat"    ${d.kategori==='obat'   ?'selected':''}>🩺 Obat</option>
-        <option value="vaksin"  ${d.kategori==='vaksin' ?'selected':''}>💉 Vaksin</option>
-        <option value="umum"    ${d.kategori==='umum'   ?'selected':''}>📦 Umum</option>
-      </select>
     </div>
     <div class="row">
       <div class="field">
@@ -6505,9 +6493,6 @@ async function saveMasterData(){
     obj.satuan      = document.getElementById('mf-satuan')?.value || 'kg';
     obj.stok_minimal= parseFloat(document.getElementById('mf-stok-min')?.value)||0;
   } else if(type === 'supplier'){
-    const kat = document.getElementById('mf-kategori')?.value;
-    if(!kat){showToast('⚠️ Kategori wajib dipilih!');return;}
-    obj.kategori = kat;
     obj.telepon  = document.getElementById('mf-telepon')?.value.trim()||null;
     obj.alamat   = document.getElementById('mf-alamat')?.value.trim()||null;
   } else if(type === 'pelanggan'){
