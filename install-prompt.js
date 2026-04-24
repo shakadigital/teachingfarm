@@ -2,7 +2,7 @@
 // INSTALL PROMPT - Teaching Farm UB V2.0
 // ═══════════════════════════════════════════════════
 
-const APP_VERSION = '2.5'; // Naikkan ini setiap ada update besar
+const APP_VERSION = '2.8'; // Naikkan ini setiap ada update besar
 
 class InstallPrompt {
   constructor() {
@@ -184,12 +184,12 @@ class InstallPrompt {
             <p>Fitur baru yang tersedia:</p>
           </div>
           <div class="version-features">
-            <div class="version-feature">📱 Mode Offline — Input data tanpa internet</div>
-            <div class="version-feature">👆 Swipe Navigation — Navigasi dengan gestur</div>
-            <div class="version-feature">🔄 Pull-to-Refresh — Tarik untuk refresh</div>
-            <div class="version-feature">📳 Haptic Feedback — Getaran konfirmasi</div>
-            <div class="version-feature">⚡ Real-time Updates — Data live update</div>
-            <div class="version-feature">🗃️ Master Data — Kelola data referensi</div>
+            <div class="version-feature">🐛 Fix bug crash stok telur pada data lama</div>
+            <div class="version-feature">🔢 Fix jumlah pakan tersimpan sebagai teks, bukan angka</div>
+            <div class="version-feature">🔒 Fix mode edit tidak ter-reset setelah simpan/reset form</div>
+            <div class="version-feature">🔔 Hapus notifikasi berulang saat form belum diisi</div>
+            <div class="version-feature">🗄️ Fix IndexedDB error loop saat app dapat fokus</div>
+            <div class="version-feature">✨ Form input lebih natural — scroll otomatis tanpa gangguan</div>
           </div>
           <div class="version-tip">💡 Swipe kiri/kanan untuk navigasi cepat antar halaman!</div>
         </div>
