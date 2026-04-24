@@ -2731,17 +2731,29 @@ async function savePenjualan(){
   const rows=[...document.querySelectorAll('.sale-row')].map(r=>{
     const inp=r.querySelectorAll('input[type="text"],input[type="number"]');
     const sel=r.querySelector('select');
-    // inp[0]=pelanggan, inp[1]=butir, inp[2]=kilo, inp[3]=harga
     return{
-      pelanggan:inp[0]?.value||'',
+      pelanggan:inp[0]?.value.trim()||'',
       grade:sel?.value||'',
-      butir:inp[1]?.value||0,
-      kilo:inp[2]?.value||0,
-      harga:inp[3]?.value||0,
+      butir:parseFloat(inp[1]?.value)||0,
+      kilo:parseFloat(inp[2]?.value)||0,
+      harga:parseFloat(inp[3]?.value)||0,
       total:r.querySelector('.total-col')?.textContent||'Rp 0'
     };
-  }).filter(r=>r.pelanggan||r.kilo);
+  }).filter(r=>r.pelanggan||r.kilo||r.butir);
+
   if(!rows.length){showToast('⚠️ Isi minimal satu baris penjualan!');return;}
+
+  // Validasi setiap baris
+  for(let i=0;i<rows.length;i++){
+    const r=rows[i];
+    const no=i+1;
+    if(!r.grade){showToast(`⚠️ Baris ${no}: Grade wajib dipilih!`);return;}
+    if(!r.butir&&!r.kilo){showToast(`⚠️ Baris ${no}: Isi jumlah butir atau kilo!`);return;}
+    if(r.butir<0||r.kilo<0){showToast(`⚠️ Baris ${no}: Jumlah tidak boleh negatif!`);return;}
+    if(r.harga<=0){showToast(`⚠️ Baris ${no}: Harga per kg wajib diisi!`);return;}
+    if(!r.pelanggan){showToast(`⚠️ Baris ${no}: Nama pelanggan wajib diisi!`);return;}
+  }
+
   showToast('⏳ Memeriksa stok...');
   const stok=await getStokTelur(tgl);
   const jualPerGrade={};
@@ -3187,13 +3199,20 @@ async function savePembayaran(){
   const supplier=document.getElementById('mb-supplier').value.trim();
   const jumlah_bayar=parseFloat(document.getElementById('mb-jumlah').value)||0;
   const jumlah_tagihan=parseFloat(document.getElementById('mb-tagihan-total').value)||0;
-  const sisa_tagihan=Math.max(0,(parseFloat(document.getElementById('mb-sisa').value)||0)-jumlah_bayar);
+  const sisa_sebelum=parseFloat(document.getElementById('mb-sisa').value)||0;
+  const sisa_tagihan=Math.max(0,sisa_sebelum-jumlah_bayar);
   const metode=document.getElementById('mb-metode').value;
   const no_referensi=document.getElementById('mb-noref').value.trim();
   const keterangan=document.getElementById('mb-ket').value.trim();
   const refId=document.getElementById('mb-ref-id').value||document.getElementById('mb-tagihan').value||null;
 
-  if(!tanggal||!supplier||!jumlah_bayar){showToast('⚠️ Tanggal, supplier, dan jumlah wajib diisi!');return;}
+  if(!tanggal){showToast('⚠️ Tanggal wajib diisi!');return;}
+  if(!supplier){showToast('⚠️ Nama supplier wajib diisi!');return;}
+  if(!jumlah_bayar||jumlah_bayar<=0){showToast('⚠️ Jumlah bayar harus lebih dari 0!');return;}
+  if(jumlah_tagihan>0&&jumlah_bayar>sisa_sebelum){
+    showToast(`⚠️ Jumlah bayar (Rp ${jumlah_bayar.toLocaleString('id-ID')}) melebihi sisa tagihan (Rp ${sisa_sebelum.toLocaleString('id-ID')})!`);return;
+  }
+
   showToast('⏳ Menyimpan...');
   try{
     await dbSavePembayaran({
@@ -3204,7 +3223,6 @@ async function savePembayaran(){
       keterangan:keterangan||null,
       user_input:currentUser?.username||''
     });
-    // Update status tagihan di kiriman_pakan
     if(refId) await dbUpdateStatusTagihan(refId,jumlah_bayar);
     closeModal('modal-bayar');
     await renderGudang();
@@ -3231,9 +3249,12 @@ async function openStokModal(id){
 }
 async function saveStok(){
   const nama=document.getElementById('ms-nama').value.trim();
+  const min=parseFloat(document.getElementById('ms-min').value)||0;
   if(!nama){showToast('⚠️ Nama pakan wajib diisi!');return;}
+  if(nama.length<2){showToast('⚠️ Nama pakan minimal 2 karakter!');return;}
+  if(min<0){showToast('⚠️ Minimum stok tidak boleh negatif!');return;}
   const id=document.getElementById('ms-id').value;
-  const obj={nama,stok_minimal:parseFloat(document.getElementById('ms-min').value)||0};
+  const obj={nama,stok_minimal:min};
   if(id)obj.id=id;
   try{await dbSaveDaftarPakan(obj);closeModal('modal-stok');await renderGudang();showToast('✅ Pakan disimpan!');}
   catch(e){showToast('❌ Gagal: '+e.message);}
@@ -3265,7 +3286,13 @@ async function saveKiriman(){
   const supplier=document.getElementById('mk2-supplier').value.trim();
   const keterangan=document.getElementById('mk2-ket').value;
   const editId=document.getElementById('mk2-id').value;
-  if(!tanggal||!nama_pakan||!jumlah){showToast('⚠️ Tanggal, pakan, dan jumlah wajib diisi!');return;}
+
+  if(!tanggal){showToast('⚠️ Tanggal wajib diisi!');return;}
+  if(!nama_pakan){showToast('⚠️ Pilih jenis pakan!');return;}
+  if(!jumlah||jumlah<=0){showToast('⚠️ Jumlah harus lebih dari 0!');return;}
+  if(harga_per_kg<=0){showToast('⚠️ Harga per kg wajib diisi!');return;}
+  if(!supplier){showToast('⚠️ Nama supplier wajib diisi!');return;}
+
   try{
     if(editId){
       await SB.update('kiriman_pakan',{tanggal,nama_pakan,jumlah,harga_per_kg,harga_total,supplier,keterangan,sisa_tagihan:harga_total},`?id=eq.${editId}`);
@@ -3592,14 +3619,26 @@ function calcUmurKandang(){
 
 async function saveKandang(){
   const nama=document.getElementById('mk-nama').value.trim();
+  const kapasitas=parseInt(document.getElementById('mk-kapasitas').value)||0;
+  const populasi=parseInt(document.getElementById('mk-populasi').value)||0;
+  const chickin=document.getElementById('mk-chickin').value||null;
+
   if(!nama){showToast('⚠️ Nama kandang wajib diisi!');return;}
+  if(kapasitas<=0){showToast('⚠️ Kapasitas harus lebih dari 0!');return;}
+  if(populasi<=0){showToast('⚠️ Populasi masuk harus lebih dari 0!');return;}
+  if(populasi>kapasitas){showToast('⚠️ Populasi tidak boleh melebihi kapasitas!');return;}
+  if(chickin){
+    const today=new Date().toISOString().split('T')[0];
+    if(chickin>today){showToast('⚠️ Tanggal Chick In tidak boleh di masa depan!');return;}
+  }
+
   const id=document.getElementById('mk-id').value;
   const obj={
     nama,
-    kapasitas:parseInt(document.getElementById('mk-kapasitas').value)||null,
-    chickin:document.getElementById('mk-chickin').value||null,
+    kapasitas,
+    chickin,
     umur_masuk:parseInt(document.getElementById('mk-umur').value)||null,
-    populasi:parseInt(document.getElementById('mk-populasi').value)||null,
+    populasi,
     harga_pullet:parseFloat(document.getElementById('mk-harga-pullet').value)||null,
     status:document.getElementById('mk-status').value
   };
@@ -3669,9 +3708,14 @@ async function openUserModal(id){
 async function saveUser(){
   const uname=document.getElementById('mu-username').value.trim();
   const pw=document.getElementById('mu-password').value.trim();
-  if(!uname){showToast('⚠️ Username wajib diisi!');return;}
-  if(!pw){showToast('⚠️ Password wajib diisi!');return;}
   const id=document.getElementById('mu-id').value;
+
+  if(!uname){showToast('⚠️ Username wajib diisi!');return;}
+  if(!/^[a-zA-Z0-9_]+$/.test(uname)){showToast('⚠️ Username hanya boleh huruf, angka, dan underscore!');return;}
+  if(uname.length<3){showToast('⚠️ Username minimal 3 karakter!');return;}
+  if(!pw){showToast('⚠️ Password wajib diisi!');return;}
+  if(pw.length<6){showToast('⚠️ Password minimal 6 karakter!');return;}
+
   const obj={username:uname,password:pw,role:document.getElementById('mu-role').value,active:true};
   if(id)obj.id=id;
   showToast('⏳ Menyimpan...');
@@ -3898,6 +3942,15 @@ async function saveBiayaData(){
   if(!tanggal){showToast('⚠️ Pilih tanggal!');return;}
   const biayaRows=getBiayaRows();
   if(biayaRows.length===0){showToast('⚠️ Tambahkan minimal 1 biaya!');return;}
+
+  // Validasi setiap baris biaya
+  for(let i=0;i<biayaRows.length;i++){
+    const b=biayaRows[i];
+    const no=i+1;
+    if(!b.jumlah||b.jumlah<=0){showToast(`⚠️ Baris ${no}: Jumlah biaya harus lebih dari 0!`);return;}
+    if(!b.ket){showToast(`⚠️ Baris ${no}: Keterangan wajib diisi!`);return;}
+  }
+
   showToast('⏳ Menyimpan...');
   try{
     for(const b of biayaRows){
@@ -5249,7 +5302,10 @@ async function saveKas(){
   const ket=document.getElementById('mk3-ket').value.trim();
   const kandang=document.getElementById('mk3-kandang').value;
   const kategori=jenis==='masuk'?'Alokasi Dana':'Operasional';
-  if(!tanggal||!jumlah){showToast('⚠️ Tanggal dan jumlah wajib diisi!');return;}
+
+  if(!tanggal){showToast('⚠️ Tanggal wajib diisi!');return;}
+  if(!jumlah||jumlah<=0){showToast('⚠️ Jumlah harus lebih dari 0!');return;}
+
   showToast('⏳ Menyimpan...');
   try{
     await dbSaveKas({tanggal,jenis,kategori,jumlah,keterangan:ket,kandang:kandang||null,user_input:currentUser?.username||''});
