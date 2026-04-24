@@ -40,16 +40,6 @@ class MobileFormsUX {
   handleInputFocus(input) {
     // Add focused class for styling
     input.classList.add('mobile-focused');
-    
-    // Scroll input into view on mobile
-    if (window.innerWidth <= 768) {
-      setTimeout(() => {
-        input.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        });
-      }, 300); // Wait for keyboard animation
-    }
 
     // Add haptic feedback
     if (window.hapticFeedback) {
@@ -261,18 +251,9 @@ class MobileFormsUX {
 
   validateInput(input) {
     const isValid = input.checkValidity();
-    
-    // Remove existing validation classes
     input.classList.remove('valid', 'invalid');
-    
-    // Add appropriate class
     if (input.value.trim() !== '') {
       input.classList.add(isValid ? 'valid' : 'invalid');
-    }
-    
-    // Add haptic feedback for invalid input
-    if (!isValid && input.value.trim() !== '' && window.hapticFeedback) {
-      window.hapticFeedback('error');
     }
   }
 
