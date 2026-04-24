@@ -29,7 +29,8 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js" defer></script>
   <!-- DB harus load duluan (tidak defer) -->
-  <script src="offline-db.js"></script>
+  <!-- offline-db.js tidak kritis untuk boot, bisa defer -->
+  <script src="offline-db.js" defer></script>
   <!-- Fitur tambahan: defer, load setelah halaman tampil -->
   <script src="offline-manager.js" defer></script>
   <script src="mobile-gestures.js" defer></script>
@@ -7118,15 +7119,32 @@ async function deleteNpPakai(id, kategori) {
 
 // ═══ BOOT ═══
 // Wait for DB script to load before initializing
+let _bootAttempts = 0;
 function bootApp(){
+  _bootAttempts++;
+
+  // Timeout 10 detik — jika DB tidak load, tampilkan error
+  if(_bootAttempts > 100){
+    console.error('❌ DB script gagal load setelah 10 detik');
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+    return;
+  }
+
   if(typeof dbGetUsers==='undefined'){
     setTimeout(bootApp,100);
     return;
   }
   initUsers();
-  setTimeout(checkSession,500);
+  setTimeout(checkSession,300);
 }
-bootApp();
+
+// Jalankan setelah DOM siap
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', bootApp);
+} else {
+  bootApp();
+}
 </script></body></html>
 
 
