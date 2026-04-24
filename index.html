@@ -6477,6 +6477,21 @@ async function saveMasterData(){
 
   if(!nama){showToast('⚠️ Nama wajib diisi!');return;}
 
+  // Validasi duplikat nama (hanya untuk data baru atau jika nama berubah)
+  if(!id || document.getElementById('mf-nama')?.dataset.originalNama !== nama) {
+    const tableMap = {pakan:'daftar_pakan',supplier:'master_supplier',vitamin:'master_vitamin',
+                      obat:'master_obat',vaksin:'master_vaksin',pelanggan:'master_pelanggan'};
+    const getters  = {pakan:dbGetDaftarPakan,supplier:dbGetSupplier,vitamin:dbGetVitamin,
+                      obat:dbGetObat,vaksin:dbGetVaksin,pelanggan:dbGetPelanggan};
+    try {
+      const existing = await getters[type]();
+      const duplikat = existing.find(x => x.nama.toLowerCase() === nama.toLowerCase() && x.id !== id);
+      if(duplikat) {
+        showToast(`⚠️ Nama "${nama}" sudah terdaftar (${duplikat.kode})!`);
+        return;
+      }
+    } catch(e) { /* lanjut jika gagal cek */ }
+  }
   // Auto-generate kode hanya jika kosong DAN ini data baru (bukan edit)
   if(!kode && !id){
     const prefixMap = {pakan:'PKN',supplier:'SUP',vitamin:'VIT',obat:'OBT',vaksin:'VAK',pelanggan:'PLG'};
