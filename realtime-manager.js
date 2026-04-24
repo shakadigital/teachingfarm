@@ -368,14 +368,22 @@ class RealtimeManager {
   }
 }
 
-// Global instance
-window.realtimeManager = new RealtimeManager();
+// Global instance — inisialisasi lazy setelah app siap
+// Tidak langsung new RealtimeManager() agar tidak block loading
+window.realtimeManager = null;
+
+window.initRealtimeManager = function() {
+  if (!window.realtimeManager) {
+    window.realtimeManager = new RealtimeManager();
+  }
+};
 
 // Export convenience functions
 window.subscribeToRealtime = function(eventType, callback) {
-  return window.realtimeManager.subscribe(eventType, callback);
+  if (window.realtimeManager) return window.realtimeManager.subscribe(eventType, callback);
+  return () => {};
 };
 
 window.sendRealtimeMessage = function(eventType, data) {
-  return window.realtimeManager.send(eventType, data);
+  if (window.realtimeManager) return window.realtimeManager.send(eventType, data);
 };

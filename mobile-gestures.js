@@ -197,20 +197,28 @@ class MobileGestures {
   }
 
   observePageChanges() {
-    // Watch for active page changes
-    const observer = new MutationObserver(() => {
-      const activePage = document.querySelector('.page.active');
-      if (activePage) {
-        this.currentPage = activePage.id.replace('page-', '');
-      }
-    });
+    // Tunggu DOM siap sebelum observe
+    const startObserving = () => {
+      if (!document.body) return;
+      const observer = new MutationObserver(() => {
+        const activePage = document.querySelector('.page.active');
+        if (activePage) {
+          this.currentPage = activePage.id.replace('page-', '');
+        }
+      });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class']
+      });
+    };
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class']
-    });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startObserving);
+    } else {
+      startObserving();
+    }
   }
 
   hapticFeedback(type = 'light') {
