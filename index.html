@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8"/>
@@ -2792,7 +2792,7 @@ function checkSession(){
   document.getElementById('loading-screen').style.display='none';
   document.getElementById('login-screen').style.display='flex';
 }
-function showApp(){document.getElementById('loading-screen').style.display='none';document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';document.getElementById('hdr-user').textContent=currentUser.username+' ('+currentUser.role+')';applyRoleRestrictions();initDarkMode();initApp();
+function showApp(){document.getElementById('loading-screen').style.display='none';document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';document.getElementById('hdr-user').textContent=currentUser.username+' ('+currentUser.role+')';applyRoleRestrictions();initDarkMode();initApp().catch(e=>console.error('initApp error:',e));
   // Inisialisasi realtime setelah app tampil (tidak block loading)
   setTimeout(()=>{ if(typeof initRealtimeManager==='function') initRealtimeManager(); }, 2000);
 }
@@ -2940,6 +2940,8 @@ function autoResetInputForm(){
   // Sembunyikan status bar
   const bar = document.getElementById('input-status-bar');
   if(bar) bar.style.display = 'none';
+  // Reset edit mode
+  _editRowId = null;
   // Reset pakan — sisakan 1 baris kosong
   const pl=document.getElementById('pakan-list');
   [...pl.querySelectorAll('.pakan-row')].slice(1).forEach(r=>r.remove());
@@ -3112,7 +3114,7 @@ function collectInputData(){
     tanggal:tgl,kandang:knd,user:currentUser?currentUser.username:'',
     deplesi:{mati:document.getElementById('mati').value,afkir:document.getElementById('afkir').value,total:document.getElementById('total_deplesi').value},
     sisa_ayam:document.getElementById('sisa_ayam').value,pct_deplesi:document.getElementById('pct_deplesi').value,
-    pakan:[...document.querySelectorAll('.pakan-row')].map(r=>{const sel=r.querySelector('.pakan-select');const inp=r.querySelector('input[type="number"]');return{kode:sel?sel.value:'',jumlah:inp?inp.value:0};}).filter(p=>p.kode),
+    pakan:[...document.querySelectorAll('.pakan-row')].map(r=>{const sel=r.querySelector('.pakan-select');const inp=r.querySelector('input[type="number"]');return{kode:sel?sel.value:'',jumlah:inp?parseFloat(inp.value)||0:0};}).filter(p=>p.kode),
     air_liter:document.getElementById('air_liter').value,
     produksi:{
       normal:{butir:document.getElementById('p_normal_butir').value,kilo:document.getElementById('p_normal_kilo').value},
@@ -3355,104 +3357,6 @@ function autoScrollToEmpty(){
   // Semua field utama sudah diisi
   showToast('✅ Semua field utama sudah diisi');
 }
-    // ══════════════════════════════════════════════════════
-    // PRINSIP PENYIMPANAN:
-    //
-    // KASUS 1 — Tidak ada data lama:
-    //   → Simpan langsung sebagai data baru
-    //
-    // KASUS 2 — User YANG SAMA, hari yang sama (input bertahap):
-    //   → MERGE: field yang diisi user sekarang → update
-    //            field yang kosong/0 → pertahankan data lama
-    //   → Contoh: pagi input deplesi+pakan, siang input produksi,
-    //             sore input vitamin+catatan → semua terakumulasi
-    //
-    // KASUS 3 — User BERBEDA, role lebih tinggi (audit/koreksi):
-    //   → Sudah dikonfirmasi user → TIMPA PENUH dengan data baru
-    //   → Data lama tersimpan di activity_log untuk audit trail
-    //
-    // KASUS 4 — Edit via tombol ✏️ (audit mode):
-    //   → TIMPA PENUH — user sudah lihat data lama di preview
-    // ══════════════════════════════════════════════════════
-
-    let finalData;
-
-    if(!dataLama){
-      // KASUS 1: Data baru
-      finalData = { ...data };
-
-    } else if(_editRowId){
-      // KASUS 4: Edit via tombol ✏️ — timpa penuh
-      finalData = { ...data };
-
-    } else {
-      // Cek apakah user yang sama
-      const prevUser = dataLama?.user || '';
-      const sameUser = prevUser === currentUser?.username;
-
-      if(sameUser){
-        // KASUS 2: User sama — MERGE akumulatif sepanjang hari
-        const hasVal = v => v !== null && v !== undefined && v !== '' && v !== '0' && parseFloat(v) !== 0;
-        const hasArr = a => Array.isArray(a) && a.length > 0;
-
-        // Deplesi: update jika user mengisi nilai > 0
-        const deplesiDiisi = hasVal(data.deplesi?.mati) || hasVal(data.deplesi?.afkir);
-        const deplesi      = deplesiDiisi ? data.deplesi : dataLama.deplesi;
-        const sisa_ayam    = deplesiDiisi ? data.sisa_ayam : dataLama.sisa_ayam;
-        const pct_deplesi  = deplesiDiisi ? data.pct_deplesi : dataLama.pct_deplesi;
-
-        // Pakan: update jika user mengisi minimal 1 baris pakan
-        const pakan = hasArr(data.pakan) ? data.pakan : dataLama.pakan;
-
-        // Air minum: update jika diisi
-        const air_liter = hasVal(data.air_liter) ? data.air_liter : dataLama.air_liter;
-
-        // Produksi: update jika ada butir atau kilo yang diisi
-        const prodDiisi = hasVal(data.produksi?.total?.butir) || hasVal(data.produksi?.total?.kilo);
-        const produksi  = prodDiisi ? data.produksi : dataLama.produksi;
-
-        // Kesehatan: update jika ada vitamin/obat/vaksin yang dipilih
-        const kesDiisi = hasArr(data.kesehatan?.vitamin) || hasArr(data.kesehatan?.obat) || hasArr(data.kesehatan?.vaksin);
-        const kesehatan = kesDiisi ? data.kesehatan : dataLama.kesehatan;
-
-        // Catatan: update jika diisi, pertahankan jika kosong
-        const catatan = data.catatan?.trim() ? data.catatan : (dataLama.catatan || '');
-
-        finalData = {
-          ...dataLama,
-          tanggal: data.tanggal,
-          kandang: data.kandang,
-          user: data.user,
-          deplesi, sisa_ayam, pct_deplesi,
-          pakan, air_liter, produksi,
-          kesehatan, catatan
-        };
-
-      } else {
-        // KASUS 3: User berbeda, sudah dikonfirmasi role lebih tinggi → timpa penuh
-        finalData = { ...data };
-      }
-    }
-
-    await dbSaveInput(data.tanggal, data.kandang, finalData);
-
-    // Activity log
-    const aksi = dataLama ? 'EDIT' : 'TAMBAH';
-    await dbSaveLog(aksi,'input_harian',_editRowId||null,dataLama,finalData,
-      `${aksi} data harian ${data.tanggal} kandang ${data.kandang}`);
-
-    // Sync pemakaian non-pakan (vitamin/obat/vaksin)
-    const kes = finalData.kesehatan || {};
-    const kesLama = dataLama?.kesehatan || {};
-    if(JSON.stringify(kes) !== JSON.stringify(kesLama) || !dataLama){
-      await syncPemakaianNonPakan(data.tanggal, data.kandang, kes, kesLama);
-    }
-
-    _editRowId = null;
-    showToast('✅ Data harian disimpan!');
-    autoResetInputForm();
-  }catch(e){showToast('❌ Gagal menyimpan: '+e.message);}
-}
 
 // Sinkronisasi otomatis pemakaian vitamin/obat/vaksin ke tabel pemakaian_nonpakan
 async function syncPemakaianNonPakan(tanggal, kandang, kesBaru, kesLama) {
@@ -3506,6 +3410,7 @@ function resetInputForm(){
   ['mati','afkir','populasi_awal','air_liter','p_normal_butir','p_normal_kilo','p_cream_butir','p_cream_kilo','p_retak_butir','p_retak_kilo'].forEach(id=>document.getElementById(id).value=0);
   document.getElementById('catatan').value='';
   resetKesRows();
+  _editRowId = null;
   const pl=document.getElementById('pakan-list');
   [...pl.querySelectorAll('.pakan-row')].slice(1).forEach(r=>r.remove());
   pl.querySelector('.pakan-row').querySelectorAll('input').forEach(i=>i.value='');
@@ -3555,8 +3460,8 @@ async function getStokTelur(tgl){
     const d=row.data;if(!d||!d.produksi)return;
     ['normal','cream','retak'].forEach(g=>{
       const G=g.charAt(0).toUpperCase()+g.slice(1);
-      prod[G].butir+=parseInt(d.produksi[g].butir)||0;
-      prod[G].kilo+=parseFloat(d.produksi[g].kilo)||0;
+      prod[G].butir+=parseInt(d.produksi[g]?.butir)||0;
+      prod[G].kilo+=parseFloat(d.produksi[g]?.kilo)||0;
     });
   });
   const juals=await dbGetPenjualan({sampai:tgl});
