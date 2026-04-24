@@ -116,7 +116,7 @@ class OfflineDB {
     
     for (const storeName of stores) {
       const transaction = this.db.transaction([storeName], 'readonly');
-      const store = transaction.objectStore('store');
+      const store = transaction.objectStore(storeName);
       const index = store.index('sync_status');
       
       pendingData[storeName] = await new Promise((resolve, reject) => {

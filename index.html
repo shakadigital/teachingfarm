@@ -3316,46 +3316,37 @@ function showInputStatusBar(prevUser, lastEditor, lastTime, canEdit, prevRole){
 function autoScrollToEmpty(){
   // Definisi field wajib dan urutannya
   const checks = [
-    // [kondisi belum diisi, elemen untuk di-scroll, label]
     [
       ()=>!document.getElementById('kandang').value,
       ()=>document.getElementById('kandang'),
-      'Kandang belum dipilih'
     ],
     [
       ()=>{ const m=parseFloat(document.getElementById('mati').value)||0; const a=parseFloat(document.getElementById('afkir').value)||0; return m===0&&a===0; },
       ()=>document.getElementById('mati'),
-      'Deplesi belum diisi (opsional jika tidak ada)'
     ],
     [
       ()=>{ const rows=document.querySelectorAll('.pakan-row'); return ![...rows].some(r=>r.querySelector('.pakan-select')?.value); },
       ()=>document.querySelector('.pakan-select'),
-      'Pakan belum dipilih'
     ],
     [
       ()=>{ const v=parseFloat(document.getElementById('p_normal_butir').value)||0; const k=parseFloat(document.getElementById('p_normal_kilo').value)||0; return v===0&&k===0; },
       ()=>document.getElementById('p_normal_butir'),
-      'Produksi telur belum diisi'
     ],
   ];
 
-  for(const [isEmpty, getEl, label] of checks){
+  for(const [isEmpty, getEl] of checks){
     if(isEmpty()){
       const el = getEl();
       if(el){
         el.scrollIntoView({behavior:'smooth', block:'center'});
-        el.focus();
-        // Highlight field
+        // Highlight field saja, tanpa toast
         el.style.borderColor = '#f59e0b';
         el.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.2)';
         setTimeout(()=>{ el.style.borderColor=''; el.style.boxShadow=''; }, 2000);
-        showToast(`💡 ${label}`);
-        return; // scroll ke yang pertama kosong saja
+        return;
       }
     }
   }
-  // Semua field utama sudah diisi
-  showToast('✅ Semua field utama sudah diisi');
 }
 
 // Sinkronisasi otomatis pemakaian vitamin/obat/vaksin ke tabel pemakaian_nonpakan
