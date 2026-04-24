@@ -1380,91 +1380,164 @@
   <div class="page" id="page-gudang">
     <div class="page-inner">
 
-      <!-- Stok Pakan (auto dari kiriman - pemakaian harian) -->
-      <div class="card">
-        <div class="card-header"><div class="num">📦</div><h2>Stok Pakan</h2></div>
-        <div class="card-body">
-          <div style="overflow-x:auto">
-            <table class="tbl">
-              <thead><tr><th>Nama Pakan</th><th>Stok Saat Ini (kg)</th><th>Min. Stok (kg)</th><th>Harga Terakhir (Rp/kg)</th><th>Status</th><th></th></tr></thead>
-              <tbody id="stok-tbody"></tbody>
-            </table>
-          </div>
-          <div id="stok-empty" class="info-box" style="display:none">Belum ada data pakan. Tambahkan pakan terlebih dahulu.</div>
-          <button class="btn-add" id="btn-daftar-pakan" onclick="openStokModal()">＋ Daftarkan Pakan</button>
-        </div>
+      <!-- Tab Bar Gudang -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="gtab-pakan"       onclick="switchGTab('pakan')">🌾 Pakan</button>
+        <button class="tab-btn"        id="gtab-vitamin"     onclick="switchGTab('vitamin')">💊 Vitamin</button>
+        <button class="tab-btn"        id="gtab-obat"        onclick="switchGTab('obat')">🩺 Obat</button>
+        <button class="tab-btn"        id="gtab-vaksin"      onclick="switchGTab('vaksin')">💉 Vaksin</button>
+        <button class="tab-btn"        id="gtab-desinfektan" onclick="switchGTab('desinfektan')">🧴 Desinfektan</button>
+        <button class="tab-btn"        id="gtab-lainnya"     onclick="switchGTab('lainnya')">📦 Lainnya</button>
       </div>
 
-      <!-- Kiriman Pakan Masuk -->
-      <div class="card">
-        <div class="card-header"><div class="num">🚚</div><h2>Kiriman Pakan Masuk</h2></div>
-        <div class="card-body">
-          <div style="overflow-x:auto">
-            <table class="tbl">
-              <thead><tr><th>Tanggal</th><th>Pakan</th><th>Jumlah (kg)</th><th>Harga/kg (Rp)</th><th>Total (Rp)</th><th>Keterangan</th><th>Status</th><th></th></tr></thead>
-              <tbody id="kiriman-tbody"></tbody>
-            </table>
-          </div>
-          <div id="kiriman-empty" class="info-box" style="display:none">Belum ada kiriman pakan.</div>
-          <button class="btn-add" id="btn-catat-kiriman" onclick="openKirimanModal()">＋ Catat Kiriman</button>
-        </div>
-      </div>
+      <!-- ══ TAB: PAKAN ══ -->
+      <div id="gtab-content-pakan">
 
-      <!-- Riwayat Pemakaian (dari input harian) -->
-      <div class="card">
-        <div class="card-header"><div class="num">📋</div><h2>Riwayat Pemakaian Pakan</h2><small style="margin-left:8px;color:#666;font-size:.78rem">Auto dari Input Harian</small></div>
-        <div class="card-body">
-          <div style="overflow-x:auto">
-            <table class="tbl">
-              <thead><tr><th>Tanggal</th><th>Kandang</th><th>Pakan</th><th>Pemakaian (kg)</th></tr></thead>
-              <tbody id="pakai-tbody"></tbody>
-            </table>
-          </div>
-          <div id="pakai-empty" class="info-box" style="display:none">Belum ada riwayat pemakaian.</div>
-        </div>
-      </div>
-
-      <!-- Pembelian & Tagihan (Manajer ke atas) -->
-      <div id="section-pembelian" style="display:none">
+        <!-- Stok Pakan -->
         <div class="card">
-          <div class="card-header"><div class="num">🛒</div><h2>Daftar Pembelian & Tagihan</h2></div>
-          <div class="card-body">
-            <div class="tab-bar" style="margin-bottom:12px">
-              <button class="tab-btn active" id="pemb-tab-belum" onclick="switchPembTab('belum')">⏳ Belum Lunas</button>
-              <button class="tab-btn" id="pemb-tab-lunas" onclick="switchPembTab('lunas')">✅ Lunas</button>
-              <button class="tab-btn" id="pemb-tab-semua" onclick="switchPembTab('semua')">📋 Semua</button>
-            </div>
-            <div style="overflow-x:auto">
-              <table class="tbl">
-                <thead><tr><th>Tanggal</th><th>Jenis</th><th>Supplier</th><th>Item</th><th>Jumlah</th><th>Total Tagihan</th><th>Status</th><th>Aksi</th></tr></thead>
-                <tbody id="pembelian-tbody"></tbody>
-              </table>
-            </div>
-            <div id="pembelian-empty" class="info-box" style="display:none">Tidak ada data pembelian.</div>
-            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-              <button class="btn-add" onclick="openKirimanModal()">＋ Tambah Pembelian Pakan</button>
-              <button class="btn-export" onclick="exportPembelian()">⬇️ Download Laporan</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pembayaran Pakan & Pullet (Manajer ke atas) -->
-      <div id="section-pembayaran" style="display:none">
-        <div class="card">
-          <div class="card-header"><div class="num">💳</div><h2>Riwayat Pembayaran</h2></div>
+          <div class="card-header"><div class="num">📦</div><h2>Stok Pakan</h2></div>
           <div class="card-body">
             <div style="overflow-x:auto">
               <table class="tbl">
-                <thead><tr><th>Tanggal</th><th>Jenis</th><th>Supplier</th><th>Jumlah (Rp)</th><th>Metode</th><th>Keterangan</th><th></th></tr></thead>
-                <tbody id="bayar-tbody"></tbody>
+                <thead><tr><th>Nama Pakan</th><th>Stok Saat Ini (kg)</th><th>Min. Stok (kg)</th><th>Harga Terakhir (Rp/kg)</th><th>Status</th><th></th></tr></thead>
+                <tbody id="stok-tbody"></tbody>
               </table>
             </div>
-            <div id="bayar-empty" class="info-box" style="display:none">Belum ada data pembayaran.</div>
-            <button class="btn-add" onclick="openBayarModal()">＋ Catat Pembayaran</button>
+            <div id="stok-empty" class="info-box" style="display:none">Belum ada data pakan. Tambahkan pakan terlebih dahulu.</div>
+            <button class="btn-add" id="btn-daftar-pakan" onclick="openStokModal()">＋ Daftarkan Pakan</button>
           </div>
         </div>
-      </div>
+
+        <!-- Kiriman Pakan Masuk -->
+        <div class="card">
+          <div class="card-header"><div class="num">🚚</div><h2>Kiriman Pakan Masuk</h2></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Tanggal</th><th>Pakan</th><th>Jumlah (kg)</th><th>Harga/kg (Rp)</th><th>Total (Rp)</th><th>Keterangan</th><th>Status</th><th></th></tr></thead>
+                <tbody id="kiriman-tbody"></tbody>
+              </table>
+            </div>
+            <div id="kiriman-empty" class="info-box" style="display:none">Belum ada kiriman pakan.</div>
+            <button class="btn-add" id="btn-catat-kiriman" onclick="openKirimanModal()">＋ Catat Kiriman</button>
+          </div>
+        </div>
+
+        <!-- Riwayat Pemakaian Pakan -->
+        <div class="card">
+          <div class="card-header"><div class="num">📋</div><h2>Riwayat Pemakaian Pakan</h2><small style="margin-left:8px;color:#666;font-size:.78rem">Auto dari Input Harian</small></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Tanggal</th><th>Kandang</th><th>Pakan</th><th>Pemakaian (kg)</th></tr></thead>
+                <tbody id="pakai-tbody"></tbody>
+              </table>
+            </div>
+            <div id="pakai-empty" class="info-box" style="display:none">Belum ada riwayat pemakaian.</div>
+          </div>
+        </div>
+
+        <!-- Pembelian & Tagihan (Manajer ke atas) -->
+        <div id="section-pembelian" style="display:none">
+          <div class="card">
+            <div class="card-header"><div class="num">🛒</div><h2>Daftar Pembelian & Tagihan</h2></div>
+            <div class="card-body">
+              <div class="tab-bar" style="margin-bottom:12px">
+                <button class="tab-btn active" id="pemb-tab-belum" onclick="switchPembTab('belum')">⏳ Belum Lunas</button>
+                <button class="tab-btn" id="pemb-tab-lunas" onclick="switchPembTab('lunas')">✅ Lunas</button>
+                <button class="tab-btn" id="pemb-tab-semua" onclick="switchPembTab('semua')">📋 Semua</button>
+              </div>
+              <div style="overflow-x:auto">
+                <table class="tbl">
+                  <thead><tr><th>Tanggal</th><th>Jenis</th><th>Supplier</th><th>Item</th><th>Jumlah</th><th>Total Tagihan</th><th>Status</th><th>Aksi</th></tr></thead>
+                  <tbody id="pembelian-tbody"></tbody>
+                </table>
+              </div>
+              <div id="pembelian-empty" class="info-box" style="display:none">Tidak ada data pembelian.</div>
+              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                <button class="btn-add" onclick="openKirimanModal()">＋ Tambah Pembelian Pakan</button>
+                <button class="btn-export" onclick="exportPembelian()">⬇️ Download Laporan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pembayaran (Manajer ke atas) -->
+        <div id="section-pembayaran" style="display:none">
+          <div class="card">
+            <div class="card-header"><div class="num">💳</div><h2>Riwayat Pembayaran</h2></div>
+            <div class="card-body">
+              <div style="overflow-x:auto">
+                <table class="tbl">
+                  <thead><tr><th>Tanggal</th><th>Jenis</th><th>Supplier</th><th>Jumlah (Rp)</th><th>Metode</th><th>Keterangan</th><th></th></tr></thead>
+                  <tbody id="bayar-tbody"></tbody>
+                </table>
+              </div>
+              <div id="bayar-empty" class="info-box" style="display:none">Belum ada data pembayaran.</div>
+              <button class="btn-add" onclick="openBayarModal()">＋ Catat Pembayaran</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end gtab-content-pakan -->
+
+      <!-- ══ TAB: NON-PAKAN (Vitamin/Obat/Vaksin/Desinfektan/Lainnya) ══ -->
+      <div id="gtab-content-nonpakan" style="display:none">
+
+        <!-- Stok -->
+        <div class="card">
+          <div class="card-header">
+            <div class="num" id="np-stok-icon">💊</div>
+            <h2 id="np-stok-title">Stok Vitamin</h2>
+          </div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Nama Item</th><th>Stok Saat Ini</th><th>Satuan</th><th>Harga Terakhir</th><th>Status</th></tr></thead>
+                <tbody id="np-stok-tbody"></tbody>
+              </table>
+            </div>
+            <div id="np-stok-empty" class="info-box" style="display:none">Belum ada data stok.</div>
+          </div>
+        </div>
+
+        <!-- Kiriman Masuk -->
+        <div class="card">
+          <div class="card-header">
+            <div class="num">🚚</div>
+            <h2 id="np-kiriman-title">Kiriman Vitamin Masuk</h2>
+          </div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Tanggal</th><th>Nama Item</th><th>Jumlah</th><th>Satuan</th><th>Harga/Satuan</th><th>Total</th><th>Supplier</th><th>Kandang</th><th></th></tr></thead>
+                <tbody id="np-kiriman-tbody"></tbody>
+              </table>
+            </div>
+            <div id="np-kiriman-empty" class="info-box" style="display:none">Belum ada kiriman.</div>
+            <button class="btn-add" id="btn-np-kiriman" onclick="openNpKirimanModal()">＋ Catat Kiriman</button>
+          </div>
+        </div>
+
+        <!-- Riwayat Pemakaian -->
+        <div class="card">
+          <div class="card-header">
+            <div class="num">📋</div>
+            <h2 id="np-pakai-title">Riwayat Pemakaian Vitamin</h2>
+          </div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Tanggal</th><th>Nama Item</th><th>Jumlah</th><th>Satuan</th><th>Kandang</th><th>Keterangan</th><th></th></tr></thead>
+                <tbody id="np-pakai-tbody"></tbody>
+              </table>
+            </div>
+            <div id="np-pakai-empty" class="info-box" style="display:none">Belum ada riwayat pemakaian.</div>
+            <button class="btn-add" id="btn-np-pakai" onclick="openNpPakaiModal()">＋ Catat Pemakaian</button>
+          </div>
+        </div>
+
+      </div><!-- end gtab-content-nonpakan -->
 
     </div>
   </div>
@@ -2045,6 +2118,132 @@
   </div>
 </div>
 
+<!-- MODAL KIRIMAN NON-PAKAN -->
+<div class="modal-overlay" id="modal-np-kiriman" style="display:none" onclick="if(event.target===this)closeModal('modal-np-kiriman')">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header" style="background:#d8f3dc;border-bottom:1px solid #b7e4c7">
+      <h3 id="modal-np-kiriman-title" style="color:#1b4332">💊 Catat Kiriman</h3>
+      <button class="modal-close" onclick="closeModal('modal-np-kiriman')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="npk-kategori"/>
+      <div class="row">
+        <div class="field">
+          <label>Tanggal <span style="color:#dc2626">*</span></label>
+          <input type="date" id="npk-tgl"/>
+        </div>
+        <div class="field">
+          <label>Kandang</label>
+          <select id="npk-kandang"><option value="">Semua Kandang</option></select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Nama Item <span style="color:#dc2626">*</span></label>
+        <input type="text" id="npk-nama" placeholder="Nama produk..." list="npk-nama-list"/>
+        <datalist id="npk-nama-list"></datalist>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Jumlah <span style="color:#dc2626">*</span></label>
+          <input type="number" id="npk-jumlah" min="0" step="0.1" placeholder="0" oninput="calcNpTotal()"/>
+        </div>
+        <div class="field">
+          <label>Satuan</label>
+          <select id="npk-satuan">
+            <option value="botol">botol</option>
+            <option value="sachet">sachet</option>
+            <option value="dosis">dosis</option>
+            <option value="liter">liter</option>
+            <option value="kg">kg</option>
+            <option value="tablet">tablet</option>
+            <option value="ampul">ampul</option>
+            <option value="vial">vial</option>
+            <option value="pcs">pcs</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Harga/Satuan (Rp)</label>
+          <input type="number" id="npk-harga" min="0" step="100" placeholder="0" oninput="calcNpTotal()"/>
+        </div>
+        <div class="field">
+          <label>Total (Rp)</label>
+          <input type="text" id="npk-total" readonly style="background:#fff3cd;color:#856404;font-weight:700"/>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Supplier</label>
+        <input type="text" id="npk-supplier" placeholder="Nama supplier..."/>
+      </div>
+      <div class="field">
+        <label>Keterangan</label>
+        <input type="text" id="npk-ket" placeholder="Keterangan tambahan..."/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-np-kiriman')">Batal</button>
+      <button class="btn-primary" onclick="saveNpKiriman()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PEMAKAIAN NON-PAKAN -->
+<div class="modal-overlay" id="modal-np-pakai" style="display:none" onclick="if(event.target===this)closeModal('modal-np-pakai')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header" style="background:#dbeafe;border-bottom:1px solid #bfdbfe">
+      <h3 id="modal-np-pakai-title" style="color:#1e40af">📋 Catat Pemakaian</h3>
+      <button class="modal-close" onclick="closeModal('modal-np-pakai')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="npp-kategori"/>
+      <div class="row">
+        <div class="field">
+          <label>Tanggal <span style="color:#dc2626">*</span></label>
+          <input type="date" id="npp-tgl"/>
+        </div>
+        <div class="field">
+          <label>Kandang</label>
+          <select id="npp-kandang"><option value="">Semua Kandang</option></select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Nama Item <span style="color:#dc2626">*</span></label>
+        <input type="text" id="npp-nama" placeholder="Nama produk..." list="npp-nama-list"/>
+        <datalist id="npp-nama-list"></datalist>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Jumlah <span style="color:#dc2626">*</span></label>
+          <input type="number" id="npp-jumlah" min="0" step="0.1" placeholder="0"/>
+        </div>
+        <div class="field">
+          <label>Satuan</label>
+          <select id="npp-satuan">
+            <option value="botol">botol</option>
+            <option value="sachet">sachet</option>
+            <option value="dosis">dosis</option>
+            <option value="liter">liter</option>
+            <option value="kg">kg</option>
+            <option value="tablet">tablet</option>
+            <option value="ampul">ampul</option>
+            <option value="vial">vial</option>
+            <option value="pcs">pcs</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Keterangan</label>
+        <input type="text" id="npp-ket" placeholder="Mis. Pemberian vitamin rutin..."/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-np-pakai')">Batal</button>
+      <button class="btn-primary" onclick="saveNpPakai()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PEMBAYARAN PAKAN & PULLET -->
 <div class="modal-overlay" id="modal-bayar" style="display:none" onclick="if(event.target===this)closeModal('modal-bayar')">
   <div class="modal" style="max-width:460px">
@@ -2509,7 +2708,7 @@ function switchPage(name){
   if(navEl) navEl.classList.add('active');
   if(name==='home')renderHome();
   if(name==='settings')renderSettings();
-  if(name==='gudang')renderGudang();
+  if(name==='gudang') { _currentGTab='pakan'; switchGTab('pakan'); }
   if(name==='penjualan'){renderStokTelur();renderRiwayatJual();}
   if(name==='biaya'){initBiayaPage();}
   if(name==='riwayat')renderRiwayat();
@@ -6178,6 +6377,295 @@ async function loadCacheInfo() {
     const ver = document.getElementById('current-app-version');
     if(ver) ver.textContent = typeof APP_VERSION !== 'undefined' ? 'V' + APP_VERSION : '—';
   } catch(e) {}
+}
+
+// ═══ GUDANG — TAB NON-PAKAN ═══
+const NP_CONFIG = {
+  vitamin:     { icon:'💊', label:'Vitamin',     satuan:'botol' },
+  obat:        { icon:'🩺', label:'Obat',        satuan:'botol' },
+  vaksin:      { icon:'💉', label:'Vaksin',      satuan:'dosis' },
+  desinfektan: { icon:'🧴', label:'Desinfektan', satuan:'liter' },
+  lainnya:     { icon:'📦', label:'Lainnya',     satuan:'pcs'   }
+};
+
+let _currentGTab = 'pakan';
+
+function switchGTab(tab) {
+  _currentGTab = tab;
+  ['pakan','vitamin','obat','vaksin','desinfektan','lainnya'].forEach(t => {
+    document.getElementById(`gtab-${t}`).classList.toggle('active', t === tab);
+  });
+  const isPakan = tab === 'pakan';
+  document.getElementById('gtab-content-pakan').style.display    = isPakan ? '' : 'none';
+  document.getElementById('gtab-content-nonpakan').style.display = isPakan ? 'none' : '';
+
+  if(isPakan) {
+    renderGudangPakan();
+  } else {
+    renderGudangNonPakan(tab);
+  }
+}
+
+async function renderGudangPakan() {
+  // Render semua konten pakan yang sudah ada
+  await renderGudang();
+}
+
+async function renderGudangNonPakan(kategori) {
+  const cfg = NP_CONFIG[kategori];
+  if(!cfg) return;
+
+  // Update judul
+  document.getElementById('np-stok-icon').textContent     = cfg.icon;
+  document.getElementById('np-stok-title').textContent    = `Stok ${cfg.label}`;
+  document.getElementById('np-kiriman-title').textContent = `Kiriman ${cfg.label} Masuk`;
+  document.getElementById('np-pakai-title').textContent   = `Riwayat Pemakaian ${cfg.label}`;
+
+  // Render stok
+  await renderNpStok(kategori);
+  // Render kiriman
+  await renderNpKiriman(kategori);
+  // Render pemakaian
+  await renderNpPakai(kategori);
+}
+
+async function renderNpStok(kategori) {
+  const stokList = await dbGetStokNonPakan(kategori);
+  const tbody = document.getElementById('np-stok-tbody');
+  const empty = document.getElementById('np-stok-empty');
+  tbody.innerHTML = '';
+  if(!stokList.length) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  stokList.forEach(s => {
+    const low = s.stok <= 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td><strong>${esc(s.nama)}</strong></td>`+
+      `<td>${s.stok.toFixed(1)}</td>`+
+      `<td>${esc(s.satuan)}</td>`+
+      `<td>${s.harga ? 'Rp '+parseFloat(s.harga).toLocaleString('id-ID') : '—'}</td>`+
+      `<td>${low
+        ? '<span class="badge badge-red">Habis</span>'
+        : '<span class="badge badge-green">Tersedia</span>'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function renderNpKiriman(kategori) {
+  const list = await dbGetKirimanNonPakan({ kategori });
+  const tbody = document.getElementById('np-kiriman-tbody');
+  const empty = document.getElementById('np-kiriman-empty');
+  tbody.innerHTML = '';
+  if(!list.length) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.slice(0, 50).forEach(k => {
+    const total = (parseFloat(k.jumlah)||0) * (parseFloat(k.harga_satuan)||0);
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td>${fmtTgl(k.tanggal)}</td>`+
+      `<td><strong>${esc(k.nama_item)}</strong></td>`+
+      `<td>${k.jumlah}</td>`+
+      `<td>${esc(k.satuan||'—')}</td>`+
+      `<td>${k.harga_satuan ? 'Rp '+parseFloat(k.harga_satuan).toLocaleString('id-ID') : '—'}</td>`+
+      `<td>${total ? 'Rp '+total.toLocaleString('id-ID') : '—'}</td>`+
+      `<td>${esc(k.supplier||'—')}</td>`+
+      `<td>${esc(k.kandang||'Semua')}</td>`+
+      `<td>`+
+        (can('BIAYA') ? `<button class="btn-del" onclick="deleteNpKiriman('${k.id}','${kategori}')">🗑</button>` : '')+
+      `</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function renderNpPakai(kategori) {
+  const list = await dbGetPemakaianNonPakan({ kategori });
+  const tbody = document.getElementById('np-pakai-tbody');
+  const empty = document.getElementById('np-pakai-empty');
+  tbody.innerHTML = '';
+  if(!list.length) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.slice(0, 50).forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td>${fmtTgl(p.tanggal)}</td>`+
+      `<td><strong>${esc(p.nama_item)}</strong></td>`+
+      `<td>${p.jumlah}</td>`+
+      `<td>${esc(p.satuan||'—')}</td>`+
+      `<td>${esc(p.kandang||'Semua')}</td>`+
+      `<td>${esc(p.keterangan||'—')}</td>`+
+      `<td>`+
+        (can('BIAYA') ? `<button class="btn-del" onclick="deleteNpPakai('${p.id}','${kategori}')">🗑</button>` : '')+
+      `</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Modal Kiriman Non-Pakan ──
+async function openNpKirimanModal() {
+  const kategori = _currentGTab;
+  const cfg = NP_CONFIG[kategori];
+  if(!cfg) return;
+
+  document.getElementById('npk-kategori').value = kategori;
+  document.getElementById('modal-np-kiriman-title').textContent = `${cfg.icon} Catat Kiriman ${cfg.label}`;
+  document.getElementById('npk-tgl').value = new Date().toISOString().split('T')[0];
+  document.getElementById('npk-nama').value = '';
+  document.getElementById('npk-jumlah').value = '';
+  document.getElementById('npk-harga').value = '';
+  document.getElementById('npk-total').value = '';
+  document.getElementById('npk-supplier').value = '';
+  document.getElementById('npk-ket').value = '';
+  document.getElementById('npk-satuan').value = cfg.satuan;
+
+  // Populate kandang
+  const kandangList = cache.get('kandang_list') || await dbGetKandang();
+  const sel = document.getElementById('npk-kandang');
+  sel.innerHTML = '<option value="">Semua Kandang</option>';
+  kandangList.forEach(k => {
+    const o = document.createElement('option');
+    o.value = k.nama; o.textContent = k.nama;
+    sel.appendChild(o);
+  });
+
+  // Autocomplete nama dari master
+  const getters = { vitamin: dbGetVitamin, obat: dbGetObat, vaksin: dbGetVaksin };
+  if(getters[kategori]) {
+    const masterList = await getters[kategori]();
+    const dl = document.getElementById('npk-nama-list');
+    dl.innerHTML = masterList.map(m => `<option value="${esc(m.nama)}">`).join('');
+  }
+
+  document.getElementById('modal-np-kiriman').style.display = 'flex';
+}
+
+function calcNpTotal() {
+  const j = parseFloat(document.getElementById('npk-jumlah').value) || 0;
+  const h = parseFloat(document.getElementById('npk-harga').value) || 0;
+  document.getElementById('npk-total').value = j && h ? 'Rp ' + (j*h).toLocaleString('id-ID') : '';
+}
+
+async function saveNpKiriman() {
+  const kategori = document.getElementById('npk-kategori').value;
+  const tanggal  = document.getElementById('npk-tgl').value;
+  const nama_item = document.getElementById('npk-nama').value.trim();
+  const jumlah   = parseFloat(document.getElementById('npk-jumlah').value) || 0;
+  const satuan   = document.getElementById('npk-satuan').value;
+  const harga_satuan = parseFloat(document.getElementById('npk-harga').value) || 0;
+  const harga_total  = jumlah * harga_satuan;
+  const supplier = document.getElementById('npk-supplier').value.trim();
+  const keterangan = document.getElementById('npk-ket').value.trim();
+  const kandang  = document.getElementById('npk-kandang').value;
+
+  if(!tanggal)    { showToast('⚠️ Tanggal wajib diisi!'); return; }
+  if(!nama_item)  { showToast('⚠️ Nama item wajib diisi!'); return; }
+  if(jumlah <= 0) { showToast('⚠️ Jumlah harus lebih dari 0!'); return; }
+
+  showToast('⏳ Menyimpan...');
+  try {
+    await dbSaveKirimanNonPakan({
+      tanggal, kategori, nama_item, jumlah, satuan,
+      harga_satuan, harga_total, supplier: supplier||null,
+      keterangan: keterangan||null, kandang: kandang||null,
+      user_input: currentUser?.username || ''
+    });
+    await dbSaveLog('TAMBAH','kiriman_nonpakan',null,null,
+      {tanggal,kategori,nama_item,jumlah,satuan},
+      `Kiriman ${kategori}: ${nama_item} ${jumlah} ${satuan}`);
+    closeModal('modal-np-kiriman');
+    renderGudangNonPakan(kategori);
+    showToast(`✅ Kiriman ${NP_CONFIG[kategori]?.label} disimpan!`);
+  } catch(e) { showToast('❌ Gagal: ' + e.message); }
+}
+
+// ── Modal Pemakaian Non-Pakan ──
+async function openNpPakaiModal() {
+  const kategori = _currentGTab;
+  const cfg = NP_CONFIG[kategori];
+  if(!cfg) return;
+
+  document.getElementById('npp-kategori').value = kategori;
+  document.getElementById('modal-np-pakai-title').textContent = `📋 Catat Pemakaian ${cfg.label}`;
+  document.getElementById('npp-tgl').value = new Date().toISOString().split('T')[0];
+  document.getElementById('npp-nama').value = '';
+  document.getElementById('npp-jumlah').value = '';
+  document.getElementById('npp-ket').value = '';
+  document.getElementById('npp-satuan').value = cfg.satuan;
+
+  // Populate kandang
+  const kandangList = cache.get('kandang_list') || await dbGetKandang();
+  const sel = document.getElementById('npp-kandang');
+  sel.innerHTML = '<option value="">Semua Kandang</option>';
+  kandangList.forEach(k => {
+    const o = document.createElement('option');
+    o.value = k.nama; o.textContent = k.nama;
+    sel.appendChild(o);
+  });
+
+  // Autocomplete dari stok yang ada
+  const stokList = await dbGetStokNonPakan(kategori);
+  const dl = document.getElementById('npp-nama-list');
+  dl.innerHTML = stokList.map(s => `<option value="${esc(s.nama)}">`).join('');
+
+  document.getElementById('modal-np-pakai').style.display = 'flex';
+}
+
+async function saveNpPakai() {
+  const kategori  = document.getElementById('npp-kategori').value;
+  const tanggal   = document.getElementById('npp-tgl').value;
+  const nama_item = document.getElementById('npp-nama').value.trim();
+  const jumlah    = parseFloat(document.getElementById('npp-jumlah').value) || 0;
+  const satuan    = document.getElementById('npp-satuan').value;
+  const keterangan = document.getElementById('npp-ket').value.trim();
+  const kandang   = document.getElementById('npp-kandang').value;
+
+  if(!tanggal)    { showToast('⚠️ Tanggal wajib diisi!'); return; }
+  if(!nama_item)  { showToast('⚠️ Nama item wajib diisi!'); return; }
+  if(jumlah <= 0) { showToast('⚠️ Jumlah harus lebih dari 0!'); return; }
+
+  // Cek stok cukup
+  const stokList = await dbGetStokNonPakan(kategori);
+  const stokItem = stokList.find(s => s.nama === nama_item);
+  if(stokItem && jumlah > stokItem.stok) {
+    showToast(`⚠️ Stok ${nama_item} tidak cukup! Tersedia: ${stokItem.stok} ${stokItem.satuan}`);
+    return;
+  }
+
+  showToast('⏳ Menyimpan...');
+  try {
+    await dbSavePemakaianNonPakan({
+      tanggal, kategori, nama_item, jumlah, satuan,
+      keterangan: keterangan||null, kandang: kandang||null,
+      user_input: currentUser?.username || ''
+    });
+    await dbSaveLog('TAMBAH','pemakaian_nonpakan',null,null,
+      {tanggal,kategori,nama_item,jumlah,satuan},
+      `Pemakaian ${kategori}: ${nama_item} ${jumlah} ${satuan}`);
+    closeModal('modal-np-pakai');
+    renderGudangNonPakan(kategori);
+    showToast(`✅ Pemakaian ${NP_CONFIG[kategori]?.label} dicatat!`);
+  } catch(e) { showToast('❌ Gagal: ' + e.message); }
+}
+
+async function deleteNpKiriman(id, kategori) {
+  if(!can('BIAYA')) { showToast('⚠️ Tidak ada akses!'); return; }
+  if(!confirm('Hapus data kiriman ini?')) return;
+  try {
+    await dbDeleteKirimanNonPakan(id, kategori);
+    await dbSaveLog('HAPUS','kiriman_nonpakan',id,null,null,`Hapus kiriman ${kategori}`);
+    renderGudangNonPakan(kategori);
+    showToast('🗑 Kiriman dihapus.');
+  } catch(e) { showToast('❌ Gagal: ' + e.message); }
+}
+
+async function deleteNpPakai(id, kategori) {
+  if(!can('BIAYA')) { showToast('⚠️ Tidak ada akses!'); return; }
+  if(!confirm('Hapus data pemakaian ini?')) return;
+  try {
+    await dbDeletePemakaianNonPakan(id);
+    await dbSaveLog('HAPUS','pemakaian_nonpakan',id,null,null,`Hapus pemakaian ${kategori}`);
+    renderGudangNonPakan(kategori);
+    showToast('🗑 Pemakaian dihapus.');
+  } catch(e) { showToast('❌ Gagal: ' + e.message); }
 }
 
 // ═══ BOOT ═══

@@ -386,3 +386,75 @@ async function dbGetAllMaster() {
   ]);
   return { supplier, vitamin, obat, vaksin, pelanggan, pakan };
 }
+
+// ── STOK NON-PAKAN (Vitamin, Obat, Vaksin, Desinfektan, Lainnya) ──
+
+async function dbGetKirimanNonPakan(filters = {}) {
+  try {
+    let q = '?select=*&order=tanggal.desc';
+    if (filters.kategori) q += `&kategori=eq.${encodeURIComponent(filters.kategori)}`;
+    if (filters.dari)     q += `&tanggal=gte.${filters.dari}`;
+    if (filters.sampai)   q += `&tanggal=lte.${filters.sampai}`;
+    const rows = await SB.select('kiriman_nonpakan', q);
+    cache.set('kiriman_np_' + (filters.kategori || 'all'), rows);
+    return rows || [];
+  } catch { return cache.get('kiriman_np_' + (filters.kategori || 'all')) || []; }
+}
+
+async function dbSaveKirimanNonPakan(obj) {
+  obj.id = crypto.randomUUID();
+  await SB.insert('kiriman_nonpakan', obj);
+  cache.del('kiriman_np_' + obj.kategori);
+  cache.del('kiriman_np_all');
+}
+
+async function dbDeleteKirimanNonPakan(id, kategori) {
+  await SB.delete('kiriman_nonpakan', `?id=eq.${id}`);
+  cache.del('kiriman_np_' + (kategori || 'all'));
+  cache.del('kiriman_np_all');
+}
+
+async function dbGetPemakaianNonPakan(filters = {}) {
+  try {
+    let q = '?select=*&order=tanggal.desc';
+    if (filters.kategori) q += `&kategori=eq.${encodeURIComponent(filters.kategori)}`;
+    if (filters.dari)     q += `&tanggal=gte.${filters.dari}`;
+    if (filters.sampai)   q += `&tanggal=lte.${filters.sampai}`;
+    const rows = await SB.select('pemakaian_nonpakan', q);
+    return rows || [];
+  } catch { return []; }
+}
+
+async function dbSavePemakaianNonPakan(obj) {
+  obj.id = crypto.randomUUID();
+  await SB.insert('pemakaian_nonpakan', obj);
+}
+
+async function dbDeletePemakaianNonPakan(id) {
+  await SB.delete('pemakaian_nonpakan', `?id=eq.${id}`);
+}
+
+// Hitung stok non-pakan: total kiriman - total pemakaian
+async function dbGetStokNonPakan(kategori) {
+  const [kiriman, pakai] = await Promise.all([
+    dbGetKirimanNonPakan({ kategori }),
+    dbGetPemakaianNonPakan({ kategori })
+  ]);
+  // Group by nama_item
+  const stokMap = {};
+  kiriman.forEach(k => {
+    if (!stokMap[k.nama_item]) stokMap[k.nama_item] = { masuk: 0, keluar: 0, satuan: k.satuan, harga: 0 };
+    stokMap[k.nama_item].masuk += parseFloat(k.jumlah) || 0;
+    stokMap[k.nama_item].harga = parseFloat(k.harga_satuan) || stokMap[k.nama_item].harga;
+  });
+  pakai.forEach(p => {
+    if (!stokMap[p.nama_item]) stokMap[p.nama_item] = { masuk: 0, keluar: 0, satuan: p.satuan, harga: 0 };
+    stokMap[p.nama_item].keluar += parseFloat(p.jumlah) || 0;
+  });
+  return Object.entries(stokMap).map(([nama, v]) => ({
+    nama,
+    stok: Math.max(0, v.masuk - v.keluar),
+    satuan: v.satuan,
+    harga: v.harga
+  }));
+}
