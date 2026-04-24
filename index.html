@@ -1278,15 +1278,18 @@
         <div class="card-header"><div class="num">6</div><h2>Program Kesehatan</h2></div>
         <div class="card-body">
           <div class="row"><div class="field" style="flex:2"><label>Vitamin</label>
-            <div class="tag-input-wrap"><input type="text" id="inp_vitamin" placeholder="Nama vitamin..." onkeydown="tagEnter(event,'vitamin')"/><button class="btn-tag" onclick="addTag('vitamin')">+ Tambah</button></div>
+            <div class="tag-input-wrap"><input type="text" id="inp_vitamin" placeholder="Nama vitamin..." onkeydown="tagEnter(event,'vitamin')" list="list_vitamin"/><button class="btn-tag" onclick="addTag('vitamin')">+ Tambah</button></div>
+            <datalist id="list_vitamin"></datalist>
             <div class="tags" id="tags_vitamin"></div>
           </div></div>
           <div class="row"><div class="field" style="flex:2"><label>Obat</label>
-            <div class="tag-input-wrap"><input type="text" id="inp_obat" placeholder="Nama obat..." onkeydown="tagEnter(event,'obat')"/><button class="btn-tag" onclick="addTag('obat')">+ Tambah</button></div>
+            <div class="tag-input-wrap"><input type="text" id="inp_obat" placeholder="Nama obat..." onkeydown="tagEnter(event,'obat')" list="list_obat"/><button class="btn-tag" onclick="addTag('obat')">+ Tambah</button></div>
+            <datalist id="list_obat"></datalist>
             <div class="tags" id="tags_obat"></div>
           </div></div>
           <div class="row"><div class="field" style="flex:2"><label>Vaksin</label>
-            <div class="tag-input-wrap"><input type="text" id="inp_vaksin" placeholder="Nama vaksin..." onkeydown="tagEnter(event,'vaksin')"/><button class="btn-tag" onclick="addTag('vaksin')">+ Tambah</button></div>
+            <div class="tag-input-wrap"><input type="text" id="inp_vaksin" placeholder="Nama vaksin..." onkeydown="tagEnter(event,'vaksin')" list="list_vaksin"/><button class="btn-tag" onclick="addTag('vaksin')">+ Tambah</button></div>
+            <datalist id="list_vaksin"></datalist>
             <div class="tags" id="tags_vaksin"></div>
           </div></div>
         </div>
@@ -2722,9 +2725,29 @@ async function initApp(){
   if(!document.getElementById('jual-tanggal').value)document.getElementById('jual-tanggal').value=new Date().toISOString().split('T')[0];
   await populateKandangSelects();
   await populateAllPakanSelects();
+  await populateKesehatanDatalist(); // Autocomplete vitamin/obat/vaksin dari master
   updatePeriodBar();
   calcSisa();calcSaleTotal();
   renderHome();
+}
+
+// Populate datalist autocomplete untuk input kesehatan dari master data
+async function populateKesehatanDatalist() {
+  try {
+    const [vitamins, obats, vaksins] = await Promise.all([
+      dbGetVitamin(),
+      dbGetObat(),
+      dbGetVaksin()
+    ]);
+    const dlVitamin = document.getElementById('list_vitamin');
+    const dlObat    = document.getElementById('list_obat');
+    const dlVaksin  = document.getElementById('list_vaksin');
+    if(dlVitamin) dlVitamin.innerHTML = vitamins.map(v=>`<option value="${esc(v.nama)}">`).join('');
+    if(dlObat)    dlObat.innerHTML    = obats.map(o=>`<option value="${esc(o.nama)}">`).join('');
+    if(dlVaksin)  dlVaksin.innerHTML  = vaksins.map(v=>`<option value="${esc(v.nama)}">`).join('');
+  } catch(e) {
+    console.warn('populateKesehatanDatalist error:', e);
+  }
 }
 
 // ═══ KANDANG SELECT ═══
@@ -3015,10 +3038,63 @@ async function doSaveInput(data){
     const aksi=dataLama?'EDIT':'TAMBAH';
     await dbSaveLog(aksi,'input_harian',_editRowId||null,dataLama,mergedData,
       `${aksi} data harian ${data.tanggal} kandang ${data.kandang}`);
+
+    // ── Sinkronisasi pemakaian non-pakan ke tabel pemakaian_nonpakan ──
+    // Hanya saat TAMBAH baru atau kesehatan berubah
+    const kes = mergedData.kesehatan || {};
+    const kesLama = dataLama?.kesehatan || {};
+    const kesBerubah = JSON.stringify(kes) !== JSON.stringify(kesLama);
+
+    if(kesBerubah || !dataLama) {
+      await syncPemakaianNonPakan(data.tanggal, data.kandang, kes, kesLama);
+    }
+
     _editRowId=null;
     showToast('✅ Data harian disimpan!');
     autoResetInputForm();
   }catch(e){showToast('❌ Gagal menyimpan: '+e.message);}
+}
+
+// Sinkronisasi otomatis pemakaian vitamin/obat/vaksin ke tabel pemakaian_nonpakan
+async function syncPemakaianNonPakan(tanggal, kandang, kesBaru, kesLama) {
+  try {
+    // Hapus pemakaian lama yang berasal dari input harian untuk tanggal+kandang ini
+    const existing = await dbGetPemakaianNonPakan({ dari: tanggal, sampai: tanggal });
+    const toDelete = existing.filter(p =>
+      p.keterangan === 'Auto dari Input Harian' &&
+      (p.kandang === kandang || (!p.kandang && !kandang))
+    );
+    for(const p of toDelete) {
+      await dbDeletePemakaianNonPakan(p.id);
+    }
+
+    // Simpan pemakaian baru dari data kesehatan
+    const kategoriMap = {
+      vitamin: { kategori: 'vitamin', satuan: 'botol' },
+      obat:    { kategori: 'obat',    satuan: 'botol' },
+      vaksin:  { kategori: 'vaksin',  satuan: 'dosis' }
+    };
+
+    for(const [field, cfg] of Object.entries(kategoriMap)) {
+      const items = kesBaru[field] || [];
+      for(const nama_item of items) {
+        if(!nama_item || !nama_item.trim()) continue;
+        await dbSavePemakaianNonPakan({
+          tanggal,
+          kategori: cfg.kategori,
+          nama_item: nama_item.trim(),
+          jumlah: 1,
+          satuan: cfg.satuan,
+          kandang: kandang || null,
+          keterangan: 'Auto dari Input Harian',
+          user_input: currentUser?.username || ''
+        });
+      }
+    }
+  } catch(e) {
+    console.warn('syncPemakaianNonPakan error:', e);
+    // Tidak throw — jangan gagalkan save input harian karena sync error
+  }
 }
 function resetInputForm(){
   if(!confirm('Reset semua data form?'))return;
