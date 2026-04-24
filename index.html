@@ -1264,9 +1264,9 @@
       </div>
       <div class="date-bar">
         <label>📅 Tanggal</label>
-        <input type="date" id="tanggal" onchange="updatePeriodBar()"/>
+        <input type="date" id="tanggal" onchange="updatePeriodBar();autoLoadInputHarian()"/>
         <label>Kandang</label>
-        <select id="kandang" onchange="updatePeriodBar()" style="border:1.5px solid #b7e4c7;border-radius:6px;padding:7px 10px;font-size:.88rem;flex:1;min-width:120px;background:#fff;">
+        <select id="kandang" onchange="updatePeriodBar();autoLoadInputHarian()" style="border:1.5px solid #b7e4c7;border-radius:6px;padding:7px 10px;font-size:.88rem;flex:1;min-width:120px;background:#fff;">
           <option value="">-- Pilih Kandang --</option>
         </select>
       </div>
@@ -2778,13 +2778,13 @@ function switchPage(name){
   const navEl = document.getElementById('nav-'+name);
   if(navEl) navEl.classList.add('active');
   if(name==='home')renderHome();
+  if(name==='input')autoLoadInputHarian();   // ← auto-load data hari ini
   if(name==='settings')renderSettings();
   if(name==='gudang') { _currentGTab='pakan'; switchGTab('pakan'); }
   if(name==='penjualan'){renderStokTelur();renderRiwayatJual();}
   if(name==='biaya'){initBiayaPage();}
   if(name==='riwayat')renderRiwayat();
   if(name==='laporan'){populateLaporanKandang();renderLaporan();}
-  if(name==='settings')renderSettings();
 }
 
 // ═══ INIT ═══
@@ -2906,6 +2906,9 @@ function autoResetInputForm(){
   document.getElementById('catatan').value='';
   // Reset tags kesehatan → reset rows baru
   resetKesRows();
+  // Sembunyikan status bar
+  const bar = document.getElementById('input-status-bar');
+  if(bar) bar.style.display = 'none';
   // Reset pakan — sisakan 1 baris kosong
   const pl=document.getElementById('pakan-list');
   [...pl.querySelectorAll('.pakan-row')].slice(1).forEach(r=>r.remove());
@@ -3096,69 +3099,18 @@ async function saveInputData(){
   const data=collectInputData();
   if(!data)return;
 
-  showToast('⏳ Memeriksa data...');
+  showToast('⏳ Menyimpan...');
   try{
     const existing=await dbGetInput({tanggal:data.tanggal,kandang:data.kandang});
-
-    // ── TIDAK ADA DATA LAMA → simpan langsung ──
-    if(!existing||existing.length===0){
-      await doSaveInput(data, null);
-      return;
-    }
-
-    const prev=existing[0];
-    const prevUser=prev.data?.user||prev.user_input||'—';
-    const prevTime=prev.updated_at||prev.created_at||'';
-    const prevHDP=prev.data?.produksi?.hdp||'—';
-    const prevProd=prev.data?.produksi?.total?.butir||'—';
-    const timeStr=prevTime?fmtTglWaktu(prevTime):'—';
-    const sameUser=prevUser===currentUser?.username;
-
-    // ── USER YANG SAMA → langsung timpa tanpa konfirmasi ──
-    if(sameUser){
-      await doSaveInput(data, prev.data);
-      return;
-    }
-
-    // ── USER BERBEDA → cek apakah boleh timpa ──
-    const prevUserObj=(await dbGetUsers()).find(u=>u.username===prevUser);
-    const prevRole=prevUserObj?.role||'';
-    const currentRole=currentUser?.role||'';
-
-    // Level role: semakin tinggi angka semakin tinggi akses
-    const LEVEL={viewer:0,staff:1,operator:2,supervisor:3,manajer:4,admin:5,superadmin:6};
-    const myLevel=LEVEL[currentRole]??0;
-    const prevLevel=LEVEL[prevRole]??0;
-
-    // Hanya boleh timpa jika level LEBIH TINGGI dari yang menginput sebelumnya
-    const canOverwrite = myLevel > prevLevel;
-
-    const roleNote=`Diinput oleh <strong>${esc(prevUser)}</strong> (${prevRole||'—'})`;
-    document.getElementById('duplikat-info').innerHTML=
-      `<div style="font-weight:700;margin-bottom:6px">📅 ${fmtTgl(data.tanggal)} — ${esc(data.kandang)}</div>`+
-      `<div>${roleNote}</div>`+
-      `<div style="margin-top:6px;font-size:.8rem;color:#92400e">`+
-      `⏱ Waktu input: ${timeStr}<br>`+
-      `🥚 Produksi: ${prevProd} butir &nbsp;|&nbsp; 📈 HDP: ${prevHDP}%`+
-      `</div>`+
-      (!canOverwrite
-        ?`<div style="margin-top:8px;background:#fee2e2;border-radius:6px;padding:8px;font-size:.8rem;color:#dc2626;font-weight:600">🚫 Anda (${currentRole}) tidak bisa menimpa data dari ${prevRole}. Hubungi atasan.</div>`
-        :`<div style="margin-top:8px;background:#fef3c7;border-radius:6px;padding:8px;font-size:.8rem;color:#92400e">⚠️ Sebagai ${currentRole}, Anda bisa menimpa data ini. Pastikan sudah mendapat persetujuan.</div>`
-      );
-
-    _pendingInputData = canOverwrite ? { data, dataLama: prev.data } : null;
-    const btnTimpa=document.getElementById('btn-timpa');
-    if(btnTimpa)btnTimpa.style.display=canOverwrite?'':'none';
-    document.getElementById('modal-duplikat').style.display='flex';
-
+    const dataLama = existing?.length > 0 ? existing[0].data : null;
+    await doSaveInput(data, dataLama);
   }catch(e){
-    console.warn('Duplikat check error:',e);
-    // Jika gagal cek, simpan langsung (jangan blokir user)
-    await doSaveInput(data, null);
+    showToast('❌ Gagal menyimpan: '+e.message);
   }
 }
 
 async function confirmTimpa(){
+  // Legacy — tidak dipakai lagi, tapi jaga agar tidak error
   closeModal('modal-duplikat');
   if(!_pendingInputData)return;
   await doSaveInput(_pendingInputData.data, _pendingInputData.dataLama);
@@ -3168,6 +3120,210 @@ async function confirmTimpa(){
 async function doSaveInput(data, dataLama){
   showToast('⏳ Menyimpan...');
   try{
+    // ══════════════════════════════════════════════════════
+    // PRINSIP: Merge akumulatif — hanya field yang diisi yang di-update
+    // Siapa pun yang menyimpan, field kosong/0 tidak menimpa data lama
+    // Last editor dicatat di field 'last_editor' untuk audit trail
+    // ══════════════════════════════════════════════════════
+
+    const hasVal = v => v !== null && v !== undefined && v !== '' && v !== '0' && parseFloat(v) !== 0;
+    const hasArr = a => Array.isArray(a) && a.length > 0;
+
+    let finalData;
+
+    if(!dataLama || _editRowId){
+      // Data baru atau edit eksplisit via ✏️ → simpan langsung
+      finalData = { ...data };
+    } else {
+      // Merge akumulatif — berlaku untuk semua user (sama atau berbeda)
+      // Proteksi role sudah ditangani di autoLoadInputHarian (read-only jika tidak berhak)
+
+      const deplesiDiisi = hasVal(data.deplesi?.mati) || hasVal(data.deplesi?.afkir);
+      const prodDiisi    = hasVal(data.produksi?.total?.butir) || hasVal(data.produksi?.total?.kilo);
+      const kesDiisi     = hasArr(data.kesehatan?.vitamin) || hasArr(data.kesehatan?.obat) || hasArr(data.kesehatan?.vaksin);
+
+      finalData = {
+        ...dataLama,
+        tanggal:    data.tanggal,
+        kandang:    data.kandang,
+        user:       dataLama.user,           // pertahankan user pertama yang input
+        last_editor: data.user,              // catat siapa yang terakhir edit
+        last_edit_time: new Date().toISOString(),
+        deplesi:    deplesiDiisi ? data.deplesi    : dataLama.deplesi,
+        sisa_ayam:  deplesiDiisi ? data.sisa_ayam  : dataLama.sisa_ayam,
+        pct_deplesi:deplesiDiisi ? data.pct_deplesi: dataLama.pct_deplesi,
+        pakan:      hasArr(data.pakan)       ? data.pakan      : dataLama.pakan,
+        air_liter:  hasVal(data.air_liter)   ? data.air_liter  : dataLama.air_liter,
+        produksi:   prodDiisi                ? data.produksi   : dataLama.produksi,
+        kesehatan:  kesDiisi                 ? data.kesehatan  : dataLama.kesehatan,
+        catatan:    data.catatan?.trim()     ? data.catatan    : (dataLama.catatan||''),
+      };
+    }
+
+    await dbSaveInput(data.tanggal, data.kandang, finalData);
+
+    // Activity log
+    const aksi = dataLama ? 'EDIT' : 'TAMBAH';
+    await dbSaveLog(aksi,'input_harian',_editRowId||null,dataLama,finalData,
+      `${aksi} data harian ${data.tanggal} kandang ${data.kandang}`);
+
+    // Sync pemakaian non-pakan
+    const kes = finalData.kesehatan || {};
+    const kesLama = dataLama?.kesehatan || {};
+    if(JSON.stringify(kes) !== JSON.stringify(kesLama) || !dataLama){
+      await syncPemakaianNonPakan(data.tanggal, data.kandang, kes, kesLama);
+    }
+
+    _editRowId = null;
+    showToast('✅ Data harian disimpan!');
+    autoResetInputForm();
+  }catch(e){showToast('❌ Gagal menyimpan: '+e.message);}
+}
+
+// ═══ AUTO-LOAD INPUT HARIAN ═══
+// Dipanggil saat buka halaman Input — load data hari ini jika sudah ada
+async function autoLoadInputHarian(){
+  const tgl  = document.getElementById('tanggal').value || new Date().toISOString().split('T')[0];
+  const knd  = document.getElementById('kandang').value;
+
+  // Set tanggal hari ini jika belum diset
+  if(!document.getElementById('tanggal').value){
+    document.getElementById('tanggal').value = tgl;
+  }
+
+  // Jika kandang belum dipilih, tunggu user pilih kandang dulu
+  if(!knd){
+    updatePeriodBar();
+    return;
+  }
+
+  try{
+    const existing = await dbGetInput({tanggal:tgl, kandang:knd});
+    if(!existing || existing.length === 0){
+      // Belum ada data — form kosong, scroll ke field pertama
+      updatePeriodBar();
+      setTimeout(()=>autoScrollToEmpty(), 300);
+      return;
+    }
+
+    const d = existing[0].data;
+    const prevUser = d?.user || existing[0].user_input || '—';
+    const lastEditor = d?.last_editor || prevUser;
+    const lastTime = d?.last_edit_time || existing[0].updated_at || existing[0].created_at || '';
+
+    // Cek apakah user ini boleh edit
+    const LEVEL={viewer:0,staff:1,operator:2,supervisor:3,manajer:4,admin:5,superadmin:6};
+    const prevUserObj=(await dbGetUsers()).find(u=>u.username===prevUser);
+    const prevRole=prevUserObj?.role||'';
+    const myLevel=LEVEL[currentUser?.role]??0;
+    const prevLevel=LEVEL[prevRole]??0;
+    const sameUser = prevUser === currentUser?.username;
+    const canEdit = sameUser || myLevel > prevLevel;
+
+    // Tampilkan info siapa yang sudah input
+    showInputStatusBar(prevUser, lastEditor, lastTime, canEdit, prevRole);
+
+    if(!canEdit){
+      // Read-only — tampilkan data tapi disable tombol simpan
+      _loadEditToForm(d, existing[0].id);
+      const btnSave = document.querySelector('#page-input .btn-save');
+      if(btnSave){
+        btnSave.disabled = true;
+        btnSave.style.opacity = '0.5';
+        btnSave.title = `Data diinput oleh ${prevUser} (${prevRole}). Anda tidak bisa mengubahnya.`;
+      }
+      return;
+    }
+
+    // Bisa edit — load data dan enable simpan
+    _loadEditToForm(d, existing[0].id);
+    const btnSave = document.querySelector('#page-input .btn-save');
+    if(btnSave){ btnSave.disabled = false; btnSave.style.opacity = ''; btnSave.title = ''; }
+
+    // Auto-scroll ke field yang belum diisi
+    setTimeout(()=>autoScrollToEmpty(), 400);
+
+  }catch(e){
+    console.warn('autoLoadInputHarian error:', e);
+    updatePeriodBar();
+  }
+}
+
+// Tampilkan status bar info siapa yang sudah input
+function showInputStatusBar(prevUser, lastEditor, lastTime, canEdit, prevRole){
+  let bar = document.getElementById('input-status-bar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'input-status-bar';
+    bar.style.cssText = 'margin-bottom:12px;padding:10px 14px;border-radius:8px;font-size:.82rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+    const periodBar = document.getElementById('period-bar');
+    if(periodBar) periodBar.parentNode.insertBefore(bar, periodBar.nextSibling);
+  }
+
+  const timeStr = lastTime ? fmtTglWaktu(lastTime) : '—';
+  const editorInfo = lastEditor !== prevUser
+    ? `Pertama: <strong>${esc(prevUser)}</strong> · Terakhir edit: <strong>${esc(lastEditor)}</strong>`
+    : `Diinput oleh: <strong>${esc(prevUser)}</strong>`;
+
+  if(canEdit){
+    bar.style.background = '#f0fdf4';
+    bar.style.border = '1px solid #b7e4c7';
+    bar.style.color = '#1b4332';
+    bar.innerHTML = `✅ Data sudah ada · ${editorInfo} · ${timeStr} · <em style="color:#2d6a4f">Lanjutkan mengisi field yang kosong</em>`;
+  } else {
+    bar.style.background = '#fef3c7';
+    bar.style.border = '1px solid #fde68a';
+    bar.style.color = '#92400e';
+    bar.innerHTML = `🔒 ${editorInfo} (${prevRole}) · ${timeStr} · <em>Anda tidak bisa mengubah data ini</em>`;
+  }
+  bar.style.display = 'flex';
+}
+
+// Auto-scroll ke field pertama yang belum diisi
+function autoScrollToEmpty(){
+  // Definisi field wajib dan urutannya
+  const checks = [
+    // [kondisi belum diisi, elemen untuk di-scroll, label]
+    [
+      ()=>!document.getElementById('kandang').value,
+      ()=>document.getElementById('kandang'),
+      'Kandang belum dipilih'
+    ],
+    [
+      ()=>{ const m=parseFloat(document.getElementById('mati').value)||0; const a=parseFloat(document.getElementById('afkir').value)||0; return m===0&&a===0; },
+      ()=>document.getElementById('mati'),
+      'Deplesi belum diisi (opsional jika tidak ada)'
+    ],
+    [
+      ()=>{ const rows=document.querySelectorAll('.pakan-row'); return ![...rows].some(r=>r.querySelector('.pakan-select')?.value); },
+      ()=>document.querySelector('.pakan-select'),
+      'Pakan belum dipilih'
+    ],
+    [
+      ()=>{ const v=parseFloat(document.getElementById('p_normal_butir').value)||0; const k=parseFloat(document.getElementById('p_normal_kilo').value)||0; return v===0&&k===0; },
+      ()=>document.getElementById('p_normal_butir'),
+      'Produksi telur belum diisi'
+    ],
+  ];
+
+  for(const [isEmpty, getEl, label] of checks){
+    if(isEmpty()){
+      const el = getEl();
+      if(el){
+        el.scrollIntoView({behavior:'smooth', block:'center'});
+        el.focus();
+        // Highlight field
+        el.style.borderColor = '#f59e0b';
+        el.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.2)';
+        setTimeout(()=>{ el.style.borderColor=''; el.style.boxShadow=''; }, 2000);
+        showToast(`💡 ${label}`);
+        return; // scroll ke yang pertama kosong saja
+      }
+    }
+  }
+  // Semua field utama sudah diisi
+  showToast('✅ Semua field utama sudah diisi');
+}
     // ══════════════════════════════════════════════════════
     // PRINSIP PENYIMPANAN:
     //
