@@ -7123,7 +7123,7 @@ let _bootAttempts = 0;
 function bootApp(){
   _bootAttempts++;
 
-  // Timeout 10 detik — jika DB tidak load, tampilkan error
+  // Timeout 10 detik — jika DB tidak load, tampilkan login
   if(_bootAttempts > 100){
     console.error('❌ DB script gagal load setelah 10 detik');
     document.getElementById('loading-screen').style.display='none';
@@ -7135,8 +7135,15 @@ function bootApp(){
     setTimeout(bootApp,100);
     return;
   }
-  initUsers();
-  setTimeout(checkSession,300);
+
+  try {
+    initUsers();
+    setTimeout(checkSession,300);
+  } catch(e) {
+    console.error('bootApp error:', e);
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+  }
 }
 
 // Jalankan setelah DOM siap

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'teachingfarm-v2.5';
+const CACHE_NAME = 'teachingfarm-v2.6';
 const STATIC_ASSETS = [
   '/supabase.js',
   '/offline-db.js',
