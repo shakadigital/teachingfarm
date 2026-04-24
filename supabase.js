@@ -330,6 +330,7 @@ async function dbUpdateStatusTagihan(kirimanId, jumlahBayar) {
 // Helper generic untuk master tables
 async function dbGetMaster(table, filters = {}) {
   try {
+    // Hanya tampilkan yang aktif di UI, tapi semua kode tetap dihitung untuk generate
     let q = '?select=*&active=eq.true&order=kode.asc';
     if (filters.kategori) q += `&kategori=eq.${encodeURIComponent(filters.kategori)}`;
     const rows = await SB.select(table, q);
@@ -359,12 +360,17 @@ async function dbDeleteMaster(table, id) {
 // Auto-generate kode berdasarkan prefix dan data existing
 async function dbGenerateKode(table, prefix) {
   try {
-    const rows = await SB.select(table, `?select=kode&kode=like.${prefix}*&order=kode.desc&limit=1`);
+    // Gunakan ilike dengan % (bukan *) untuk Supabase REST API
+    // Ambil SEMUA kode dengan prefix ini (termasuk nonaktif) untuk hindari duplikat
+    const rows = await SB.select(table, `?select=kode&kode=ilike.${prefix}-%25&order=kode.desc&limit=1`);
     if (!rows || !rows.length) return `${prefix}-001`;
     const lastKode = rows[0].kode;
     const lastNum = parseInt(lastKode.replace(prefix + '-', '')) || 0;
     return `${prefix}-${String(lastNum + 1).padStart(3, '0')}`;
-  } catch { return `${prefix}-${Date.now().toString().slice(-3)}`; }
+  } catch {
+    // Fallback: timestamp-based untuk hindari collision
+    return `${prefix}-${Date.now().toString().slice(-4)}`;
+  }
 }
 
 // Specific getters

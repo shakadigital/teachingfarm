@@ -6477,12 +6477,16 @@ async function saveMasterData(){
 
   if(!nama){showToast('⚠️ Nama wajib diisi!');return;}
 
-  // Auto-generate kode jika kosong
-  if(!kode){
+  // Auto-generate kode hanya jika kosong DAN ini data baru (bukan edit)
+  if(!kode && !id){
     const prefixMap = {pakan:'PKN',supplier:'SUP',vitamin:'VIT',obat:'OBT',vaksin:'VAK',pelanggan:'PLG'};
     const tableMap  = {pakan:'daftar_pakan',supplier:'master_supplier',vitamin:'master_vitamin',
                        obat:'master_obat',vaksin:'master_vaksin',pelanggan:'master_pelanggan'};
+    showToast('⏳ Generate kode...');
     kode = await dbGenerateKode(tableMap[type], prefixMap[type]);
+  } else if(!kode && id) {
+    showToast('⚠️ Kode tidak boleh kosong saat edit!');
+    return;
   }
 
   let obj = { kode, nama, active: true, created_by: currentUser?.username || '' };
