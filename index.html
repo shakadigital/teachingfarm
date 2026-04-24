@@ -1648,8 +1648,7 @@
         <div class="ks-item"><div class="ks-label">📤 Terpakai</div><div class="ks-val red" id="ks-keluar">Rp 0</div></div>
         <div class="ks-item"><div class="ks-label">💵 Sisa Saldo</div><div class="ks-val" id="ks-saldo">Rp 0</div></div>
         <div style="margin-left:auto;display:flex;gap:6px">
-          <button class="btn-add" style="margin-top:0;font-size:.78rem" id="btn-kas-masuk" onclick="openKasModal('masuk')">＋ Alokasi</button>
-          <button class="btn-add" style="margin-top:0;font-size:.78rem" id="btn-kirim-kas" onclick="openKirimKasModal()">📤 Kirim Kas</button>
+          <button class="btn-add" style="margin-top:0;font-size:.78rem" id="btn-kas-masuk" onclick="openKasModal('masuk')">＋ Kirim Kas</button>
           <button class="btn-add" style="margin-top:0;font-size:.78rem;background:#f59e0b" onclick="openKasModal('keluar')">− Pengeluaran</button>
         </div>
       </div>
@@ -2441,47 +2440,7 @@
   </div>
 </div>
 
-<!-- MODAL KIRIM KAS KE KANDANG (Manager only) -->
-<div class="modal-overlay" id="modal-kirim-kas" style="display:none" onclick="if(event.target===this)closeModal('modal-kirim-kas')">
-  <div class="modal">
-    <div class="modal-header" style="background:#d8f3dc;border-bottom:1px solid #b7e4c7">
-      <h3 style="color:#1b4332">📤 Kirim Kas ke Kandang</h3>
-      <button class="modal-close" onclick="closeModal('modal-kirim-kas')">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="info-box">💡 Dana akan dikirim dari kas pusat ke kas operasional kandang tujuan.</div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Tanggal Kirim</label>
-        <input type="date" id="kirim-kas-tgl"/>
-      </div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Kandang Tujuan</label>
-        <select id="kirim-kas-kandang" onchange="updateKirimKasPreview()">
-          <option value="">-- Pilih Kandang --</option>
-        </select>
-      </div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Jumlah Dana (Rp)</label>
-        <input type="number" id="kirim-kas-jumlah" min="0" step="1000" placeholder="0" oninput="updateKirimKasPreview()"/>
-      </div>
-      <div class="field">
-        <label>Keterangan</label>
-        <input type="text" id="kirim-kas-ket" placeholder="Mis. Dana operasional bulan ini"/>
-      </div>
-      <div id="kirim-kas-preview" style="display:none;background:#f0fdf4;border:1px solid #b7e4c7;border-radius:8px;padding:12px;margin-top:10px">
-        <div style="font-size:.85rem;color:#1b4332;font-weight:600;margin-bottom:4px">Preview Transaksi:</div>
-        <div style="font-size:.8rem;color:#555">
-          • Kas Pusat: <span style="color:#dc2626">-Rp <span id="preview-jumlah">0</span></span><br>
-          • Kas <span id="preview-kandang">Kandang</span>: <span style="color:#16a34a">+Rp <span id="preview-jumlah2">0</span></span>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModal('modal-kirim-kas')">Batal</button>
-      <button class="btn-primary" onclick="saveKirimKas()">📤 Kirim Dana</button>
-    </div>
-  </div>
-</div>
+<!-- MODAL KIRIM KAS KE KANDANG dihapus -->
 
 <!-- MODAL RINGKASAN SIKLUS -->
 <div class="modal-overlay" id="modal-siklus" style="display:none" onclick="if(event.target===this)closeModal('modal-siklus')">
@@ -6155,9 +6114,6 @@ async function renderKasSaldo(kandangParam){
   const btnMasuk=document.getElementById('btn-kas-masuk');
   if(btnMasuk)btnMasuk.style.display=can('KAS_MASUK')?'':'none';
   
-  // Tombol Kirim Kas hanya untuk manajer/admin
-  const btnKirimKas=document.getElementById('btn-kirim-kas');
-  if(btnKirimKas)btnKirimKas.style.display=can('KEUANGAN')?'':'none';
 }
 
 async function openKasModal(jenis){
@@ -6200,112 +6156,6 @@ async function saveKas(){
     showToast(jenis==='masuk'?'✅ Alokasi kas disimpan!':'✅ Pengeluaran kas dicatat!');
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
-
-// ═══ KIRIM KAS KE KANDANG (Manager only) ═══
-async function openKirimKasModal() {
-  if(!can('KEUANGAN')) {
-    showToast('⚠️ Hanya Manager yang bisa kirim kas ke kandang!');
-    return;
-  }
-  
-  // Reset form
-  document.getElementById('kirim-kas-tgl').value = new Date().toISOString().split('T')[0];
-  document.getElementById('kirim-kas-kandang').value = '';
-  document.getElementById('kirim-kas-jumlah').value = '';
-  document.getElementById('kirim-kas-ket').value = '';
-  document.getElementById('kirim-kas-preview').style.display = 'none';
-  
-  // Populate kandang dropdown
-  const kandangList = cache.get('kandang_list') || await dbGetKandang();
-  const sel = document.getElementById('kirim-kas-kandang');
-  sel.innerHTML = '<option value="">-- Pilih Kandang --</option>';
-  kandangList.forEach(k => {
-    const opt = document.createElement('option');
-    opt.value = k.nama;
-    opt.textContent = `${k.nama} (${k.status || 'aktif'})`;
-    sel.appendChild(opt);
-  });
-  
-  document.getElementById('modal-kirim-kas').style.display = 'flex';
-}
-
-function updateKirimKasPreview() {
-  const jumlah = parseFloat(document.getElementById('kirim-kas-jumlah').value) || 0;
-  const kandang = document.getElementById('kirim-kas-kandang').value;
-  const preview = document.getElementById('kirim-kas-preview');
-  
-  if(jumlah > 0 && kandang) {
-    const formatted = jumlah.toLocaleString('id-ID');
-    document.getElementById('preview-jumlah').textContent = formatted;
-    document.getElementById('preview-jumlah2').textContent = formatted;
-    document.getElementById('preview-kandang').textContent = kandang;
-    preview.style.display = 'block';
-  } else {
-    preview.style.display = 'none';
-  }
-}
-
-async function saveKirimKas() {
-  const tanggal = document.getElementById('kirim-kas-tgl').value;
-  const kandang = document.getElementById('kirim-kas-kandang').value;
-  const jumlah = parseFloat(document.getElementById('kirim-kas-jumlah').value) || 0;
-  const keterangan = document.getElementById('kirim-kas-ket').value.trim();
-  
-  if(!tanggal || !kandang || !jumlah) {
-    showToast('⚠️ Tanggal, kandang, dan jumlah wajib diisi!');
-    return;
-  }
-  
-  if(jumlah <= 0) {
-    showToast('⚠️ Jumlah harus lebih dari 0!');
-    return;
-  }
-  
-  showToast('⏳ Mengirim kas...');
-  
-  try {
-    // 1. Catat pengeluaran dari kas pusat (Manager)
-    await dbSaveKas({
-      tanggal,
-      jenis: 'keluar',
-      kategori: 'Transfer ke Kandang',
-      jumlah,
-      keterangan: `Transfer ke ${kandang}: ${keterangan || 'Dana operasional'}`,
-      kandang: null, // kas pusat
-      user_input: currentUser?.username || ''
-    });
-    
-    // 2. Catat penerimaan di kas kandang tujuan
-    await dbSaveKas({
-      tanggal,
-      jenis: 'masuk',
-      kategori: 'Transfer dari Manager',
-      jumlah,
-      keterangan: `Diterima dari Manager: ${keterangan || 'Dana operasional'}`,
-      kandang: kandang,
-      user_input: currentUser?.username || ''
-    });
-    
-    closeModal('modal-kirim-kas');
-    await renderKasSaldo();
-    await dbSaveLog('TAMBAH','kas_operasional',null,null,
-      {tanggal,kandang,jumlah,jenis:'transfer'},
-      `Transfer kas ke ${kandang}: Rp ${jumlah.toLocaleString('id-ID')}`);
-    showToast(`✅ Kas Rp ${jumlah.toLocaleString('id-ID')} berhasil dikirim ke ${kandang}!`);
-    
-  } catch(e) {
-    showToast('❌ Gagal kirim kas: ' + e.message);
-  }
-}
-
-// Update visibility tombol kirim kas
-function updateKirimKasVisibility() {
-  const btnKirimKas = document.getElementById('btn-kirim-kas');
-  if(btnKirimKas) {
-    btnKirimKas.style.display = can('KEUANGAN') ? '' : 'none';
-  }
-}
-
 // ═══ MASTER DATA ═══
 const MASTER_ROLES = ['superadmin','admin','manajer'];
 function canMaster(){ return MASTER_ROLES.includes(currentUser?.role); }
