@@ -1548,6 +1548,7 @@
       <div class="tab-bar" style="margin-bottom:14px">
         <button class="tab-btn active" id="stab-kandang" onclick="switchSTab('kandang')">🏠 Kandang</button>
         <button class="tab-btn" id="stab-user" onclick="switchSTab('user')">👤 User</button>
+        <button class="tab-btn" id="stab-master" onclick="switchSTab('master')" style="display:none">🗃️ Master</button>
         <button class="tab-btn" id="stab-backup" onclick="switchSTab('backup')">💾 Backup</button>
       </div>
 
@@ -1608,6 +1609,124 @@
         </div>
       </div>
       </div>
+
+      <!-- Tab: Master Data (Manager ke atas) -->
+      <div id="stab-content-master" style="display:none">
+        <div class="info-box" style="margin-bottom:14px">🗃️ Data master digunakan sebagai referensi di seluruh aplikasi. Hanya Manager ke atas yang dapat mengelola data ini.</div>
+
+        <!-- Sub-tab Master -->
+        <div class="tab-bar" style="margin-bottom:12px">
+          <button class="tab-btn active" id="smtab-pakan"     onclick="switchMTab('pakan')">🌾 Pakan</button>
+          <button class="tab-btn"        id="smtab-supplier"  onclick="switchMTab('supplier')">🏭 Supplier</button>
+          <button class="tab-btn"        id="smtab-vitamin"   onclick="switchMTab('vitamin')">💊 Vitamin</button>
+          <button class="tab-btn"        id="smtab-obat"      onclick="switchMTab('obat')">🩺 Obat</button>
+          <button class="tab-btn"        id="smtab-vaksin"    onclick="switchMTab('vaksin')">💉 Vaksin</button>
+          <button class="tab-btn"        id="smtab-pelanggan" onclick="switchMTab('pelanggan')">👥 Pelanggan</button>
+        </div>
+
+        <!-- Pakan -->
+        <div id="smtab-content-pakan">
+          <div class="card">
+            <div class="card-header"><div class="num">🌾</div><h2>Master Pakan</h2></div>
+            <div class="card-body">
+              <div style="overflow-x:auto">
+                <table class="tbl">
+                  <thead><tr><th>Kode</th><th>Nama Pakan</th><th>Satuan</th><th>Min. Stok (kg)</th><th>Status</th><th></th></tr></thead>
+                  <tbody id="m-pakan-tbody"></tbody>
+                </table>
+              </div>
+              <div id="m-pakan-empty" class="info-box" style="display:none">Belum ada data pakan.</div>
+              <button class="btn-add" id="btn-add-pakan" onclick="openMasterModal('pakan')">＋ Tambah Pakan</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Supplier -->
+        <div id="smtab-content-supplier" style="display:none">
+          <div class="card">
+            <div class="card-header"><div class="num">🏭</div><h2>Master Supplier</h2></div>
+            <div class="card-body">
+              <div style="overflow-x:auto">
+                <table class="tbl">
+                  <thead><tr><th>Kode</th><th>Nama Supplier</th><th>Kategori</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
+                  <tbody id="m-supplier-tbody"></tbody>
+                </table>
+              </div>
+              <div id="m-supplier-empty" class="info-box" style="display:none">Belum ada data supplier.</div>
+              <button class="btn-add" id="btn-add-supplier" onclick="openMasterModal('supplier')">＋ Tambah Supplier</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vitamin -->
+        <div id="smtab-content-vitamin" style="display:none">
+          <div class="card">
+            <div class="card-header"><div class="num">💊</div><h2>Master Vitamin</h2></div>
+            <div class="card-body">
+              <div style="overflow-x:auto">
+                <table class="tbl">
+                  <thead><tr><th>Kode</th><th>Nama Vitamin</th><th>Supplier</th><th>Satuan</th><th>Status</th><th></th></tr></thead>
+                  <tbody id="m-vitamin-tbody"></tbody>
+                </table>
+              </div>
+              <div id="m-vitamin-empty" class="info-box" style="display:none">Belum ada data vitamin.</div>
+              <button class="btn-add" id="btn-add-vitamin" onclick="openMasterModal('vitamin')">＋ Tambah Vitamin</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Obat -->
+        <div id="smtab-content-obat" style="display:none">
+          <div class="card">
+            <div class="card-header"><div class="num">🩺</div><h2>Master Obat</h2></div>
+            <div class="card-body">
+              <div style="overflow-x:auto">
+                <table class="tbl">
+                  <thead><tr><th>Kode</th><th>Nama Obat</th><th>Supplier</th><th>Satuan</th><th>Status</th><th></th></tr></thead>
+                  <tbody id="m-obat-tbody"></tbody>
+                </table>
+              </div>
+              <div id="m-obat-empty" class="info-box" style="display:none">Belum ada data obat.</div>
+              <button class="btn-add" id="btn-add-obat" onclick="openMasterModal('obat')">＋ Tambah Obat</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vaksin -->
+        <div id="smtab-content-vaksin" style="display:none">
+          <div class="card">
+            <div class="card-header"><div class="num">💉</div><h2>Master Vaksin</h2></div>
+            <div class="card-body">
+              <div style="overflow-x:auto">
+                <table class="tbl">
+                  <thead><tr><th>Kode</th><th>Nama Vaksin</th><th>Supplier</th><th>Satuan</th><th>Status</th><th></th></tr></thead>
+                  <tbody id="m-vaksin-tbody"></tbody>
+                </table>
+              </div>
+              <div id="m-vaksin-empty" class="info-box" style="display:none">Belum ada data vaksin.</div>
+              <button class="btn-add" id="btn-add-vaksin" onclick="openMasterModal('vaksin')">＋ Tambah Vaksin</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pelanggan -->
+        <div id="smtab-content-pelanggan" style="display:none">
+          <div class="card">
+            <div class="card-header"><div class="num">👥</div><h2>Master Pelanggan</h2></div>
+            <div class="card-body">
+              <div style="overflow-x:auto">
+                <table class="tbl">
+                  <thead><tr><th>Kode</th><th>Nama Pelanggan</th><th>Tipe</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
+                  <tbody id="m-pelanggan-tbody"></tbody>
+                </table>
+              </div>
+              <div id="m-pelanggan-empty" class="info-box" style="display:none">Belum ada data pelanggan.</div>
+              <button class="btn-add" id="btn-add-pelanggan" onclick="openMasterModal('pelanggan')">＋ Tambah Pelanggan</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end stab-content-master -->
 
     </div>
   </div>
@@ -1796,125 +1915,6 @@
     </div>
   </div>
 
-  <!-- ══ PAGE: MASTER DATA ══ -->
-  <div class="page" id="page-master">
-    <div class="page-inner">
-
-      <!-- Tab Bar -->
-      <div class="tab-bar">
-        <button class="tab-btn active" id="mtab-pakan"     onclick="switchMTab('pakan')">🌾 Pakan</button>
-        <button class="tab-btn"        id="mtab-supplier"  onclick="switchMTab('supplier')">🏭 Supplier</button>
-        <button class="tab-btn"        id="mtab-vitamin"   onclick="switchMTab('vitamin')">💊 Vitamin</button>
-        <button class="tab-btn"        id="mtab-obat"      onclick="switchMTab('obat')">🩺 Obat</button>
-        <button class="tab-btn"        id="mtab-vaksin"    onclick="switchMTab('vaksin')">💉 Vaksin</button>
-        <button class="tab-btn"        id="mtab-pelanggan" onclick="switchMTab('pelanggan')">👥 Pelanggan</button>
-      </div>
-
-      <!-- ── TAB: PAKAN ── -->
-      <div id="mtab-content-pakan">
-        <div class="card">
-          <div class="card-header"><div class="num">🌾</div><h2>Master Pakan</h2></div>
-          <div class="card-body">
-            <div style="overflow-x:auto">
-              <table class="tbl">
-                <thead><tr><th>Kode</th><th>Nama Pakan</th><th>Satuan</th><th>Min. Stok (kg)</th><th>Status</th><th></th></tr></thead>
-                <tbody id="m-pakan-tbody"></tbody>
-              </table>
-            </div>
-            <div id="m-pakan-empty" class="info-box" style="display:none">Belum ada data pakan.</div>
-            <button class="btn-add" id="btn-add-pakan" onclick="openMasterModal('pakan')">＋ Tambah Pakan</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── TAB: SUPPLIER ── -->
-      <div id="mtab-content-supplier" style="display:none">
-        <div class="card">
-          <div class="card-header"><div class="num">🏭</div><h2>Master Supplier</h2></div>
-          <div class="card-body">
-            <div style="overflow-x:auto">
-              <table class="tbl">
-                <thead><tr><th>Kode</th><th>Nama Supplier</th><th>Kategori</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
-                <tbody id="m-supplier-tbody"></tbody>
-              </table>
-            </div>
-            <div id="m-supplier-empty" class="info-box" style="display:none">Belum ada data supplier.</div>
-            <button class="btn-add" id="btn-add-supplier" onclick="openMasterModal('supplier')">＋ Tambah Supplier</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── TAB: VITAMIN ── -->
-      <div id="mtab-content-vitamin" style="display:none">
-        <div class="card">
-          <div class="card-header"><div class="num">💊</div><h2>Master Vitamin</h2></div>
-          <div class="card-body">
-            <div style="overflow-x:auto">
-              <table class="tbl">
-                <thead><tr><th>Kode</th><th>Nama Vitamin</th><th>Supplier</th><th>Satuan</th><th>Status</th><th></th></tr></thead>
-                <tbody id="m-vitamin-tbody"></tbody>
-              </table>
-            </div>
-            <div id="m-vitamin-empty" class="info-box" style="display:none">Belum ada data vitamin.</div>
-            <button class="btn-add" id="btn-add-vitamin" onclick="openMasterModal('vitamin')">＋ Tambah Vitamin</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── TAB: OBAT ── -->
-      <div id="mtab-content-obat" style="display:none">
-        <div class="card">
-          <div class="card-header"><div class="num">🩺</div><h2>Master Obat</h2></div>
-          <div class="card-body">
-            <div style="overflow-x:auto">
-              <table class="tbl">
-                <thead><tr><th>Kode</th><th>Nama Obat</th><th>Supplier</th><th>Satuan</th><th>Status</th><th></th></tr></thead>
-                <tbody id="m-obat-tbody"></tbody>
-              </table>
-            </div>
-            <div id="m-obat-empty" class="info-box" style="display:none">Belum ada data obat.</div>
-            <button class="btn-add" id="btn-add-obat" onclick="openMasterModal('obat')">＋ Tambah Obat</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── TAB: VAKSIN ── -->
-      <div id="mtab-content-vaksin" style="display:none">
-        <div class="card">
-          <div class="card-header"><div class="num">💉</div><h2>Master Vaksin</h2></div>
-          <div class="card-body">
-            <div style="overflow-x:auto">
-              <table class="tbl">
-                <thead><tr><th>Kode</th><th>Nama Vaksin</th><th>Supplier</th><th>Satuan</th><th>Status</th><th></th></tr></thead>
-                <tbody id="m-vaksin-tbody"></tbody>
-              </table>
-            </div>
-            <div id="m-vaksin-empty" class="info-box" style="display:none">Belum ada data vaksin.</div>
-            <button class="btn-add" id="btn-add-vaksin" onclick="openMasterModal('vaksin')">＋ Tambah Vaksin</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── TAB: PELANGGAN ── -->
-      <div id="mtab-content-pelanggan" style="display:none">
-        <div class="card">
-          <div class="card-header"><div class="num">👥</div><h2>Master Pelanggan</h2></div>
-          <div class="card-body">
-            <div style="overflow-x:auto">
-              <table class="tbl">
-                <thead><tr><th>Kode</th><th>Nama Pelanggan</th><th>Tipe</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
-                <tbody id="m-pelanggan-tbody"></tbody>
-              </table>
-            </div>
-            <div id="m-pelanggan-empty" class="info-box" style="display:none">Belum ada data pelanggan.</div>
-            <button class="btn-add" id="btn-add-pelanggan" onclick="openMasterModal('pelanggan')">＋ Tambah Pelanggan</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
     <button class="nav-item active" id="nav-home" onclick="switchPage('home')"><span class="ni">🏡</span>Home</button>
@@ -1923,7 +1923,7 @@
     <button class="nav-item" id="nav-biaya" onclick="switchPage('biaya')"><span class="ni">💰</span>Biaya</button>
     <button class="nav-item" id="nav-gudang" onclick="switchPage('gudang')"><span class="ni">📦</span>Gudang</button>
     <button class="nav-item" id="nav-laporan" onclick="switchPage('laporan')"><span class="ni">📊</span>Laporan</button>
-    <button class="nav-item" id="nav-master" onclick="switchPage('master')"><span class="ni">🗃️</span>Master</button>
+    <button class="nav-item" id="nav-settings" onclick="switchPage('settings')"><span class="ni">⚙️</span>Atur</button>
   </nav>
 </div>
 
@@ -2325,9 +2325,9 @@ function applyRoleRestrictions(){
   if(btnExportJualRiwayat)btnExportJualRiwayat.style.display=can('EXPORT_LAP')?'':'none';
   const btnDaftar=document.getElementById('btn-daftar-pakan');
   if(btnDaftar)btnDaftar.style.display=can('KEUANGAN')?'':'none';
-  // Menu Master — semua bisa lihat, tapi nav tetap tampil
-  const nm=document.getElementById('nav-master');
-  if(nm)nm.style.display=''; // semua role bisa akses halaman master (read-only untuk operator/staff)
+  // Settings nav selalu tampil untuk semua role
+  const ns=document.getElementById('nav-settings');
+  if(ns)ns.style.display='';
 }
 
 // ═══ AUTH (Supabase) ═══
@@ -2465,7 +2465,7 @@ function switchPage(name){
   if(name==='biaya'){initBiayaPage();}
   if(name==='riwayat')renderRiwayat();
   if(name==='laporan'){populateLaporanKandang();renderLaporan();}
-  if(name==='master')renderMaster();
+  if(name==='settings')renderSettings();
 }
 
 // ═══ INIT ═══
@@ -3689,17 +3689,25 @@ async function captureSummary(){
 }
 
 // ═══ SETTINGS — KANDANG ═══
-function renderSettings(){switchSTab('kandang');}
+function renderSettings(){
+  // Tampilkan tab Master hanya untuk Manager ke atas
+  const tabMaster = document.getElementById('stab-master');
+  if(tabMaster) tabMaster.style.display = can('KEUANGAN') ? '' : 'none';
+  switchSTab('kandang');
+}
 
 let currentSTab='kandang';
 function switchSTab(tab){
   currentSTab=tab;
-  ['kandang','user','backup'].forEach(t=>{
-    document.getElementById('stab-'+t).classList.toggle('active',t===tab);
-    document.getElementById('stab-content-'+t).style.display=t===tab?'block':'none';
+  ['kandang','user','master','backup'].forEach(t=>{
+    const btn = document.getElementById('stab-'+t);
+    const content = document.getElementById('stab-content-'+t);
+    if(btn) btn.classList.toggle('active',t===tab);
+    if(content) content.style.display=t===tab?'block':'none';
   });
-  if(tab==='kandang')renderKandangTable();
-  if(tab==='user')renderUserTable();
+  if(tab==='kandang') renderKandangTable();
+  if(tab==='user') renderUserTable();
+  if(tab==='master') renderMaster();
 }
 
 async function renderKandangTable(){
@@ -5557,7 +5565,7 @@ function updateKirimKasVisibility() {
 }
 
 // ═══ MASTER DATA ═══
-const MASTER_ROLES = ['superadmin','admin','manajer','supervisor'];
+const MASTER_ROLES = ['superadmin','admin','manajer'];
 function canMaster(){ return MASTER_ROLES.includes(currentUser?.role); }
 
 let _currentMasterType = 'pakan';
@@ -5565,20 +5573,21 @@ let _currentMasterType = 'pakan';
 function switchMTab(tab){
   _currentMasterType = tab;
   ['pakan','supplier','vitamin','obat','vaksin','pelanggan'].forEach(t=>{
-    document.getElementById(`mtab-${t}`).classList.toggle('active', t===tab);
-    document.getElementById(`mtab-content-${t}`).style.display = t===tab ? '' : 'none';
+    const btn = document.getElementById(`smtab-${t}`);
+    const content = document.getElementById(`smtab-content-${t}`);
+    if(btn) btn.classList.toggle('active', t===tab);
+    if(content) content.style.display = t===tab ? '' : 'none';
   });
   renderMasterTab(tab);
 }
 
 async function renderMaster(){
-  // Semua role bisa lihat, tapi hanya supervisor+ bisa tambah/edit/hapus
   const canEdit = canMaster();
   ['pakan','supplier','vitamin','obat','vaksin','pelanggan'].forEach(t=>{
     const btn = document.getElementById(`btn-add-${t}`);
     if(btn) btn.style.display = canEdit ? '' : 'none';
   });
-  renderMasterTab('pakan');
+  switchMTab('pakan');
 }
 
 async function renderMasterTab(tab){
