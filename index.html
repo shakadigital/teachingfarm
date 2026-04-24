@@ -3313,7 +3313,6 @@ function showInputStatusBar(prevUser, lastEditor, lastTime, canEdit, prevRole){
 
 // Auto-scroll ke field pertama yang belum diisi
 function autoScrollToEmpty(){
-  // Definisi field wajib dan urutannya
   const checks = [
     [
       ()=>!document.getElementById('kandang').value,
@@ -3336,14 +3335,7 @@ function autoScrollToEmpty(){
   for(const [isEmpty, getEl] of checks){
     if(isEmpty()){
       const el = getEl();
-      if(el){
-        el.scrollIntoView({behavior:'smooth', block:'center'});
-        // Highlight field saja, tanpa toast
-        el.style.borderColor = '#f59e0b';
-        el.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.2)';
-        setTimeout(()=>{ el.style.borderColor=''; el.style.boxShadow=''; }, 2000);
-        return;
-      }
+      if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); return; }
     }
   }
 }
