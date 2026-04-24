@@ -15,6 +15,30 @@
   <link rel="shortcut icon" href="icon/favicon.ico"/>
   <title>Teaching Farm UB</title>
   <script>
+    // ── FORCE CLEAR CACHE jika versi lama ──
+    // Jalankan sebelum apapun untuk pastikan tidak ada cache lama
+    (function(){
+      const CURRENT = 'v2.7';
+      const stored  = localStorage.getItem('app_cache_ver');
+      if(stored !== CURRENT){
+        // Hapus semua SW dan cache lama
+        if('serviceWorker' in navigator){
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister());
+          });
+        }
+        if('caches' in window){
+          caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+        }
+        localStorage.setItem('app_cache_ver', CURRENT);
+        // Reload sekali untuk load versi bersih
+        if(stored !== null){
+          window.location.reload(true);
+        }
+      }
+    })();
+  </script>
+  <script>
     (function(){
       const m = localStorage.getItem('DB_MODE') || 'supabase';
       window.DB_MODE = m;
