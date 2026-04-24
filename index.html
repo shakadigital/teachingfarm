@@ -1119,14 +1119,20 @@
       <div class="settings-dropdown">
         <button class="settings-btn" onclick="toggleSettings()" title="Pengaturan">⚙️</button>
         <div class="settings-menu" id="settings-menu">
-          <button onclick="switchPage('riwayat');toggleSettings()">
-            <span>🗂️</span> <span>Riwayat</span>
-          </button>
-          <button onclick="switchPage('settings');toggleSettings()">
-            <span>⚙️</span> <span>Pengaturan</span>
-          </button>
           <button onclick="toggleDark();toggleSettings()">
             <span id="dark-icon">🌙</span> <span id="dark-text">Mode Gelap</span>
+          </button>
+          <button onclick="goSettings('kandang')">
+            <span>🏠</span> <span>Kandang</span>
+          </button>
+          <button id="smenu-user" onclick="goSettings('user')">
+            <span>👤</span> <span>User</span>
+          </button>
+          <button id="smenu-master" onclick="goSettings('master')" style="display:none">
+            <span>🗃️</span> <span>Master Data</span>
+          </button>
+          <button id="smenu-backup" onclick="goSettings('backup')" style="display:none">
+            <span>💾</span> <span>Backup & Restore</span>
           </button>
           <button onclick="doLogout()">
             <span>⏻</span> <span>Keluar</span>
@@ -2328,6 +2334,26 @@ function applyRoleRestrictions(){
   if(btnExportJualRiwayat)btnExportJualRiwayat.style.display=can('EXPORT_LAP')?'':'none';
   const btnDaftar=document.getElementById('btn-daftar-pakan');
   if(btnDaftar)btnDaftar.style.display=can('KEUANGAN')?'':'none';
+
+  // Settings dropdown menu visibility
+  const isSuperadmin = currentUser?.role === 'superadmin';
+  const isManager    = can('KEUANGAN'); // manajer ke atas
+
+  // Backup — superadmin only
+  const smBackup = document.getElementById('smenu-backup');
+  if(smBackup) smBackup.style.display = isSuperadmin ? '' : 'none';
+
+  // Master — manajer ke atas
+  const smMaster = document.getElementById('smenu-master');
+  if(smMaster) smMaster.style.display = isManager ? '' : 'none';
+
+  // Tab Master di settings — manajer ke atas
+  const stabMaster = document.getElementById('stab-master');
+  if(stabMaster) stabMaster.style.display = isManager ? '' : 'none';
+
+  // Tab Backup di settings — superadmin only
+  const stabBackup = document.getElementById('stab-backup');
+  if(stabBackup) stabBackup.style.display = isSuperadmin ? '' : 'none';
 }
 
 // ═══ AUTH (Supabase) ═══
@@ -3690,9 +3716,17 @@ async function captureSummary(){
 
 // ═══ SETTINGS — KANDANG ═══
 function renderSettings(){
-  // Tampilkan tab Master hanya untuk Manager ke atas
+  const isSuperadmin = currentUser?.role === 'superadmin';
+  const isManager    = can('KEUANGAN');
+
+  // Tab Master — manajer ke atas
   const tabMaster = document.getElementById('stab-master');
-  if(tabMaster) tabMaster.style.display = can('KEUANGAN') ? '' : 'none';
+  if(tabMaster) tabMaster.style.display = isManager ? '' : 'none';
+
+  // Tab Backup — superadmin only
+  const tabBackup = document.getElementById('stab-backup');
+  if(tabBackup) tabBackup.style.display = isSuperadmin ? '' : 'none';
+
   switchSTab('kandang');
 }
 
@@ -3802,30 +3836,61 @@ async function saveKandang(){
 
 // ═══ SETTINGS — USER ═══
 async function renderUserTable(){
-  const isSuperadmin=currentUser&&currentUser.role==='superadmin';
-  const isAdmin=currentUser&&(currentUser.role==='admin'||isSuperadmin);
-  document.getElementById('user-noaccess').style.display=isAdmin?'none':'block';
-  document.getElementById('user-section').style.display=isAdmin?'block':'none';
-  if(!isAdmin)return;
-  const users=await dbGetUsers();
-  const tbody=document.getElementById('user-tbody');tbody.innerHTML='';
-  users.forEach(u=>{
-    const tr=document.createElement('tr');
-    const roleBadge={
-      superadmin:'<span class="badge" style="background:#1e1b4b;color:#a5b4fc">⭐ Superadmin</span>',
-      admin:'<span class="badge badge-blue">Admin</span>',
-      manajer:'<span class="badge badge-green">Manajer</span>',
-      supervisor:'<span class="badge" style="background:#ede9fe;color:#6d28d9">Supervisor</span>',
-      operator:'<span class="badge badge-orange">Operator</span>',
-      staff:'<span class="badge badge-gray">Staff</span>',
-      viewer:'<span class="badge" style="background:#f1f5f9;color:#64748b">👁 Viewer</span>'
-    };
-    // superadmin tidak bisa dihapus oleh siapapun, dan tidak bisa diedit kecuali oleh dirinya sendiri
-    const isSelf=u.username===currentUser.username;
-    const targetIsSuperadmin=u.role==='superadmin';
-    const canEdit=isSelf||(isSuperadmin&&!targetIsSuperadmin)||(!targetIsSuperadmin&&isAdmin);
-    const canDel=!targetIsSuperadmin&&!isSelf&&isAdmin;
-    tr.innerHTML='<td><strong>'+esc(u.username)+'</strong>'+(targetIsSuperadmin?' 🔒':'')+'</td><td>'+(roleBadge[u.role]||'<span class="badge badge-gray">'+esc(u.role)+'</span>')+'</td><td>'+(u.active!==false?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Nonaktif</span>')+'</td><td>'+(canEdit?'<button class="btn-edit" onclick="openUserModal(\''+u.id+'\')">✏️</button>':'')+(canDel?'<button class="btn-del" onclick="deleteUser(\''+u.id+'\',\''+esc(u.username)+'\')">🗑</button>':'')+'</td>';
+  const isSuperadmin = currentUser?.role === 'superadmin';
+  const isAdmin      = currentUser?.role === 'admin' || isSuperadmin;
+  document.getElementById('user-noaccess').style.display = isAdmin ? 'none' : 'block';
+  document.getElementById('user-section').style.display  = isAdmin ? 'block' : 'none';
+  if(!isAdmin) return;
+
+  const users = await dbGetUsers();
+  const tbody = document.getElementById('user-tbody');
+  tbody.innerHTML = '';
+
+  const roleBadge = {
+    superadmin: '<span class="badge" style="background:#1e1b4b;color:#a5b4fc">⭐ Superadmin</span>',
+    admin:      '<span class="badge badge-blue">Admin</span>',
+    manajer:    '<span class="badge badge-green">Manajer</span>',
+    supervisor: '<span class="badge" style="background:#ede9fe;color:#6d28d9">Supervisor</span>',
+    operator:   '<span class="badge badge-orange">Operator</span>',
+    staff:      '<span class="badge badge-gray">Staff</span>',
+    viewer:     '<span class="badge" style="background:#f1f5f9;color:#64748b">👁 Viewer</span>'
+  };
+
+  users.forEach(u => {
+    const isSelf            = u.username === currentUser.username;
+    const targetIsSuperadmin = u.role === 'superadmin';
+    const isActive          = u.active !== false;
+
+    // Superadmin tidak bisa diedit kecuali oleh dirinya sendiri
+    const canEdit = isSelf || (isSuperadmin && !targetIsSuperadmin) || (!targetIsSuperadmin && isAdmin);
+
+    // Hapus permanen: hanya superadmin, dan tidak bisa hapus diri sendiri atau superadmin lain
+    const canHardDelete = isSuperadmin && !targetIsSuperadmin && !isSelf;
+
+    // Nonaktifkan (soft-delete): admin bisa, tapi tidak bisa ke superadmin atau diri sendiri
+    const canSoftDelete = isAdmin && !targetIsSuperadmin && !isSelf && isActive;
+
+    // Aktifkan kembali: admin bisa aktifkan user yang nonaktif
+    const canActivate = isAdmin && !targetIsSuperadmin && !isSelf && !isActive;
+
+    const statusBadge = isActive
+      ? '<span class="badge badge-green">Aktif</span>'
+      : '<span class="badge badge-gray">Nonaktif</span>';
+
+    let aksiHtml = '';
+    if(canEdit)        aksiHtml += `<button class="btn-edit" onclick="openUserModal('${u.id}')" title="Edit">✏️</button>`;
+    if(canSoftDelete)  aksiHtml += `<button class="btn-del" style="background:#fef3c7;color:#92400e" onclick="softDeleteUser('${u.id}','${esc(u.username)}')" title="Nonaktifkan">🚫</button>`;
+    if(canActivate)    aksiHtml += `<button class="btn-edit" style="background:#d8f3dc;color:#1b4332" onclick="activateUser('${u.id}','${esc(u.username)}')" title="Aktifkan kembali">✅</button>`;
+    if(canHardDelete)  aksiHtml += `<button class="btn-del" onclick="deleteUser('${u.id}','${esc(u.username)}')" title="Hapus permanen">🗑</button>`;
+
+    const tr = document.createElement('tr');
+    // Baris user nonaktif ditampilkan lebih redup
+    if(!isActive) tr.style.opacity = '0.55';
+    tr.innerHTML =
+      `<td><strong>${esc(u.username)}</strong>${targetIsSuperadmin?' 🔒':''}</td>`+
+      `<td>${roleBadge[u.role] || `<span class="badge badge-gray">${esc(u.role)}</span>`}</td>`+
+      `<td>${statusBadge}</td>`+
+      `<td>${aksiHtml}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -4538,28 +4603,49 @@ async function deleteKandang(id){
 
 // ── Hapus User ──
 async function deleteUser(id, username){
-  if(username===currentUser?.username){showToast('⚠️ Tidak bisa hapus akun sendiri!');return;}
-  const users=await dbGetUsers();
-  const u=users.find(x=>x.id===id);
-  // superadmin tidak bisa dihapus oleh siapapun
-  if(u?.role==='superadmin'){showToast('🔒 Superadmin tidak dapat dihapus!');return;}
-  const canDelete=currentUser?.role==='admin'||currentUser?.role==='superadmin';
+  // Hard delete — hanya superadmin
+  if(currentUser?.role !== 'superadmin'){showToast('🔒 Hanya Superadmin yang bisa hapus permanen!');return;}
+  if(username === currentUser?.username){showToast('⚠️ Tidak bisa hapus akun sendiri!');return;}
+  const users = await dbGetUsers();
+  const u = users.find(x => x.id === id);
+  if(u?.role === 'superadmin'){showToast('🔒 Superadmin tidak dapat dihapus!');return;}
 
   showHapusModal({
-    judul:`Hapus User`,
-    deskripsi:`👤 <strong>${esc(username)}</strong> · Role: ${u?.role||'—'}`,
-    warning: !canDelete
-      ?`🚫 Hanya Admin yang dapat menghapus user. Hubungi Admin sistem.`
-      :`⚠️ User yang dihapus tidak dapat login lagi. Tindakan ini tidak bisa dibatalkan.`,
-    canDelete,
-    onConfirm:async()=>{
+    judul: 'Hapus Permanen User',
+    deskripsi: `👤 <strong>${esc(username)}</strong> · Role: ${u?.role||'—'}`,
+    warning: `⚠️ Hapus permanen tidak bisa dibatalkan. User tidak akan bisa login lagi dan semua data terkait akan terputus.`,
+    canDelete: true,
+    onConfirm: async () => {
       try{
         await dbDeleteUser(id);
         await renderUserTable();
-        showToast('🗑 User dihapus.');
+        showToast('🗑 User dihapus permanen.');
       }catch(e){showToast('❌ Gagal menghapus.');}
     }
   });
+}
+
+async function softDeleteUser(id, username){
+  // Soft delete — nonaktifkan user (admin bisa)
+  if(!['admin','superadmin'].includes(currentUser?.role)){showToast('⚠️ Tidak ada akses!');return;}
+  if(username === currentUser?.username){showToast('⚠️ Tidak bisa nonaktifkan akun sendiri!');return;}
+  if(!confirm(`Nonaktifkan user "${username}"? User tidak bisa login tapi data tetap tersimpan.`)) return;
+  try{
+    await SB.update('users', {active: false}, `?id=eq.${id}`);
+    cache.del('users');
+    await renderUserTable();
+    showToast(`🚫 User "${username}" dinonaktifkan.`);
+  }catch(e){showToast('❌ Gagal: '+e.message);}
+}
+
+async function activateUser(id, username){
+  if(!['admin','superadmin'].includes(currentUser?.role)){showToast('⚠️ Tidak ada akses!');return;}
+  try{
+    await SB.update('users', {active: true}, `?id=eq.${id}`);
+    cache.del('users');
+    await renderUserTable();
+    showToast(`✅ User "${username}" diaktifkan kembali.`);
+  }catch(e){showToast('❌ Gagal: '+e.message);}
 }
 
 // ── Hapus Daftar Pakan ──
@@ -4905,6 +4991,21 @@ function toggleSettings(){
   const menu=document.getElementById('settings-menu');
   menu.classList.toggle('show');
 }
+
+function goSettings(tab){
+  switchPage('settings');
+  switchSTab(tab);
+  toggleSettings();
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const dropdown = document.querySelector('.settings-dropdown');
+  const menu = document.getElementById('settings-menu');
+  if(dropdown && menu && !dropdown.contains(e.target)){
+    menu.classList.remove('show');
+  }
+});
 // Close dropdown when clicking outside
 document.addEventListener('click',function(e){
   const dropdown=document.querySelector('.settings-dropdown');
