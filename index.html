@@ -1617,6 +1617,29 @@
           <div id="restore-status" style="margin-top:10px;font-size:.85rem"></div>
         </div>
       </div>
+
+      <!-- Force Update PWA — Superadmin only -->
+      <div class="card" style="border:2px solid #dc2626">
+        <div class="card-header" style="background:#fee2e2;border-bottom:1px solid #fecaca">
+          <div class="num" style="background:#dc2626">🔄</div>
+          <h2 style="color:#dc2626">Force Update Aplikasi</h2>
+        </div>
+        <div class="card-body">
+          <div class="warn-box">⚠️ Tombol ini akan menghapus semua cache PWA lama dan memuat ulang versi terbaru. Gunakan saat ada update aplikasi yang perlu disebarkan ke semua user.</div>
+          <div style="margin-bottom:12px;font-size:.85rem;color:#555">
+            <strong>Versi saat ini:</strong> <span id="current-app-version" style="font-family:monospace;background:#f0f4f8;padding:2px 8px;border-radius:4px">—</span><br>
+            <strong>Cache aktif:</strong> <span id="current-cache-name" style="font-family:monospace;background:#f0f4f8;padding:2px 8px;border-radius:4px">—</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-primary" style="background:linear-gradient(135deg,#dc2626,#ef4444)" onclick="forceUpdatePWA()">
+              🔄 Hapus Cache & Update Sekarang
+            </button>
+            <button class="btn-export" onclick="broadcastUpdateNotice()">
+              📢 Kirim Notifikasi Update ke Semua User
+            </button>
+          </div>
+        </div>
+      </div>
       </div>
 
       <!-- Tab: Master Data (Manager ke atas) -->
@@ -2983,7 +3006,11 @@ async function hapusPenjualan(id){
   if(!konfirm)return;
   try{
     showToast('⏳ Menghapus...');
+    const all=await dbGetPenjualan();
+    const rec=all.find(x=>x.id===id);
     await dbDeletePenjualan(id);
+    await dbSaveLog('HAPUS','penjualan',id,rec,null,
+      `Hapus penjualan tgl ${rec?.tanggal||'—'}, total Rp ${(rec?.grand_total||0).toLocaleString('id-ID')}`);
     await renderStokTelur();
     await renderRiwayatJual();
     showToast('✅ Transaksi penjualan dihapus!');
@@ -3391,6 +3418,9 @@ async function savePembayaran(){
     if(refId) await dbUpdateStatusTagihan(refId,jumlah_bayar);
     closeModal('modal-bayar');
     await renderGudang();
+    await dbSaveLog('TAMBAH','pembayaran',null,null,
+      {tanggal,jenis,supplier,jumlah_bayar,metode},
+      `Pembayaran ${jenis}: ${supplier} Rp ${jumlah_bayar.toLocaleString('id-ID')} via ${metode}`);
     showToast('✅ Pembayaran dicatat!');
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
@@ -3398,9 +3428,15 @@ async function savePembayaran(){
 async function deletePembayaran(id){
   if(!can('KEUANGAN')){showToast('⚠️ Tidak ada akses!');return;}
   if(!confirm('Hapus data pembayaran ini?'))return;
-  await dbDeletePembayaran(id);
-  await renderGudang();
-  showToast('🗑 Pembayaran dihapus.');
+  try{
+    const list=await dbGetPembayaran({});
+    const b=list.find(x=>x.id===id);
+    await dbDeletePembayaran(id);
+    await renderGudang();
+    await dbSaveLog('HAPUS','pembayaran',id,b,null,
+      `Hapus pembayaran: ${b?.supplier||'—'} Rp ${(b?.jumlah_bayar||0).toLocaleString('id-ID')}`);
+    showToast('🗑 Pembayaran dihapus.');
+  }catch(e){showToast('❌ Gagal: '+e.message);}
 }
 
 async function openStokModal(id){
@@ -3421,7 +3457,9 @@ async function saveStok(){
   const id=document.getElementById('ms-id').value;
   const obj={nama,stok_minimal:min};
   if(id)obj.id=id;
-  try{await dbSaveDaftarPakan(obj);closeModal('modal-stok');await renderGudang();showToast('✅ Pakan disimpan!');}
+  try{await dbSaveDaftarPakan(obj);closeModal('modal-stok');await renderGudang();
+    await dbSaveLog(id?'EDIT':'TAMBAH','daftar_pakan',obj.id||null,null,obj,`${id?'Edit':'Tambah'} pakan: ${nama}`);
+    showToast('✅ Pakan disimpan!');}
   catch(e){showToast('❌ Gagal: '+e.message);}
 }
 async function openKirimanModal(){
@@ -3466,6 +3504,9 @@ async function saveKiriman(){
       await dbSaveKiriman({tanggal,nama_pakan,jumlah,harga_per_kg,harga_total,supplier,keterangan,sisa_tagihan:harga_total,status_bayar:'belum',user_input:currentUser?.username||''});
     }
     closeModal('modal-kiriman');await renderGudang();
+    await dbSaveLog(editId?'EDIT':'TAMBAH','kiriman_pakan',editId||null,null,
+      {tanggal,nama_pakan,jumlah,harga_per_kg,harga_total,supplier},
+      `${editId?'Edit':'Tambah'} kiriman: ${nama_pakan} ${jumlah}kg dari ${supplier||'—'}`);
     showToast(editId?'✅ Kiriman diperbarui!':'✅ Kiriman pakan dicatat sebagai tagihan!');
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
@@ -3742,6 +3783,7 @@ function switchSTab(tab){
   if(tab==='kandang') renderKandangTable();
   if(tab==='user') renderUserTable();
   if(tab==='master') renderMaster();
+  if(tab==='backup') loadCacheInfo();
 }
 
 async function renderKandangTable(){
@@ -3830,6 +3872,8 @@ async function saveKandang(){
     closeModal('modal-kandang');
     await renderKandangTable();
     await populateKandangSelects();
+    await dbSaveLog(id?'EDIT':'TAMBAH','kandang',obj.id||null,null,obj,
+      `${id?'Edit':'Tambah'} kandang: ${nama}`);
     showToast('✅ Kandang disimpan!');
   }catch(e){showToast('❌ Gagal menyimpan: '+e.message);}
 }
@@ -3935,6 +3979,9 @@ async function saveUser(){
     await dbSaveUser(obj);
     closeModal('modal-user');
     await renderUserTable();
+    await dbSaveLog(id?'EDIT':'TAMBAH','users',obj.id||null,null,
+      {username:uname,role:obj.role},
+      `${id?'Edit':'Tambah'} user: ${uname} (${obj.role})`);
     showToast('✅ User disimpan!');
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
@@ -4176,6 +4223,9 @@ async function saveBiayaData(){
         user_input:currentUser?.username||''
       });
     }
+    await dbSaveLog('TAMBAH','kas_operasional',null,null,
+      {tanggal,kandang,total:biayaRows.reduce((s,b)=>s+b.jumlah,0),items:biayaRows.length},
+      `Input biaya operasional: ${biayaRows.length} item, total Rp ${biayaRows.reduce((s,b)=>s+b.jumlah,0).toLocaleString('id-ID')}`);
     showToast('✅ Biaya operasional disimpan!');
     resetBiayaRows();
     document.getElementById('biaya-tanggal').value=new Date().toISOString().split('T')[0];
@@ -4595,6 +4645,7 @@ async function deleteKandang(id){
         await dbDeleteKandang(id);
         await renderKandangTable();
         await populateKandangSelects();
+        await dbSaveLog('HAPUS','kandang',id,k,null,`Hapus kandang: ${k?.nama||id}`);
         showToast('🗑 Kandang dihapus.');
       }catch(e){showToast('❌ Gagal menghapus.');}
     }
@@ -4619,6 +4670,7 @@ async function deleteUser(id, username){
       try{
         await dbDeleteUser(id);
         await renderUserTable();
+        await dbSaveLog('HAPUS','users',id,{username,role:u?.role},null,`Hapus permanen user: ${username}`);
         showToast('🗑 User dihapus permanen.');
       }catch(e){showToast('❌ Gagal menghapus.');}
     }
@@ -4634,6 +4686,7 @@ async function softDeleteUser(id, username){
     await SB.update('users', {active: false}, `?id=eq.${id}`);
     cache.del('users');
     await renderUserTable();
+    await dbSaveLog('NONAKTIF','users',id,{active:true},{active:false},`Nonaktifkan user: ${username}`);
     showToast(`🚫 User "${username}" dinonaktifkan.`);
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
@@ -4644,6 +4697,7 @@ async function activateUser(id, username){
     await SB.update('users', {active: true}, `?id=eq.${id}`);
     cache.del('users');
     await renderUserTable();
+    await dbSaveLog('AKTIFKAN','users',id,{active:false},{active:true},`Aktifkan kembali user: ${username}`);
     showToast(`✅ User "${username}" diaktifkan kembali.`);
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
@@ -4660,7 +4714,12 @@ async function deletePakan(id){
     warning:`⚠️ Menghapus pakan akan menghilangkan data dari semua dropdown input. Pastikan tidak ada stok aktif.`,
     canDelete:true,
     onConfirm:async()=>{
-      try{await dbDeleteDaftarPakan(id);await renderGudang();showToast('🗑 Pakan dihapus.');}
+      try{
+        await dbDeleteDaftarPakan(id);
+        await renderGudang();
+        await dbSaveLog('HAPUS','daftar_pakan',id,p,null,`Hapus pakan: ${p?.nama||id}`);
+        showToast('🗑 Pakan dihapus.');
+      }
       catch(e){showToast('❌ Gagal menghapus.');}
     }
   });
@@ -4669,14 +4728,22 @@ async function deletePakan(id){
 // ── Hapus Kiriman Pakan ──
 async function deleteKiriman(id){
   if(!can('KEUANGAN')){showToast('⚠️ Hanya Admin/Manajer yang bisa hapus kiriman!');return;}
+  const kiriman=cache.get('kiriman_pakan')||await dbGetKiriman({});
+  const k=kiriman.find(x=>x.id===id);
 
   showHapusModal({
     judul:`Hapus Kiriman Pakan`,
-    deskripsi:`🚚 Catatan kiriman pakan ini akan dihapus permanen.`,
+    deskripsi:`🚚 <strong>${esc(k?.nama_pakan||'—')}</strong> ${k?.jumlah||0} kg dari ${esc(k?.supplier||'—')}`,
     warning:`⚠️ Menghapus kiriman akan mempengaruhi kalkulasi stok pakan secara otomatis.`,
     canDelete:true,
     onConfirm:async()=>{
-      try{await dbDeleteKiriman(id);await renderGudang();showToast('🗑 Kiriman dihapus.');}
+      try{
+        await dbDeleteKiriman(id);
+        await renderGudang();
+        await dbSaveLog('HAPUS','kiriman_pakan',id,k,null,
+          `Hapus kiriman: ${k?.nama_pakan||'—'} ${k?.jumlah||0}kg tgl ${k?.tanggal||'—'}`);
+        showToast('🗑 Kiriman dihapus.');
+      }
       catch(e){showToast('❌ Gagal menghapus.');}
     }
   });
@@ -5559,6 +5626,9 @@ async function saveKas(){
     await dbSaveKas({tanggal,jenis,kategori,jumlah,keterangan:ket,kandang:kandang||null,user_input:currentUser?.username||''});
     closeModal('modal-kas');
     await renderKasSaldo();
+    await dbSaveLog('TAMBAH','kas_operasional',null,null,
+      {tanggal,jenis,kategori,jumlah,kandang:kandang||null},
+      `${jenis==='masuk'?'Alokasi':'Pengeluaran'} kas: Rp ${jumlah.toLocaleString('id-ID')}${kandang?' ('+kandang+')':''}`);
     showToast(jenis==='masuk'?'✅ Alokasi kas disimpan!':'✅ Pengeluaran kas dicatat!');
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
@@ -5650,6 +5720,9 @@ async function saveKirimKas() {
     
     closeModal('modal-kirim-kas');
     await renderKasSaldo();
+    await dbSaveLog('TAMBAH','kas_operasional',null,null,
+      {tanggal,kandang,jumlah,jenis:'transfer'},
+      `Transfer kas ke ${kandang}: Rp ${jumlah.toLocaleString('id-ID')}`);
     showToast(`✅ Kas Rp ${jumlah.toLocaleString('id-ID')} berhasil dikirim ke ${kandang}!`);
     
   } catch(e) {
@@ -6023,6 +6096,8 @@ async function saveMasterData(){
     }
     closeModal('modal-master');
     renderMasterTab(type);
+    await dbSaveLog(id?'EDIT':'TAMBAH', 'master_'+type, obj.id||null, null, {kode,nama},
+      `${id?'Edit':'Tambah'} master ${type}: ${kode} - ${nama}`);
     showToast(`✅ Data ${type} berhasil disimpan!`);
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
@@ -6039,8 +6114,70 @@ async function deleteMasterData(type, id){
       await dbDeleteMaster(tableMap[type], id);
     }
     renderMasterTab(type);
+    await dbSaveLog('NONAKTIF', tableMap[type]||type, id, null, {active:false},
+      `Nonaktifkan master ${type}: id=${id}`);
     showToast('✅ Data dinonaktifkan.');
   }catch(e){showToast('❌ Gagal: '+e.message);}
+}
+
+// ═══ FORCE UPDATE PWA (Superadmin only) ═══
+async function forceUpdatePWA() {
+  if(currentUser?.role !== 'superadmin') {
+    showToast('🔒 Hanya Superadmin yang bisa force update!');
+    return;
+  }
+  if(!confirm('Hapus semua cache PWA dan muat ulang versi terbaru?\n\nSemua user yang membuka aplikasi akan otomatis mendapat versi baru.')) return;
+
+  showToast('⏳ Menghapus cache lama...');
+
+  try {
+    // 1. Hapus semua cache
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+
+    // 2. Reset shown_version agar popup versi baru muncul lagi
+    localStorage.removeItem('shown_version');
+
+    // 3. Unregister service worker lama
+    if('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+
+    // 4. Log aktivitas
+    await dbSaveLog('FORCE_UPDATE', 'system', null, null,
+      { version: typeof APP_VERSION !== 'undefined' ? APP_VERSION : '—' },
+      'Force update PWA oleh superadmin');
+
+    showToast('✅ Cache dihapus! Memuat ulang...');
+
+    // 5. Reload setelah delay singkat
+    setTimeout(() => window.location.reload(true), 1500);
+
+  } catch(e) {
+    showToast('❌ Gagal: ' + e.message);
+  }
+}
+
+async function broadcastUpdateNotice() {
+  if(currentUser?.role !== 'superadmin') {
+    showToast('🔒 Hanya Superadmin!');
+    return;
+  }
+  // Reset shown_version di localStorage semua user tidak bisa dilakukan langsung
+  // tapi kita bisa naikkan APP_VERSION di install-prompt.js
+  showToast('💡 Untuk broadcast update: naikkan APP_VERSION di install-prompt.js lalu deploy ulang.');
+}
+
+// Tampilkan info versi & cache di tab backup
+async function loadCacheInfo() {
+  try {
+    const keys = await caches.keys();
+    const el = document.getElementById('current-cache-name');
+    if(el) el.textContent = keys.join(', ') || 'Tidak ada cache';
+    const ver = document.getElementById('current-app-version');
+    if(ver) ver.textContent = typeof APP_VERSION !== 'undefined' ? 'V' + APP_VERSION : '—';
+  } catch(e) {}
 }
 
 // ═══ BOOT ═══
