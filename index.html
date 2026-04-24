@@ -3170,25 +3170,81 @@ async function doSaveInput(data, dataLama){
   try{
     // ══════════════════════════════════════════════════════
     // PRINSIP PENYIMPANAN:
-    // 1. Data baru (tidak ada dataLama) → simpan apa adanya
-    // 2. User yang sama edit datanya sendiri → timpa penuh
-    // 3. Role lebih tinggi audit/koreksi → timpa penuh (sudah dikonfirmasi)
-    // TIDAK ADA merge silang antar user — setiap save adalah snapshot lengkap
+    //
+    // KASUS 1 — Tidak ada data lama:
+    //   → Simpan langsung sebagai data baru
+    //
+    // KASUS 2 — User YANG SAMA, hari yang sama (input bertahap):
+    //   → MERGE: field yang diisi user sekarang → update
+    //            field yang kosong/0 → pertahankan data lama
+    //   → Contoh: pagi input deplesi+pakan, siang input produksi,
+    //             sore input vitamin+catatan → semua terakumulasi
+    //
+    // KASUS 3 — User BERBEDA, role lebih tinggi (audit/koreksi):
+    //   → Sudah dikonfirmasi user → TIMPA PENUH dengan data baru
+    //   → Data lama tersimpan di activity_log untuk audit trail
+    //
+    // KASUS 4 — Edit via tombol ✏️ (audit mode):
+    //   → TIMPA PENUH — user sudah lihat data lama di preview
     // ══════════════════════════════════════════════════════
 
     let finalData;
 
     if(!dataLama){
-      // KASUS 1: Data baru — simpan langsung
-      finalData = data;
+      // KASUS 1: Data baru
+      finalData = { ...data };
+
     } else if(_editRowId){
-      // KASUS 2: Edit via tombol ✏️ (audit mode) — timpa penuh dengan data baru
-      // User sudah melihat data lama di preview sebelum edit
+      // KASUS 4: Edit via tombol ✏️ — timpa penuh
       finalData = { ...data };
+
     } else {
-      // KASUS 3: Timpa setelah konfirmasi (user berbeda, role lebih tinggi)
-      // Timpa penuh — tidak ada merge parsial yang bisa merusak data
-      finalData = { ...data };
+      // Cek apakah user yang sama
+      const prevUser = dataLama?.user || '';
+      const sameUser = prevUser === currentUser?.username;
+
+      if(sameUser){
+        // KASUS 2: User sama — MERGE akumulatif sepanjang hari
+        const hasVal = v => v !== null && v !== undefined && v !== '' && v !== '0' && parseFloat(v) !== 0;
+        const hasArr = a => Array.isArray(a) && a.length > 0;
+
+        // Deplesi: update jika user mengisi nilai > 0
+        const deplesiDiisi = hasVal(data.deplesi?.mati) || hasVal(data.deplesi?.afkir);
+        const deplesi      = deplesiDiisi ? data.deplesi : dataLama.deplesi;
+        const sisa_ayam    = deplesiDiisi ? data.sisa_ayam : dataLama.sisa_ayam;
+        const pct_deplesi  = deplesiDiisi ? data.pct_deplesi : dataLama.pct_deplesi;
+
+        // Pakan: update jika user mengisi minimal 1 baris pakan
+        const pakan = hasArr(data.pakan) ? data.pakan : dataLama.pakan;
+
+        // Air minum: update jika diisi
+        const air_liter = hasVal(data.air_liter) ? data.air_liter : dataLama.air_liter;
+
+        // Produksi: update jika ada butir atau kilo yang diisi
+        const prodDiisi = hasVal(data.produksi?.total?.butir) || hasVal(data.produksi?.total?.kilo);
+        const produksi  = prodDiisi ? data.produksi : dataLama.produksi;
+
+        // Kesehatan: update jika ada vitamin/obat/vaksin yang dipilih
+        const kesDiisi = hasArr(data.kesehatan?.vitamin) || hasArr(data.kesehatan?.obat) || hasArr(data.kesehatan?.vaksin);
+        const kesehatan = kesDiisi ? data.kesehatan : dataLama.kesehatan;
+
+        // Catatan: update jika diisi, pertahankan jika kosong
+        const catatan = data.catatan?.trim() ? data.catatan : (dataLama.catatan || '');
+
+        finalData = {
+          ...dataLama,
+          tanggal: data.tanggal,
+          kandang: data.kandang,
+          user: data.user,
+          deplesi, sisa_ayam, pct_deplesi,
+          pakan, air_liter, produksi,
+          kesehatan, catatan
+        };
+
+      } else {
+        // KASUS 3: User berbeda, sudah dikonfirmasi role lebih tinggi → timpa penuh
+        finalData = { ...data };
+      }
     }
 
     await dbSaveInput(data.tanggal, data.kandang, finalData);
