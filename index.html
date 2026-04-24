@@ -1796,6 +1796,125 @@
     </div>
   </div>
 
+  <!-- ══ PAGE: MASTER DATA ══ -->
+  <div class="page" id="page-master">
+    <div class="page-inner">
+
+      <!-- Tab Bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="mtab-pakan"     onclick="switchMTab('pakan')">🌾 Pakan</button>
+        <button class="tab-btn"        id="mtab-supplier"  onclick="switchMTab('supplier')">🏭 Supplier</button>
+        <button class="tab-btn"        id="mtab-vitamin"   onclick="switchMTab('vitamin')">💊 Vitamin</button>
+        <button class="tab-btn"        id="mtab-obat"      onclick="switchMTab('obat')">🩺 Obat</button>
+        <button class="tab-btn"        id="mtab-vaksin"    onclick="switchMTab('vaksin')">💉 Vaksin</button>
+        <button class="tab-btn"        id="mtab-pelanggan" onclick="switchMTab('pelanggan')">👥 Pelanggan</button>
+      </div>
+
+      <!-- ── TAB: PAKAN ── -->
+      <div id="mtab-content-pakan">
+        <div class="card">
+          <div class="card-header"><div class="num">🌾</div><h2>Master Pakan</h2></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Kode</th><th>Nama Pakan</th><th>Satuan</th><th>Min. Stok (kg)</th><th>Status</th><th></th></tr></thead>
+                <tbody id="m-pakan-tbody"></tbody>
+              </table>
+            </div>
+            <div id="m-pakan-empty" class="info-box" style="display:none">Belum ada data pakan.</div>
+            <button class="btn-add" id="btn-add-pakan" onclick="openMasterModal('pakan')">＋ Tambah Pakan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: SUPPLIER ── -->
+      <div id="mtab-content-supplier" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="num">🏭</div><h2>Master Supplier</h2></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Kode</th><th>Nama Supplier</th><th>Kategori</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
+                <tbody id="m-supplier-tbody"></tbody>
+              </table>
+            </div>
+            <div id="m-supplier-empty" class="info-box" style="display:none">Belum ada data supplier.</div>
+            <button class="btn-add" id="btn-add-supplier" onclick="openMasterModal('supplier')">＋ Tambah Supplier</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: VITAMIN ── -->
+      <div id="mtab-content-vitamin" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="num">💊</div><h2>Master Vitamin</h2></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Kode</th><th>Nama Vitamin</th><th>Supplier</th><th>Satuan</th><th>Status</th><th></th></tr></thead>
+                <tbody id="m-vitamin-tbody"></tbody>
+              </table>
+            </div>
+            <div id="m-vitamin-empty" class="info-box" style="display:none">Belum ada data vitamin.</div>
+            <button class="btn-add" id="btn-add-vitamin" onclick="openMasterModal('vitamin')">＋ Tambah Vitamin</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: OBAT ── -->
+      <div id="mtab-content-obat" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="num">🩺</div><h2>Master Obat</h2></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Kode</th><th>Nama Obat</th><th>Supplier</th><th>Satuan</th><th>Status</th><th></th></tr></thead>
+                <tbody id="m-obat-tbody"></tbody>
+              </table>
+            </div>
+            <div id="m-obat-empty" class="info-box" style="display:none">Belum ada data obat.</div>
+            <button class="btn-add" id="btn-add-obat" onclick="openMasterModal('obat')">＋ Tambah Obat</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: VAKSIN ── -->
+      <div id="mtab-content-vaksin" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="num">💉</div><h2>Master Vaksin</h2></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Kode</th><th>Nama Vaksin</th><th>Supplier</th><th>Satuan</th><th>Status</th><th></th></tr></thead>
+                <tbody id="m-vaksin-tbody"></tbody>
+              </table>
+            </div>
+            <div id="m-vaksin-empty" class="info-box" style="display:none">Belum ada data vaksin.</div>
+            <button class="btn-add" id="btn-add-vaksin" onclick="openMasterModal('vaksin')">＋ Tambah Vaksin</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB: PELANGGAN ── -->
+      <div id="mtab-content-pelanggan" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="num">👥</div><h2>Master Pelanggan</h2></div>
+          <div class="card-body">
+            <div style="overflow-x:auto">
+              <table class="tbl">
+                <thead><tr><th>Kode</th><th>Nama Pelanggan</th><th>Tipe</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
+                <tbody id="m-pelanggan-tbody"></tbody>
+              </table>
+            </div>
+            <div id="m-pelanggan-empty" class="info-box" style="display:none">Belum ada data pelanggan.</div>
+            <button class="btn-add" id="btn-add-pelanggan" onclick="openMasterModal('pelanggan')">＋ Tambah Pelanggan</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
     <button class="nav-item active" id="nav-home" onclick="switchPage('home')"><span class="ni">🏡</span>Home</button>
@@ -1804,8 +1923,25 @@
     <button class="nav-item" id="nav-biaya" onclick="switchPage('biaya')"><span class="ni">💰</span>Biaya</button>
     <button class="nav-item" id="nav-gudang" onclick="switchPage('gudang')"><span class="ni">📦</span>Gudang</button>
     <button class="nav-item" id="nav-laporan" onclick="switchPage('laporan')"><span class="ni">📊</span>Laporan</button>
-    <button class="nav-item" id="nav-riwayat" onclick="switchPage('riwayat')"><span class="ni">🗂️</span>Riwayat</button>
+    <button class="nav-item" id="nav-master" onclick="switchPage('master')"><span class="ni">🗃️</span>Master</button>
   </nav>
+</div>
+
+<!-- MODAL MASTER DATA -->
+<div class="modal-overlay" id="modal-master" style="display:none" onclick="if(event.target===this)closeModal('modal-master')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header" style="background:#d8f3dc;border-bottom:1px solid #b7e4c7">
+      <h3 id="modal-master-title" style="color:#1b4332">Tambah Data Master</h3>
+      <button class="modal-close" onclick="closeModal('modal-master')">×</button>
+    </div>
+    <div class="modal-body" id="modal-master-body">
+      <!-- Diisi dinamis oleh JS -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-master')">Batal</button>
+      <button class="btn-primary" onclick="saveMasterData()">💾 Simpan</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL KANDANG -->
@@ -2183,14 +2319,15 @@ function applyRoleRestrictions(){
   document.querySelectorAll('.btn-export').forEach(b=>{
     if(b.getAttribute('onclick')==='exportLaporan()')b.style.display=can('EXPORT_LAP')?'':'none';
   });
-  // Tombol export riwayat penjualan
   const btnExportJual=document.getElementById('btn-export-jual');
   if(btnExportJual)btnExportJual.style.display=can('EXPORT_LAP')?'':'none';
   const btnExportJualRiwayat=document.getElementById('btn-export-jual-riwayat');
   if(btnExportJualRiwayat)btnExportJualRiwayat.style.display=can('EXPORT_LAP')?'':'none';
-  // Gudang — Daftarkan Pakan hanya admin/manajer
   const btnDaftar=document.getElementById('btn-daftar-pakan');
   if(btnDaftar)btnDaftar.style.display=can('KEUANGAN')?'':'none';
+  // Menu Master — semua bisa lihat, tapi nav tetap tampil
+  const nm=document.getElementById('nav-master');
+  if(nm)nm.style.display=''; // semua role bisa akses halaman master (read-only untuk operator/staff)
 }
 
 // ═══ AUTH (Supabase) ═══
@@ -2319,7 +2456,8 @@ function switchPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-  document.getElementById('nav-'+name).classList.add('active');
+  const navEl = document.getElementById('nav-'+name);
+  if(navEl) navEl.classList.add('active');
   if(name==='home')renderHome();
   if(name==='settings')renderSettings();
   if(name==='gudang')renderGudang();
@@ -2327,6 +2465,7 @@ function switchPage(name){
   if(name==='biaya'){initBiayaPage();}
   if(name==='riwayat')renderRiwayat();
   if(name==='laporan'){populateLaporanKandang();renderLaporan();}
+  if(name==='master')renderMaster();
 }
 
 // ═══ INIT ═══
@@ -5415,6 +5554,383 @@ function updateKirimKasVisibility() {
   if(btnKirimKas) {
     btnKirimKas.style.display = can('KEUANGAN') ? '' : 'none';
   }
+}
+
+// ═══ MASTER DATA ═══
+const MASTER_ROLES = ['superadmin','admin','manajer','supervisor'];
+function canMaster(){ return MASTER_ROLES.includes(currentUser?.role); }
+
+let _currentMasterType = 'pakan';
+
+function switchMTab(tab){
+  _currentMasterType = tab;
+  ['pakan','supplier','vitamin','obat','vaksin','pelanggan'].forEach(t=>{
+    document.getElementById(`mtab-${t}`).classList.toggle('active', t===tab);
+    document.getElementById(`mtab-content-${t}`).style.display = t===tab ? '' : 'none';
+  });
+  renderMasterTab(tab);
+}
+
+async function renderMaster(){
+  // Semua role bisa lihat, tapi hanya supervisor+ bisa tambah/edit/hapus
+  const canEdit = canMaster();
+  ['pakan','supplier','vitamin','obat','vaksin','pelanggan'].forEach(t=>{
+    const btn = document.getElementById(`btn-add-${t}`);
+    if(btn) btn.style.display = canEdit ? '' : 'none';
+  });
+  renderMasterTab('pakan');
+}
+
+async function renderMasterTab(tab){
+  switch(tab){
+    case 'pakan':     return renderMasterPakan();
+    case 'supplier':  return renderMasterSupplier();
+    case 'vitamin':   return renderMasterItem('vitamin',  'm-vitamin-tbody',  'm-vitamin-empty');
+    case 'obat':      return renderMasterItem('obat',     'm-obat-tbody',     'm-obat-empty');
+    case 'vaksin':    return renderMasterItem('vaksin',   'm-vaksin-tbody',   'm-vaksin-empty');
+    case 'pelanggan': return renderMasterPelanggan();
+  }
+}
+
+async function renderMasterPakan(){
+  const list = await dbGetDaftarPakan();
+  const tbody = document.getElementById('m-pakan-tbody');
+  const empty = document.getElementById('m-pakan-empty');
+  tbody.innerHTML = '';
+  if(!list.length){ empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  list.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td><span class="badge badge-gray" style="font-family:monospace">${esc(p.kode||'—')}</span></td>`+
+      `<td><strong>${esc(p.nama)}</strong></td>`+
+      `<td>${esc(p.satuan||'kg')}</td>`+
+      `<td>${p.stok_minimal||0} kg</td>`+
+      `<td><span class="badge ${p.active===false?'badge-gray':'badge-green'}">${p.active===false?'Nonaktif':'Aktif'}</span></td>`+
+      `<td>`+
+        (canMaster()?`<button class="btn-edit" onclick="openMasterModal('pakan','${p.id}')">✏️</button>`+
+        `<button class="btn-del" onclick="deleteMasterData('pakan','${p.id}')">🗑</button>`:'')+
+      `</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function renderMasterSupplier(){
+  const list = await dbGetSupplier();
+  const tbody = document.getElementById('m-supplier-tbody');
+  const empty = document.getElementById('m-supplier-empty');
+  tbody.innerHTML = '';
+  if(!list.length){ empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  const katBadge = {pakan:'badge-green',vitamin:'badge-blue',obat:'badge-orange',vaksin:'badge-red',umum:'badge-gray'};
+  list.forEach(s=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td><span class="badge badge-gray" style="font-family:monospace">${esc(s.kode)}</span></td>`+
+      `<td><strong>${esc(s.nama)}</strong></td>`+
+      `<td><span class="badge ${katBadge[s.kategori]||'badge-gray'}">${esc(s.kategori)}</span></td>`+
+      `<td>${esc(s.telepon||'—')}</td>`+
+      `<td><span class="badge ${s.active===false?'badge-gray':'badge-green'}">${s.active===false?'Nonaktif':'Aktif'}</span></td>`+
+      `<td>`+
+        (canMaster()?`<button class="btn-edit" onclick="openMasterModal('supplier','${s.id}')">✏️</button>`+
+        `<button class="btn-del" onclick="deleteMasterData('supplier','${s.id}')">🗑</button>`:'')+
+      `</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function renderMasterItem(type, tbodyId, emptyId){
+  const getters = {vitamin:dbGetVitamin, obat:dbGetObat, vaksin:dbGetVaksin};
+  const list = await getters[type]();
+  const suppliers = await dbGetSupplier();
+  const supMap = Object.fromEntries(suppliers.map(s=>[s.id, s.nama]));
+  const tbody = document.getElementById(tbodyId);
+  const empty = document.getElementById(emptyId);
+  tbody.innerHTML = '';
+  if(!list.length){ empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  list.forEach(item=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td><span class="badge badge-gray" style="font-family:monospace">${esc(item.kode)}</span></td>`+
+      `<td><strong>${esc(item.nama)}</strong></td>`+
+      `<td>${esc(supMap[item.supplier_id]||'—')}</td>`+
+      `<td>${esc(item.satuan||'—')}</td>`+
+      `<td><span class="badge ${item.active===false?'badge-gray':'badge-green'}">${item.active===false?'Nonaktif':'Aktif'}</span></td>`+
+      `<td>`+
+        (canMaster()?`<button class="btn-edit" onclick="openMasterModal('${type}','${item.id}')">✏️</button>`+
+        `<button class="btn-del" onclick="deleteMasterData('${type}','${item.id}')">🗑</button>`:'')+
+      `</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function renderMasterPelanggan(){
+  const list = await dbGetPelanggan();
+  const tbody = document.getElementById('m-pelanggan-tbody');
+  const empty = document.getElementById('m-pelanggan-empty');
+  tbody.innerHTML = '';
+  if(!list.length){ empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  const tipeBadge = {retail:'badge-blue',grosir:'badge-green',distributor:'badge-orange'};
+  list.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td><span class="badge badge-gray" style="font-family:monospace">${esc(p.kode)}</span></td>`+
+      `<td><strong>${esc(p.nama)}</strong></td>`+
+      `<td><span class="badge ${tipeBadge[p.tipe]||'badge-gray'}">${esc(p.tipe||'—')}</span></td>`+
+      `<td>${esc(p.telepon||'—')}</td>`+
+      `<td><span class="badge ${p.active===false?'badge-gray':'badge-green'}">${p.active===false?'Nonaktif':'Aktif'}</span></td>`+
+      `<td>`+
+        (canMaster()?`<button class="btn-edit" onclick="openMasterModal('pelanggan','${p.id}')">✏️</button>`+
+        `<button class="btn-del" onclick="deleteMasterData('pelanggan','${p.id}')">🗑</button>`:'')+
+      `</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Form Templates per tipe ──
+const MASTER_FORMS = {
+  pakan: (d={}) => `
+    <input type="hidden" id="mf-id" value="${d.id||''}"/>
+    <div class="field" style="margin-bottom:12px">
+      <label>Kode Pakan</label>
+      <input type="text" id="mf-kode" value="${esc(d.kode||'')}" placeholder="Auto-generate jika kosong" style="font-family:monospace"/>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Nama Pakan <span style="color:#dc2626">*</span></label>
+      <input type="text" id="mf-nama" value="${esc(d.nama||'')}" placeholder="Mis. Pakan Layer A"/>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Satuan</label>
+        <select id="mf-satuan">
+          <option value="kg" ${d.satuan==='kg'?'selected':''}>kg</option>
+          <option value="sak" ${d.satuan==='sak'?'selected':''}>sak</option>
+          <option value="ton" ${d.satuan==='ton'?'selected':''}>ton</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Min. Stok (kg)</label>
+        <input type="number" id="mf-stok-min" value="${d.stok_minimal||0}" min="0"/>
+      </div>
+    </div>`,
+
+  supplier: (d={}) => `
+    <input type="hidden" id="mf-id" value="${d.id||''}"/>
+    <div class="field" style="margin-bottom:12px">
+      <label>Kode Supplier</label>
+      <input type="text" id="mf-kode" value="${esc(d.kode||'')}" placeholder="Auto-generate jika kosong" style="font-family:monospace"/>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Nama Supplier <span style="color:#dc2626">*</span></label>
+      <input type="text" id="mf-nama" value="${esc(d.nama||'')}" placeholder="Nama perusahaan/toko"/>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Kategori <span style="color:#dc2626">*</span></label>
+      <select id="mf-kategori">
+        <option value="pakan"   ${d.kategori==='pakan'  ?'selected':''}>🌾 Pakan</option>
+        <option value="vitamin" ${d.kategori==='vitamin'?'selected':''}>💊 Vitamin</option>
+        <option value="obat"    ${d.kategori==='obat'   ?'selected':''}>🩺 Obat</option>
+        <option value="vaksin"  ${d.kategori==='vaksin' ?'selected':''}>💉 Vaksin</option>
+        <option value="umum"    ${d.kategori==='umum'   ?'selected':''}>📦 Umum</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Telepon</label>
+        <input type="tel" id="mf-telepon" value="${esc(d.telepon||'')}" placeholder="08xx-xxxx-xxxx"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Alamat</label>
+      <textarea id="mf-alamat" rows="2" placeholder="Alamat lengkap supplier">${esc(d.alamat||'')}</textarea>
+    </div>`,
+
+  _itemWithSupplier: (d={}, supplierOpts='', satuanOpts='') => `
+    <input type="hidden" id="mf-id" value="${d.id||''}"/>
+    <div class="field" style="margin-bottom:12px">
+      <label>Kode</label>
+      <input type="text" id="mf-kode" value="${esc(d.kode||'')}" placeholder="Auto-generate jika kosong" style="font-family:monospace"/>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Nama <span style="color:#dc2626">*</span></label>
+      <input type="text" id="mf-nama" value="${esc(d.nama||'')}" placeholder="Nama produk"/>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Supplier</label>
+      <select id="mf-supplier">${supplierOpts}</select>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Satuan</label>
+        <select id="mf-satuan">${satuanOpts}</select>
+      </div>
+      <div class="field">
+        <label>Harga Satuan (Rp)</label>
+        <input type="number" id="mf-harga" value="${d.harga_satuan||0}" min="0" step="100"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Keterangan</label>
+      <input type="text" id="mf-ket" value="${esc(d.keterangan||'')}" placeholder="Keterangan tambahan"/>
+    </div>`,
+
+  pelanggan: (d={}) => `
+    <input type="hidden" id="mf-id" value="${d.id||''}"/>
+    <div class="field" style="margin-bottom:12px">
+      <label>Kode Pelanggan</label>
+      <input type="text" id="mf-kode" value="${esc(d.kode||'')}" placeholder="Auto-generate jika kosong" style="font-family:monospace"/>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Nama Pelanggan <span style="color:#dc2626">*</span></label>
+      <input type="text" id="mf-nama" value="${esc(d.nama||'')}" placeholder="Nama pelanggan/toko"/>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Tipe</label>
+        <select id="mf-tipe">
+          <option value="retail"      ${d.tipe==='retail'     ?'selected':''}>Retail</option>
+          <option value="grosir"      ${d.tipe==='grosir'     ?'selected':''}>Grosir</option>
+          <option value="distributor" ${d.tipe==='distributor'?'selected':''}>Distributor</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Telepon</label>
+        <input type="tel" id="mf-telepon" value="${esc(d.telepon||'')}" placeholder="08xx-xxxx-xxxx"/>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Harga Khusus (Rp/kg)</label>
+      <input type="number" id="mf-harga" value="${d.harga_khusus||0}" min="0" step="100" placeholder="0 = harga normal"/>
+    </div>
+    <div class="field">
+      <label>Alamat</label>
+      <textarea id="mf-alamat" rows="2" placeholder="Alamat pelanggan">${esc(d.alamat||'')}</textarea>
+    </div>`
+};
+
+async function openMasterModal(type, id=null){
+  if(!canMaster()){showToast('⚠️ Hanya Supervisor ke atas yang bisa mengelola data master!');return;}
+
+  _currentMasterType = type;
+  const titles = {
+    pakan:'Pakan', supplier:'Supplier', vitamin:'Vitamin',
+    obat:'Obat', vaksin:'Vaksin', pelanggan:'Pelanggan'
+  };
+  document.getElementById('modal-master-title').textContent =
+    (id ? '✏️ Edit ' : '＋ Tambah ') + titles[type];
+
+  let data = {};
+  if(id){
+    const getters = {
+      pakan: dbGetDaftarPakan, supplier: dbGetSupplier,
+      vitamin: dbGetVitamin, obat: dbGetObat,
+      vaksin: dbGetVaksin, pelanggan: dbGetPelanggan
+    };
+    const list = await getters[type]();
+    data = list.find(x=>x.id===id) || {};
+  }
+
+  let html = '';
+  if(type === 'pakan'){
+    html = MASTER_FORMS.pakan(data);
+  } else if(type === 'supplier'){
+    html = MASTER_FORMS.supplier(data);
+  } else if(type === 'pelanggan'){
+    html = MASTER_FORMS.pelanggan(data);
+  } else {
+    // vitamin, obat, vaksin — perlu supplier dropdown
+    const suppliers = await dbGetSupplier();
+    const supOpts = '<option value="">-- Pilih Supplier --</option>' +
+      suppliers.map(s=>`<option value="${s.id}" ${data.supplier_id===s.id?'selected':''}>${esc(s.nama)}</option>`).join('');
+    const satuanMap = {
+      vitamin: ['botol','sachet','liter'],
+      obat:    ['botol','sachet','tablet','ampul'],
+      vaksin:  ['dosis','vial','botol']
+    };
+    const satuanOpts = (satuanMap[type]||['pcs']).map(s=>
+      `<option value="${s}" ${data.satuan===s?'selected':''}>${s}</option>`).join('');
+    html = MASTER_FORMS._itemWithSupplier(data, supOpts, satuanOpts);
+  }
+
+  document.getElementById('modal-master-body').innerHTML = html;
+  document.getElementById('modal-master').style.display = 'flex';
+}
+
+async function saveMasterData(){
+  if(!canMaster()){showToast('⚠️ Tidak ada akses!');return;}
+
+  const type = _currentMasterType;
+  const id   = document.getElementById('mf-id')?.value || '';
+  const nama = document.getElementById('mf-nama')?.value.trim() || '';
+  let   kode = document.getElementById('mf-kode')?.value.trim() || '';
+
+  if(!nama){showToast('⚠️ Nama wajib diisi!');return;}
+
+  // Auto-generate kode jika kosong
+  if(!kode){
+    const prefixMap = {pakan:'PKN',supplier:'SUP',vitamin:'VIT',obat:'OBT',vaksin:'VAK',pelanggan:'PLG'};
+    const tableMap  = {pakan:'daftar_pakan',supplier:'master_supplier',vitamin:'master_vitamin',
+                       obat:'master_obat',vaksin:'master_vaksin',pelanggan:'master_pelanggan'};
+    kode = await dbGenerateKode(tableMap[type], prefixMap[type]);
+  }
+
+  let obj = { kode, nama, active: true, created_by: currentUser?.username || '' };
+  if(id) obj.id = id;
+
+  // Tambah field spesifik per tipe
+  if(type === 'pakan'){
+    obj.satuan      = document.getElementById('mf-satuan')?.value || 'kg';
+    obj.stok_minimal= parseFloat(document.getElementById('mf-stok-min')?.value)||0;
+  } else if(type === 'supplier'){
+    const kat = document.getElementById('mf-kategori')?.value;
+    if(!kat){showToast('⚠️ Kategori wajib dipilih!');return;}
+    obj.kategori = kat;
+    obj.telepon  = document.getElementById('mf-telepon')?.value.trim()||null;
+    obj.alamat   = document.getElementById('mf-alamat')?.value.trim()||null;
+  } else if(type === 'pelanggan'){
+    obj.tipe         = document.getElementById('mf-tipe')?.value || 'retail';
+    obj.telepon      = document.getElementById('mf-telepon')?.value.trim()||null;
+    obj.harga_khusus = parseFloat(document.getElementById('mf-harga')?.value)||0;
+    obj.alamat       = document.getElementById('mf-alamat')?.value.trim()||null;
+  } else {
+    // vitamin, obat, vaksin
+    obj.supplier_id  = document.getElementById('mf-supplier')?.value||null;
+    obj.satuan       = document.getElementById('mf-satuan')?.value||'botol';
+    obj.harga_satuan = parseFloat(document.getElementById('mf-harga')?.value)||0;
+    obj.keterangan   = document.getElementById('mf-ket')?.value.trim()||null;
+  }
+
+  showToast('⏳ Menyimpan...');
+  try{
+    const tableMap = {pakan:'daftar_pakan',supplier:'master_supplier',vitamin:'master_vitamin',
+                      obat:'master_obat',vaksin:'master_vaksin',pelanggan:'master_pelanggan'};
+    if(type === 'pakan'){
+      await dbSaveDaftarPakan(obj);
+    } else {
+      await dbSaveMaster(tableMap[type], obj);
+    }
+    closeModal('modal-master');
+    renderMasterTab(type);
+    showToast(`✅ Data ${type} berhasil disimpan!`);
+  }catch(e){showToast('❌ Gagal: '+e.message);}
+}
+
+async function deleteMasterData(type, id){
+  if(!canMaster()){showToast('⚠️ Tidak ada akses!');return;}
+  if(!confirm('Nonaktifkan data ini? Data tidak akan dihapus permanen.'))return;
+  try{
+    const tableMap = {pakan:'daftar_pakan',supplier:'master_supplier',vitamin:'master_vitamin',
+                      obat:'master_obat',vaksin:'master_vaksin',pelanggan:'master_pelanggan'};
+    if(type === 'pakan'){
+      await dbDeleteDaftarPakan(id);
+    } else {
+      await dbDeleteMaster(tableMap[type], id);
+    }
+    renderMasterTab(type);
+    showToast('✅ Data dinonaktifkan.');
+  }catch(e){showToast('❌ Gagal: '+e.message);}
 }
 
 // ═══ BOOT ═══

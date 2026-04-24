@@ -324,3 +324,65 @@ async function dbUpdateStatusTagihan(kirimanId, jumlahBayar) {
     cache.del('kiriman_pakan');
   } catch (e) { console.warn('updateStatusTagihan error:', e); }
 }
+
+// ── MASTER TABLES ──────────────────────────────────
+
+// Helper generic untuk master tables
+async function dbGetMaster(table, filters = {}) {
+  try {
+    let q = '?select=*&active=eq.true&order=kode.asc';
+    if (filters.kategori) q += `&kategori=eq.${encodeURIComponent(filters.kategori)}`;
+    const rows = await SB.select(table, q);
+    cache.set(table, rows);
+    return rows || [];
+  } catch { return cache.get(table) || []; }
+}
+
+async function dbSaveMaster(table, obj) {
+  if (obj.id) {
+    obj.updated_at = new Date().toISOString();
+    await SB.update(table, obj, `?id=eq.${obj.id}`);
+  } else {
+    obj.id = crypto.randomUUID();
+    obj.created_at = new Date().toISOString();
+    await SB.insert(table, obj);
+  }
+  cache.del(table);
+}
+
+async function dbDeleteMaster(table, id) {
+  // Soft delete — set active = false
+  await SB.update(table, { active: false, updated_at: new Date().toISOString() }, `?id=eq.${id}`);
+  cache.del(table);
+}
+
+// Auto-generate kode berdasarkan prefix dan data existing
+async function dbGenerateKode(table, prefix) {
+  try {
+    const rows = await SB.select(table, `?select=kode&kode=like.${prefix}*&order=kode.desc&limit=1`);
+    if (!rows || !rows.length) return `${prefix}-001`;
+    const lastKode = rows[0].kode;
+    const lastNum = parseInt(lastKode.replace(prefix + '-', '')) || 0;
+    return `${prefix}-${String(lastNum + 1).padStart(3, '0')}`;
+  } catch { return `${prefix}-${Date.now().toString().slice(-3)}`; }
+}
+
+// Specific getters
+const dbGetSupplier  = (f) => dbGetMaster('master_supplier', f);
+const dbGetVitamin   = (f) => dbGetMaster('master_vitamin', f);
+const dbGetObat      = (f) => dbGetMaster('master_obat', f);
+const dbGetVaksin    = (f) => dbGetMaster('master_vaksin', f);
+const dbGetPelanggan = (f) => dbGetMaster('master_pelanggan', f);
+
+// Get all master data sekaligus (untuk dropdown)
+async function dbGetAllMaster() {
+  const [supplier, vitamin, obat, vaksin, pelanggan, pakan] = await Promise.all([
+    dbGetSupplier(),
+    dbGetVitamin(),
+    dbGetObat(),
+    dbGetVaksin(),
+    dbGetPelanggan(),
+    dbGetDaftarPakan()
+  ]);
+  return { supplier, vitamin, obat, vaksin, pelanggan, pakan };
+}
