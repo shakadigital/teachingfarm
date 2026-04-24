@@ -1125,11 +1125,8 @@
           <button onclick="toggleDark();toggleSettings()">
             <span id="dark-icon">🌙</span> <span id="dark-text">Mode Gelap</span>
           </button>
-          <button onclick="toggleLang();toggleSettings()">
-            <span>🌐</span> <span id="lang-text">English</span>
-          </button>
           <button onclick="doLogout()">
-            <span>⏻</span> <span data-i18n="keluar">Keluar</span>
+            <span>⏻</span> <span>Keluar</span>
           </button>
         </div>
       </div>
@@ -2311,7 +2308,7 @@ function checkSession(){
   document.getElementById('loading-screen').style.display='none';
   document.getElementById('login-screen').style.display='flex';
 }
-function showApp(){document.getElementById('loading-screen').style.display='none';document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';document.getElementById('hdr-user').textContent=currentUser.username+' ('+currentUser.role+')';applyRoleRestrictions();initDarkMode();applyLang();initApp();}
+function showApp(){document.getElementById('loading-screen').style.display='none';document.getElementById('login-screen').style.display='none';document.getElementById('app').style.display='block';document.getElementById('hdr-user').textContent=currentUser.username+' ('+currentUser.role+')';applyRoleRestrictions();initDarkMode();initApp();}
 function togglePw(){const i=document.getElementById('login-pw');i.type=i.type==='password'?'text':'password';}
 function togglePwField(id){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password';}
 
@@ -4745,45 +4742,6 @@ function initDarkMode(){
 }
 
 // ═══ MULTI-BAHASA ═══
-const LANG={
-  id:{
-    keluar:'Keluar',home:'Home',input:'Input',jual:'Jual',gudang:'Gudang',laporan:'Laporan',riwayat:'Riwayat',atur:'Atur',
-    kandangAktif:'Kandang Aktif',totalPopulasi:'Total Populasi',produksiHariIni:'Produksi Hari Ini (butir)',penjualanHariIni:'Penjualan Hari Ini',
-    aktivitasTerakhir:'Aktivitas Terakhir',statusKandang:'Status Kandang',
-  },
-  en:{
-    keluar:'Logout',home:'Home',input:'Input',jual:'Sell',gudang:'Warehouse',laporan:'Report',riwayat:'History',atur:'Settings',
-    kandangAktif:'Active Coops',totalPopulasi:'Total Population',produksiHariIni:"Today's Production (eggs)",penjualanHariIni:"Today's Sales",
-    aktivitasTerakhir:'Recent Activity',statusKandang:'Coop Status',
-  }
-};
-let currentLang=localStorage.getItem('appLang')||'id';
-function toggleLang(){
-  currentLang=currentLang==='id'?'en':'id';
-  localStorage.setItem('appLang',currentLang);
-  applyLang();
-}
-function applyLang(){
-  const L=LANG[currentLang];
-  // Update dropdown text
-  const langText=document.getElementById('lang-text');
-  if(langText)langText.textContent=currentLang==='id'?'English':'Bahasa';
-  // Update old button if exists
-  const btn=document.getElementById('btn-lang');
-  if(btn)btn.textContent=currentLang==='id'?'EN':'ID';
-  // Nav labels
-  const navMap={home:'Home',input:'Input',penjualan:L.jual,biaya:'Biaya',gudang:L.gudang,laporan:L.laporan,riwayat:L.riwayat};
-  Object.entries(navMap).forEach(([id,label])=>{
-    const el=document.getElementById('nav-'+id);
-    if(el)el.childNodes[el.childNodes.length-1].textContent=label;
-  });
-  // Stat labels
-  const statMap={'sc-label-kandang':L.kandangAktif,'sc-label-populasi':L.totalPopulasi,'sc-label-produksi':L.produksiHariIni,'sc-label-penjualan':L.penjualanHariIni};
-  Object.entries(statMap).forEach(([id,label])=>{const el=document.getElementById(id);if(el)el.textContent=label;});
-  // i18n spans
-  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(L[k])el.textContent=L[k];});
-}
-
 // ═══ HOME ALERTS ═══
 async function renderHomeAlerts(){
   const alerts=[];
