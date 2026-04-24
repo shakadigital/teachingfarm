@@ -1119,8 +1119,11 @@
       <div class="settings-dropdown">
         <button class="settings-btn" onclick="toggleSettings()" title="Pengaturan">⚙️</button>
         <div class="settings-menu" id="settings-menu">
+          <button onclick="switchPage('riwayat');toggleSettings()">
+            <span>🗂️</span> <span>Riwayat</span>
+          </button>
           <button onclick="switchPage('settings');toggleSettings()">
-            <span>⚙️</span> <span>Kandang & User</span>
+            <span>⚙️</span> <span>Pengaturan</span>
           </button>
           <button onclick="toggleDark();toggleSettings()">
             <span id="dark-icon">🌙</span> <span id="dark-text">Mode Gelap</span>
@@ -1923,7 +1926,7 @@
     <button class="nav-item" id="nav-biaya" onclick="switchPage('biaya')"><span class="ni">💰</span>Biaya</button>
     <button class="nav-item" id="nav-gudang" onclick="switchPage('gudang')"><span class="ni">📦</span>Gudang</button>
     <button class="nav-item" id="nav-laporan" onclick="switchPage('laporan')"><span class="ni">📊</span>Laporan</button>
-    <button class="nav-item" id="nav-settings" onclick="switchPage('settings')"><span class="ni">⚙️</span>Atur</button>
+    <button class="nav-item" id="nav-riwayat" onclick="switchPage('riwayat')"><span class="ni">🗂️</span>Riwayat</button>
   </nav>
 </div>
 
@@ -2325,9 +2328,6 @@ function applyRoleRestrictions(){
   if(btnExportJualRiwayat)btnExportJualRiwayat.style.display=can('EXPORT_LAP')?'':'none';
   const btnDaftar=document.getElementById('btn-daftar-pakan');
   if(btnDaftar)btnDaftar.style.display=can('KEUANGAN')?'':'none';
-  // Settings nav selalu tampil untuk semua role
-  const ns=document.getElementById('nav-settings');
-  if(ns)ns.style.display='';
 }
 
 // ═══ AUTH (Supabase) ═══
