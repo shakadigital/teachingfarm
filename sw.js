@@ -1,13 +1,6 @@
-const CACHE_NAME = 'teachingfarm-v2.6';
+const CACHE_NAME = 'teachingfarm-v2.7';
 const STATIC_ASSETS = [
   '/supabase.js',
-  '/offline-db.js',
-  '/offline-manager.js',
-  '/mobile-gestures.js',
-  '/pull-to-refresh.js',
-  '/mobile-forms.js',
-  '/realtime-manager.js',
-  '/install-prompt.js',
   '/manifest.json',
   '/icon/favicon.ico',
   '/icon/icon.svg',
@@ -16,48 +9,48 @@ const STATIC_ASSETS = [
   '/icon/icon-512.png'
 ];
 
-// Install — cache static assets (index.html TIDAK di-cache agar selalu fresh)
+// Install
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache =>
       Promise.allSettled(STATIC_ASSETS.map(url => cache.add(url)))
     )
   );
-  self.skipWaiting(); // Langsung aktif tanpa tunggu tab lama ditutup
+  self.skipWaiting();
 });
 
-// Activate — hapus semua cache lama, klaim semua client
+// Activate — hapus SEMUA cache lama
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => {
-        console.log('[SW] Deleting old cache:', k);
-        return caches.delete(k);
-      }))
-    ).then(() => self.clients.claim()) // Klaim semua tab yang terbuka
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
+});
+
+// Handle SKIP_WAITING dari halaman
+self.addEventListener('message', e => {
+  if(e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // ── index.html → NETWORK FIRST, fallback cache ──
-  // Ini kunci utama agar update selalu terdeteksi
+  // index.html → NETWORK FIRST (selalu fresh)
   if (url.pathname === '/' || url.pathname === '/index.html') {
     e.respondWith(
       fetch(e.request)
         .then(res => {
-          // Simpan versi terbaru ke cache
           const clone = res.clone();
           caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
           return res;
         })
-        .catch(() => caches.match('/index.html')) // Fallback ke cache jika offline
+        .catch(() => caches.match('/index.html'))
     );
     return;
   }
 
-  // ── Supabase API → Network only ──
+  // Supabase API → Network only
   if (url.hostname.includes('supabase.co')) {
     e.respondWith(
       fetch(e.request).catch(() => new Response('{"error":"offline"}', {
@@ -67,22 +60,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // ── CDN (Chart.js, xlsx, jspdf) → Network first, cache fallback ──
-  if (url.hostname.includes('cdn.jsdelivr.net')) {
-    e.respondWith(
-      fetch(e.request)
-        .then(res => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-          return res;
-        })
-        .catch(() => caches.match(e.request))
-    );
-    return;
-  }
-
-  // ── JS/CSS lokal → Network first, cache fallback ──
-  // Pastikan file JS lokal (supabase.js, offline-db.js, dll) selalu fresh
+  // JS/CSS lokal → Network first (agar update selalu terdeteksi)
   if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
     e.respondWith(
       fetch(e.request)
@@ -96,7 +74,21 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // ── Asset statis lainnya (icon, manifest) → Cache first ──
+  // CDN → Network first, cache fallback
+  if (url.hostname.includes('cdn.jsdelivr.net')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+          return res;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Asset statis (icon, manifest) → Cache first
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;

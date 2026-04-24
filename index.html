@@ -4698,7 +4698,27 @@ function todayISO(){return new Date().toISOString().split('T')[0];}
 function yesterdayISO(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().split('T')[0];}
 
 // ═══ PWA ═══
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator && location.protocol !== 'file:'){
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    // Jika ada SW baru menunggu, langsung aktifkan
+    if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      if(newSW) newSW.addEventListener('statechange', () => {
+        if(newSW.state === 'installed' && navigator.serviceWorker.controller){
+          // SW baru siap — reload untuk pakai versi terbaru
+          window.location.reload();
+        }
+      });
+    });
+  }).catch(()=>{});
+
+  // Jika SW controller berubah (update aktif), reload
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(!refreshing){ refreshing = true; window.location.reload(); }
+  });
+}
 
 // ═══ BIAYA OPERASIONAL ═══
 const BIAYA_ROLES=['superadmin','admin','manajer','supervisor'];
