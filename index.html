@@ -3096,129 +3096,116 @@ async function saveInputData(){
   const data=collectInputData();
   if(!data)return;
 
-  // ── Validasi duplikat ──
   showToast('⏳ Memeriksa data...');
   try{
     const existing=await dbGetInput({tanggal:data.tanggal,kandang:data.kandang});
-    if(existing&&existing.length>0){
-      const prev=existing[0];
-      const prevUser=prev.data?.user||prev.user_input||'—';
-      const prevTime=prev.updated_at||prev.created_at||'';
-      const prevHDP=prev.data?.produksi?.hdp||'—';
-      const prevProd=prev.data?.produksi?.total?.butir||'—';
-      const timeStr=prevTime?fmtTglWaktu(prevTime):'—';
 
-      // Cek apakah user yang sama atau berbeda
-      const sameUser=prevUser===currentUser?.username;
-      const roleNote=sameUser
-        ?'Anda sendiri yang menginput sebelumnya.'
-        :`Diinput oleh <strong>${esc(prevUser)}</strong>.`;
-
-      // Proteksi: Operator tidak bisa timpa data dari Supervisor/Manajer/Admin
-      const prevUserObj=(await dbGetUsers()).find(u=>u.username===prevUser);
-      const prevRole=prevUserObj?.role||'';
-      const higherRoles=['admin','manajer','supervisor'];
-      const currentRole=currentUser?.role||'';
-      const canOverwrite=currentRole==='superadmin'||currentRole==='admin'||(currentRole==='manajer')||
-        (currentRole==='supervisor'&&!['admin','manajer','superadmin'].includes(prevRole))||
-        (currentRole==='operator'&&!higherRoles.includes(prevRole))||
-        sameUser;
-
-      document.getElementById('duplikat-info').innerHTML=
-        `<div style="font-weight:700;margin-bottom:6px">📅 ${fmtTgl(data.tanggal)} — ${esc(data.kandang)}</div>`+
-        `<div>Data sudah ada: ${roleNote}</div>`+
-        (prevRole?`<div style="font-size:.78rem;margin-top:2px">Role: <strong>${prevRole}</strong></div>`:'')+
-        `<div style="margin-top:6px;font-size:.8rem;color:#92400e">`+
-        `⏱ Waktu input: ${timeStr}<br>`+
-        `🥚 Produksi: ${prevProd} butir &nbsp;|&nbsp; 📈 HDP: ${prevHDP}%`+
-        `</div>`+
-        (!canOverwrite?`<div style="margin-top:8px;background:#fee2e2;border-radius:6px;padding:8px;font-size:.8rem;color:#dc2626;font-weight:600">🚫 Anda tidak memiliki izin untuk menimpa data dari ${prevRole}.</div>`:'');
-
-      _pendingInputData=canOverwrite?data:null;
-      const btnTimpa=document.getElementById('btn-timpa');
-      if(btnTimpa)btnTimpa.style.display=canOverwrite?'':'none';
-      document.getElementById('modal-duplikat').style.display='flex';
+    // ── TIDAK ADA DATA LAMA → simpan langsung ──
+    if(!existing||existing.length===0){
+      await doSaveInput(data, null);
       return;
     }
-  }catch(e){
-    // Jika gagal cek, lanjut simpan langsung
-    console.warn('Duplikat check error:',e);
-  }
 
-  // Tidak ada duplikat — simpan langsung
-  await doSaveInput(data);
+    const prev=existing[0];
+    const prevUser=prev.data?.user||prev.user_input||'—';
+    const prevTime=prev.updated_at||prev.created_at||'';
+    const prevHDP=prev.data?.produksi?.hdp||'—';
+    const prevProd=prev.data?.produksi?.total?.butir||'—';
+    const timeStr=prevTime?fmtTglWaktu(prevTime):'—';
+    const sameUser=prevUser===currentUser?.username;
+
+    // ── USER YANG SAMA → langsung timpa tanpa konfirmasi ──
+    if(sameUser){
+      await doSaveInput(data, prev.data);
+      return;
+    }
+
+    // ── USER BERBEDA → cek apakah boleh timpa ──
+    const prevUserObj=(await dbGetUsers()).find(u=>u.username===prevUser);
+    const prevRole=prevUserObj?.role||'';
+    const currentRole=currentUser?.role||'';
+
+    // Level role: semakin tinggi angka semakin tinggi akses
+    const LEVEL={viewer:0,staff:1,operator:2,supervisor:3,manajer:4,admin:5,superadmin:6};
+    const myLevel=LEVEL[currentRole]??0;
+    const prevLevel=LEVEL[prevRole]??0;
+
+    // Hanya boleh timpa jika level LEBIH TINGGI dari yang menginput sebelumnya
+    const canOverwrite = myLevel > prevLevel;
+
+    const roleNote=`Diinput oleh <strong>${esc(prevUser)}</strong> (${prevRole||'—'})`;
+    document.getElementById('duplikat-info').innerHTML=
+      `<div style="font-weight:700;margin-bottom:6px">📅 ${fmtTgl(data.tanggal)} — ${esc(data.kandang)}</div>`+
+      `<div>${roleNote}</div>`+
+      `<div style="margin-top:6px;font-size:.8rem;color:#92400e">`+
+      `⏱ Waktu input: ${timeStr}<br>`+
+      `🥚 Produksi: ${prevProd} butir &nbsp;|&nbsp; 📈 HDP: ${prevHDP}%`+
+      `</div>`+
+      (!canOverwrite
+        ?`<div style="margin-top:8px;background:#fee2e2;border-radius:6px;padding:8px;font-size:.8rem;color:#dc2626;font-weight:600">🚫 Anda (${currentRole}) tidak bisa menimpa data dari ${prevRole}. Hubungi atasan.</div>`
+        :`<div style="margin-top:8px;background:#fef3c7;border-radius:6px;padding:8px;font-size:.8rem;color:#92400e">⚠️ Sebagai ${currentRole}, Anda bisa menimpa data ini. Pastikan sudah mendapat persetujuan.</div>`
+      );
+
+    _pendingInputData = canOverwrite ? { data, dataLama: prev.data } : null;
+    const btnTimpa=document.getElementById('btn-timpa');
+    if(btnTimpa)btnTimpa.style.display=canOverwrite?'':'none';
+    document.getElementById('modal-duplikat').style.display='flex';
+
+  }catch(e){
+    console.warn('Duplikat check error:',e);
+    // Jika gagal cek, simpan langsung (jangan blokir user)
+    await doSaveInput(data, null);
+  }
 }
 
 async function confirmTimpa(){
   closeModal('modal-duplikat');
   if(!_pendingInputData)return;
-  await doSaveInput(_pendingInputData);
+  await doSaveInput(_pendingInputData.data, _pendingInputData.dataLama);
   _pendingInputData=null;
 }
 
-async function doSaveInput(data){
+async function doSaveInput(data, dataLama){
   showToast('⏳ Menyimpan...');
   try{
-    // Ambil data lama — untuk log DAN untuk merge
-    const existingRows=await dbGetInput({tanggal:data.tanggal,kandang:data.kandang});
-    const dataLama=existingRows&&existingRows.length>0?existingRows[0].data:null;
+    // ══════════════════════════════════════════════════════
+    // PRINSIP PENYIMPANAN:
+    // 1. Data baru (tidak ada dataLama) → simpan apa adanya
+    // 2. User yang sama edit datanya sendiri → timpa penuh
+    // 3. Role lebih tinggi audit/koreksi → timpa penuh (sudah dikonfirmasi)
+    // TIDAK ADA merge silang antar user — setiap save adalah snapshot lengkap
+    // ══════════════════════════════════════════════════════
 
-    // Helper
-    const hasVal=v=>v!==null&&v!==undefined&&v!==''&&v!=='0'&&parseFloat(v)!==0;
-    const hasArr=a=>Array.isArray(a)&&a.length>0;
-    const jsonEq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+    let finalData;
 
-    let mergedData=data;
-    if(dataLama){
-      if(_editRowId){
-        // ── MODE AUDIT/EDIT: hanya timpa field yang benar-benar berubah dari data lama ──
-        const deplesi=!jsonEq(data.deplesi,dataLama.deplesi)?data.deplesi:dataLama.deplesi;
-        const sisa_ayam=data.sisa_ayam!==dataLama.sisa_ayam?data.sisa_ayam:dataLama.sisa_ayam;
-        const pct_deplesi=data.pct_deplesi!==dataLama.pct_deplesi?data.pct_deplesi:dataLama.pct_deplesi;
-        const pakan=!jsonEq(data.pakan,dataLama.pakan)?data.pakan:dataLama.pakan;
-        const air_liter=data.air_liter!==dataLama.air_liter?data.air_liter:dataLama.air_liter;
-        const produksi=!jsonEq(data.produksi,dataLama.produksi)?data.produksi:dataLama.produksi;
-        const kesehatan=!jsonEq(data.kesehatan,dataLama.kesehatan)?data.kesehatan:dataLama.kesehatan;
-        const catatan=data.catatan!==dataLama.catatan?data.catatan:dataLama.catatan;
-        mergedData={...dataLama,tanggal:data.tanggal,kandang:data.kandang,user:data.user,
-          deplesi,sisa_ayam,pct_deplesi,pakan,air_liter,produksi,kesehatan,catatan};
-      } else {
-        // ── MODE INPUT BARU (data sudah ada dari user lain): merge independen per-field ──
-        const deplesi=(hasVal(data.deplesi?.mati)||hasVal(data.deplesi?.afkir))
-          ?data.deplesi:dataLama.deplesi;
-        const prodAda=hasVal(data.produksi?.total?.butir)||hasVal(data.produksi?.total?.kilo);
-        const produksi=prodAda?data.produksi:dataLama.produksi;
-        const sisa_ayam=(hasVal(data.deplesi?.mati)||hasVal(data.deplesi?.afkir))
-          ?data.sisa_ayam:dataLama.sisa_ayam;
-        const pct_deplesi=(hasVal(data.deplesi?.mati)||hasVal(data.deplesi?.afkir))
-          ?data.pct_deplesi:dataLama.pct_deplesi;
-        const pakan=hasArr(data.pakan)?data.pakan:dataLama.pakan;
-        const air_liter=hasVal(data.air_liter)?data.air_liter:dataLama.air_liter;
-        const kesAda=hasArr(data.kesehatan?.vitamin)||hasArr(data.kesehatan?.obat)||hasArr(data.kesehatan?.vaksin);
-        const kesehatan=kesAda?data.kesehatan:dataLama.kesehatan;
-        const catatan=data.catatan||dataLama.catatan||'';
-        mergedData={...dataLama,tanggal:data.tanggal,kandang:data.kandang,user:data.user,
-          deplesi,sisa_ayam,pct_deplesi,pakan,air_liter,produksi,kesehatan,catatan};
-      }
+    if(!dataLama){
+      // KASUS 1: Data baru — simpan langsung
+      finalData = data;
+    } else if(_editRowId){
+      // KASUS 2: Edit via tombol ✏️ (audit mode) — timpa penuh dengan data baru
+      // User sudah melihat data lama di preview sebelum edit
+      finalData = { ...data };
+    } else {
+      // KASUS 3: Timpa setelah konfirmasi (user berbeda, role lebih tinggi)
+      // Timpa penuh — tidak ada merge parsial yang bisa merusak data
+      finalData = { ...data };
     }
 
-    await dbSaveInput(data.tanggal,data.kandang,mergedData);
-    // Catat activity log
-    const aksi=dataLama?'EDIT':'TAMBAH';
-    await dbSaveLog(aksi,'input_harian',_editRowId||null,dataLama,mergedData,
+    await dbSaveInput(data.tanggal, data.kandang, finalData);
+
+    // Activity log
+    const aksi = dataLama ? 'EDIT' : 'TAMBAH';
+    await dbSaveLog(aksi,'input_harian',_editRowId||null,dataLama,finalData,
       `${aksi} data harian ${data.tanggal} kandang ${data.kandang}`);
 
-    // ── Sinkronisasi pemakaian non-pakan ke tabel pemakaian_nonpakan ──
-    // Hanya saat TAMBAH baru atau kesehatan berubah
-    const kes = mergedData.kesehatan || {};
+    // Sync pemakaian non-pakan (vitamin/obat/vaksin)
+    const kes = finalData.kesehatan || {};
     const kesLama = dataLama?.kesehatan || {};
-    const kesBerubah = JSON.stringify(kes) !== JSON.stringify(kesLama);
-
-    if(kesBerubah || !dataLama) {
+    if(JSON.stringify(kes) !== JSON.stringify(kesLama) || !dataLama){
       await syncPemakaianNonPakan(data.tanggal, data.kandang, kes, kesLama);
     }
 
-    _editRowId=null;
+    _editRowId = null;
     showToast('✅ Data harian disimpan!');
     autoResetInputForm();
   }catch(e){showToast('❌ Gagal menyimpan: '+e.message);}
