@@ -3232,9 +3232,8 @@ async function autoLoadInputHarian(){
   try{
     const existing = await dbGetInput({tanggal:tgl, kandang:knd});
     if(!existing || existing.length === 0){
-      // Belum ada data — form kosong, scroll ke field pertama
+      // Belum ada data — form kosong
       updatePeriodBar();
-      setTimeout(()=>autoScrollToEmpty(), 300);
       return;
     }
 
@@ -3271,9 +3270,6 @@ async function autoLoadInputHarian(){
     _loadEditToForm(d, existing[0].id);
     const btnSave = document.querySelector('#page-input .btn-save');
     if(btnSave){ btnSave.disabled = false; btnSave.style.opacity = ''; btnSave.title = ''; }
-
-    // Auto-scroll ke field yang belum diisi
-    setTimeout(()=>autoScrollToEmpty(), 400);
 
   }catch(e){
     console.warn('autoLoadInputHarian error:', e);
