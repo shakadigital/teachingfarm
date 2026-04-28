@@ -667,7 +667,7 @@
         <div class="card-body">
           <div id="kandang-empty" class="info-box" style="display:none">Belum ada data kandang.</div>
           <div style="overflow-x:auto">
-            <table class="tbl"><thead><tr><th>Nama</th><th>Kapasitas</th><th>Chick In</th><th>Umur Masuk</th><th>Populasi</th><th>Periode</th><th>Status</th><th></th></tr></thead>
+            <table class="tbl"><thead><tr><th>Nama</th><th>Kapasitas</th><th>Periode</th><th>Umur Masuk</th><th>Populasi</th><th>Hari Berjalan</th><th>Status</th><th></th></tr></thead>
             <tbody id="kandang-tbody"></tbody></table>
           </div>
           <button class="btn-add" onclick="openKandangModal()">＋ Tambah Kandang</button>
@@ -1083,9 +1083,9 @@
       <input type="hidden" id="mk-id"/>
       <div class="field" style="margin-bottom:12px"><label>Nama Kandang</label><input type="text" id="mk-nama" placeholder="Mis. Kandang A"/></div>
       <div class="field" style="margin-bottom:12px"><label>Kapasitas (ekor)</label><input type="number" id="mk-kapasitas" min="0" placeholder="0"/></div>
-      <div class="field" style="margin-bottom:12px"><label>Tanggal Chick In</label><input type="date" id="mk-chickin" oninput="calcUmurKandang()"/></div>
+      <div class="field" style="margin-bottom:12px"><label>Tanggal Periode Datang</label><input type="date" id="mk-chickin" oninput="calcUmurKandang()"/></div>
       <div class="field" style="margin-bottom:12px">
-        <label>Umur saat Chick In (hari)</label>
+        <label>Umur saat Datang (hari)</label>
         <input type="number" id="mk-umur" min="0" placeholder="Mis. 1 (DOC)" oninput="calcUmurKandang()"/>
         <div id="mk-umur-preview" style="margin-top:5px;font-size:.78rem;color:#2d6a4f;font-weight:700;min-height:18px"></div>
       </div>

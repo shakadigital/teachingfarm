@@ -842,7 +842,7 @@ async function renderHome(){
   const klEl=document.getElementById('home-kandang-list');
   if(!list.length){klEl.innerHTML='<div style="color:#aaa;font-size:.85rem;text-align:center;padding:12px 0">Belum ada kandang.</div>';}
   else{
-    klEl.innerHTML='<table class="tbl"><thead><tr><th>Kandang</th><th>Populasi</th><th>Chick In</th><th>Hari ke-</th><th>Status</th></tr></thead><tbody>'+
+    klEl.innerHTML='<table class="tbl"><thead><tr><th>Kandang</th><th>Populasi</th><th>Periode</th><th>Hari ke-</th><th>Status</th></tr></thead><tbody>'+
     list.map(k=>{
       const diff=k.chickin?Math.floor((new Date()-new Date(k.chickin))/86400000)+1:0;
       return'<tr><td><strong>'+esc(k.nama)+'</strong></td><td>'+(k.populasi||0)+' ekor</td><td>'+fmtTgl(k.chickin)+'</td><td>'+(diff>0?diff:'—')+'</td><td>'+(k.status==='Aktif'?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Selesai</span>')+'</td></tr>';
@@ -1135,7 +1135,7 @@ async function saveKandang(){
   if(populasi>kapasitas){showToast('⚠️ Populasi tidak boleh melebihi kapasitas!');return;}
   if(chickin){
     const today=new Date().toISOString().split('T')[0];
-    if(chickin>today){showToast('⚠️ Tanggal Chick In tidak boleh di masa depan!');return;}
+    if(chickin>today){showToast('⚠️ Tanggal Periode tidak boleh di masa depan!');return;}
   }
 
   const id=document.getElementById('mk-id').value;
@@ -2746,7 +2746,7 @@ async function showRingkasanSiklus(namaKandang){
   document.getElementById('modal-siklus-body').innerHTML=`
     <div class="siklus-box"><h4>🏠 Info Kandang</h4>
       <div class="siklus-row"><span class="sr-label">Nama Kandang</span><span class="sr-val">${esc(k.nama)}</span></div>
-      <div class="siklus-row"><span class="sr-label">Chick In</span><span class="sr-val">${fmtTgl(k.chickin)}</span></div>
+      <div class="siklus-row"><span class="sr-label">Periode</span><span class="sr-val">${fmtTgl(k.chickin)}</span></div>
       <div class="siklus-row"><span class="sr-label">Populasi Masuk</span><span class="sr-val">${(k.populasi||0).toLocaleString('id-ID')} ekor</span></div>
       <div class="siklus-row"><span class="sr-label">Status</span><span class="sr-val">${k.status}</span></div>
       <div class="siklus-row"><span class="sr-label">Hari Data Tercatat</span><span class="sr-val">${inputs.length} hari</span></div>
@@ -2778,7 +2778,7 @@ function exportSiklus(){
   if(!_siklusData)return;
   const d=_siklusData;
   let csv='Ringkasan Siklus,'+d.namaKandang+'\n';
-  csv+='Chick In,'+d.k.chickin+'\nPopulasi Masuk,'+d.k.populasi+'\nHari Tercatat,'+d.hari+'\n\n';
+  csv+='Periode,'+d.k.chickin+'\nPopulasi Masuk,'+d.k.populasi+'\nHari Tercatat,'+d.hari+'\n\n';
   csv+='PRODUKSI\nTotal Butir,'+d.totalButir+'\nTotal kg Telur,'+d.totalKgTelur+'\nRata-rata HDP,'+d.avgHDP+'%\n\n';
   csv+='DEPLESI\nTotal Deplesi,'+d.totalDeplesi+'\n% Deplesi,'+d.pctDeplesi+'%\n\n';
   csv+='PAKAN & FCR\nTotal Pakan kg,'+d.totalPakanKg+'\nFCR,'+d.fcr+'\nRating FCR,'+d.fcrRating+'\n\n';
