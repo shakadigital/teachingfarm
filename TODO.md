@@ -95,3 +95,4 @@
 - Urutan pengerjaan yang disarankan:
   `Riwayat Input → Laporan Rekap → Grafik → FCR → Notifikasi → Export → Backend`
 - te@chingfarM2022
+- **Refactor app.js**: Pecah app.js menjadi modul-modul yang lebih kecil (misalnya dashboard.js, transaksi.js, gudang.js) di masa depan jika skala aplikasi / database semakin besar.
