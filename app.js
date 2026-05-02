@@ -2081,7 +2081,8 @@ function switchLTab(tab){
 function populateLaporanKandang(){
   const list=cache.get('kandang_list')||[];
   // Populate semua select kandang di halaman laporan
-  ['l-kandang','g-kandang','fcr-kandang'].forEach(id=>{
+  // Populate select kandang di halaman laporan
+  ['l-kandang'].forEach(id=>{
     const sel=document.getElementById(id);
     if(!sel)return;
     const prev=sel.value;
@@ -2105,9 +2106,15 @@ function getLaporanRange(){
   const p=document.getElementById('l-periode').value;
   const now=new Date();
   let dari,sampai=now.toISOString().split('T')[0];
-  if(p==='minggu'){const d=new Date(now);d.setDate(d.getDate()-6);dari=d.toISOString().split('T')[0];}
-  else if(p==='bulan'){dari=now.getFullYear()+'-'+(String(now.getMonth()+1).padStart(2,'0'))+'-01';}
-  else{dari=document.getElementById('l-dari').value||sampai;sampai=document.getElementById('l-sampai').value||sampai;}
+  if(p==='bulan'){
+    dari=now.getFullYear()+'-'+(String(now.getMonth()+1).padStart(2,'0'))+'-01';
+  } else if(!isNaN(p)) {
+    const d=new Date(now); d.setDate(d.getDate() - (parseInt(p)-1));
+    dari=d.toISOString().split('T')[0];
+  } else {
+    dari=document.getElementById('l-dari').value||sampai;
+    sampai=document.getElementById('l-sampai').value||sampai;
+  }
   return{dari,sampai,kandang:document.getElementById('l-kandang').value};
 }
 
@@ -2545,19 +2552,13 @@ async function renderHomeAlerts(){
 let chartHDP=null,chartPerforma=null;
 
 async function renderGrafik(){
-  const kandang=document.getElementById('g-kandang').value;
-  const days=parseInt(document.getElementById('g-periode').value)||30;
-  const now=new Date();
-  const dari=new Date(now);dari.setDate(dari.getDate()-(days-1));
-  const dariStr=dari.toISOString().split('T')[0];
-  const sampaiStr=now.toISOString().split('T')[0];
+  const {dari:dariStr, sampai:sampaiStr, kandang} = getLaporanRange();
 
   // ── HDP + FI Chart (Dual Axis) ──
   const inputs=await dbGetInput({dari:dariStr,sampai:sampaiStr,kandang});
   
   // Cari tanggal data pertama yang ada
-  const tanggalAda=inputs.map(r=>r.tanggal).sort();
-  const startDate=tanggalAda.length>0?new Date(tanggalAda[0]):dari;
+  const startDate = tanggalAda.length > 0 ? new Date(tanggalAda[0]) : new Date(dariStr);
   
   // Build map untuk HDP dan FI per tanggal
   const dataMap={};
@@ -2730,7 +2731,7 @@ function getFCRRange(){
 }
 
 async function renderFCR(){
-  const{dari,sampai,kandang}=getFCRRange();
+  const {dari, sampai, kandang} = getLaporanRange();
   const inputs=await dbGetInput({dari,sampai,kandang});
   // Group by kandang
   const byKandang={};

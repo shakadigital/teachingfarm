@@ -948,8 +948,9 @@
       <div class="lap-filter">
         <select id="l-kandang"><option value="">Semua Kandang</option></select>
         <select id="l-periode">
-          <option value="minggu">Minggu Ini</option>
-          <option value="bulan" selected>Bulan Ini</option>
+          <option value="7">7 Hari Terakhir</option>
+          <option value="30" selected>30 Hari Terakhir</option>
+          <option value="bulan">Bulan Kalender</option>
           <option value="custom">Rentang Tanggal</option>
         </select>
         <input type="date" id="l-dari" style="display:none"/>
@@ -996,15 +997,7 @@
 
       <!-- Tab: Grafik -->
       <div id="ltab-content-grafik" style="display:none">
-        <div class="lap-filter">
-          <select id="g-kandang"><option value="">Semua Kandang</option></select>
-          <select id="g-periode">
-            <option value="7">7 Hari Terakhir</option>
-            <option value="14">14 Hari Terakhir</option>
-            <option value="30" selected>30 Hari Terakhir</option>
-          </select>
-          <button class="btn-primary" style="padding:7px 16px;font-size:.85rem" onclick="renderGrafik()">Tampilkan</button>
-        </div>
+        <!-- Filter bar disatukan di atas -->
         <div class="card">
           <div class="card-header"><div class="num">📈</div><h2>Trend HDP & FI Harian</h2></div>
           <div class="card-body"><div class="chart-wrap"><canvas id="chart-hdp"></canvas></div></div>
@@ -1017,17 +1010,7 @@
 
       <!-- Tab: FCR -->
       <div id="ltab-content-fcr" style="display:none">
-        <div class="lap-filter">
-          <select id="fcr-kandang"><option value="">Semua Kandang</option></select>
-          <select id="fcr-periode">
-            <option value="minggu">Minggu Ini</option>
-            <option value="bulan" selected>Bulan Ini</option>
-            <option value="custom">Rentang Tanggal</option>
-          </select>
-          <input type="date" id="fcr-dari" style="display:none"/>
-          <input type="date" id="fcr-sampai" style="display:none"/>
-          <button class="btn-primary" style="padding:7px 16px;font-size:.85rem" onclick="renderFCR()">Hitung</button>
-        </div>
+        <!-- Filter bar disatukan di atas -->
         <div class="fcr-grid" id="fcr-summary"></div>
         <div class="card">
           <div class="card-header"><div class="num">🌾</div><h2>Detail FCR per Kandang</h2></div>
