@@ -2671,8 +2671,6 @@ async function renderGrafik(){
   const wLabels = weekKeys;
   const hdData  = weekKeys.map(k=>avg(weekMap[k].hd));
   const wFiData  = weekKeys.map(k=>avg(weekMap[k].fi));
-  const ewData  = weekKeys.map(k=>avg(weekMap[k].ew));
-  const fcrData = weekKeys.map(k=>avg(weekMap[k].fcr));
 
   const ctxP=document.getElementById('chart-performa').getContext('2d');
   if(chartPerforma)chartPerforma.destroy();
@@ -2681,11 +2679,8 @@ async function renderGrafik(){
     data:{
       labels:wLabels,
       datasets:[
-        // urutan render: FI paling atas, HD tengah, EW bawah (semua sumbu kiri), FCR sumbu kanan
-        {label:'FI (g/ekor)',data:wFiData,borderColor:'#2563eb',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true,yAxisID:'yL'},
-        {label:'HD / HDP (%)',data:hdData,borderColor:'#16a34a',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true,yAxisID:'yL'},
-        {label:'EW (g/butir)',data:ewData,borderColor:'#d97706',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true,yAxisID:'yL'},
-        {label:'FCR',data:fcrData,borderColor:'#dc2626',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true,yAxisID:'yR',borderDash:[5,4]}
+        {label:'FI (g/ekor)',data:wFiData,borderColor:'#2563eb',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true},
+        {label:'HD / HDP (%)',data:hdData,borderColor:'#16a34a',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true}
       ]
     },
     options:{
@@ -2699,9 +2694,7 @@ async function renderGrafik(){
             if(v===null||v===undefined)return null;
             const units={
               'FI (g/ekor)':'g/ekor',
-              'HD / HDP (%)':'%',
-              'EW (g/butir)':'g',
-              'FCR':''
+              'HD / HDP (%)':'%'
             };
             const u=units[ctx.dataset.label]||'';
             return `${ctx.dataset.label}: ${v}${u}`;
@@ -2709,20 +2702,11 @@ async function renderGrafik(){
         }}
       },
       scales:{
-        yL:{
-          position:'left',
-          title:{display:true,text:'FI (g) / HD (%) / EW (g)'},
+        y:{
+          title:{display:true,text:'FI (g) / HD (%)'},
           min:0,
           grid:{color:'rgba(0,0,0,.06)'},
           ticks:{color:'#374151'}
-        },
-        yR:{
-          position:'right',
-          title:{display:true,text:'FCR'},
-          min:0,
-          max:10,
-          grid:{drawOnChartArea:false},
-          ticks:{color:'#dc2626',callback:v=>v.toFixed(1)}
         },
         x:{
           title:{display:true,text:'Minggu Umur Ayam (Mgg ke-)'},
