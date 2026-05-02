@@ -1,23 +1,37 @@
 // ═══ PERIOD BAR ═══
-function updatePeriodBar(){
+async function updatePeriodBar(){
   const name=(document.getElementById('kandang').value||'').trim();
   const bar=document.getElementById('period-bar');
+  const tglInput = document.getElementById('tanggal').value || new Date().toISOString().split('T')[0];
+  
   if(!name){bar.style.display='none';document.getElementById('hdr-kandang').textContent='—';return;}
   const list=cache.get('kandang_list')||[];
   const k=list.find(x=>x.nama===name);
   if(!k){bar.style.display='none';return;}
   bar.style.display='flex';
   document.getElementById('pi-kandang').textContent=k.nama;
-  document.getElementById('pi-pop').textContent=k.populasi?k.populasi+' ekor':'—';
   document.getElementById('pi-status').innerHTML=k.status==='Aktif'?'<span class="badge badge-green">Aktif</span>':'<span class="badge badge-gray">Selesai</span>';
   document.getElementById('hdr-kandang').textContent=k.nama;
-  // Auto-fill populasi awal dari data kandang
-  document.getElementById('populasi_awal').value=k.populasi||0;
+  
+  // ── Hitung Populasi Awal Kumulatif ──
+  // Populasi awal hari ini = Populasi masuk - total deplesi hari-hari sebelumnya
+  const allInputs = await dbGetInput({kandang: name});
+  let totalDepSebelumnya = 0;
+  allInputs.forEach(row => {
+    if(row.tanggal < tglInput) {
+      totalDepSebelumnya += parseInt(row.data?.deplesi?.total || 0);
+    }
+  });
+  const popAwalHariIni = Math.max(0, (parseInt(k.populasi)||0) - totalDepSebelumnya);
+  document.getElementById('populasi_awal').value = popAwalHariIni;
+  document.getElementById('pi-pop').textContent = popAwalHariIni + ' ekor';
+
   calcSisa();
   // Refresh saldo kas untuk kandang ini
   if(typeof renderKasSaldo === 'function') renderKasSaldo();
+  
   if(k.chickin){
-    const today=new Date(document.getElementById('tanggal').value||new Date());
+    const today=new Date(tglInput);
     const cin=new Date(k.chickin);cin.setHours(0,0,0,0);today.setHours(0,0,0,0);
     const hariSejak=Math.floor((today-cin)/86400000);
     const totalHari=(parseInt(k.umur_masuk)||0)+hariSejak;

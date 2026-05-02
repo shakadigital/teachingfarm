@@ -955,7 +955,7 @@
         <input type="date" id="l-dari" style="display:none"/>
         <input type="date" id="l-sampai" style="display:none"/>
         <button class="btn-primary" style="padding:7px 16px;font-size:.85rem" onclick="renderLaporan()">Tampilkan</button>
-        <button class="btn-export" onclick="exportLaporan('csv')">⬇️ CSV</button>
+        <button class="btn-export" onclick="exportLaporan('csv')" style="display:none">⬇️ CSV</button>
         <button class="btn-export" onclick="exportLaporan('excel')" style="border-color:#1d6f42;color:#1d6f42">📊 Excel</button>
         <button class="btn-export" onclick="exportLaporan('pdf')" style="border-color:#c0392b;color:#c0392b">📄 PDF</button>
       </div>
@@ -964,11 +964,11 @@
       <div id="ltab-content-rekap">
         <div class="summary-grid" id="lap-summary"></div>
         <div class="card">
-          <div class="card-header"><div class="num">📈</div><h2>Detail Produksi Harian</h2></div>
+          <div class="card-header"><div class="num">📈</div><h2>Detail Produksi Harian <span id="lap-kandang-name" style="color:#16a34a"></span></h2></div>
           <div class="card-body">
             <div style="overflow-x:auto">
               <table class="tbl">
-                <thead><tr><th>Tanggal</th><th>Kandang</th><th>Sisa Ayam</th><th>Prod. (butir)</th><th>Prod. (kg)</th><th>HDP (%)</th><th>Deplesi</th><th>Pakan (kg)</th></tr></thead>
+                <thead><tr><th>Tanggal</th><th>Deplesi</th><th>Sisa Ayam</th><th>Pakan (kg)</th><th>Fi (gr)</th><th>Prod. (butir)</th><th>Prod. (kg)</th><th>HDP (%)</th><th>EW (gr)</th></tr></thead>
                 <tbody id="lap-rekap-tbody"></tbody>
               </table>
             </div>

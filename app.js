@@ -2120,8 +2120,40 @@ function renderLaporan(){
 
 async function renderLapRekap(){
   const{dari,sampai,kandang}=getLaporanRange();
-  const allRows=await dbGetInput({dari,sampai,kandang});
-  const rows=allRows.map(r=>r.data).filter(Boolean);
+
+  // Update title
+  const titleName = document.getElementById('lap-kandang-name');
+  if(titleName) titleName.textContent = kandang ? `(${kandang})` : '';
+
+  // Ambil data untuk hitung kumulatif
+  const allRowsRaw = await dbGetInput(kandang ? {kandang} : {});
+  // Urutkan dari terlama ke terbaru untuk hitung kumulatif deplesi
+  const sortedRows = allRowsRaw.sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+  
+  const kandangList = cache.get('kandang_list') || await dbGetKandang();
+  const currentSisaMap = {};
+  kandangList.forEach(k => { currentSisaMap[k.nama] = parseInt(k.populasi) || 0; });
+
+  // Hitung sisa ayam secara kumulatif berdasarkan urutan tanggal
+  const processedRows = sortedRows.map(row => {
+    const d = { ...row.data };
+    const kName = row.kandang;
+    const depTotal = parseInt(d.deplesi?.total || 0);
+    
+    const prevSisa = currentSisaMap[kName] || 0;
+    const newSisa = Math.max(0, prevSisa - depTotal);
+    currentSisaMap[kName] = newSisa;
+    
+    d.sisa_ayam_calc = newSisa; 
+    return d;
+  }).filter(Boolean);
+
+  // Filter sesuai range tanggal & balik urutan (terbaru di atas)
+  const rows = processedRows.filter(d => {
+    if(dari && d.tanggal < dari) return false;
+    if(sampai && d.tanggal > sampai) return false;
+    return true;
+  }).reverse();
 
   const totalProd=rows.reduce((s,d)=>s+(parseInt(d.produksi?d.produksi.total.butir:0)||0),0);
   const totalKilo=rows.reduce((s,d)=>s+(parseFloat(d.produksi?d.produksi.total.kilo:0)||0),0);
@@ -2142,10 +2174,31 @@ async function renderLapRekap(){
   tbody.innerHTML='';
   if(!rows.length){empty.style.display='block';return;}
   empty.style.display='none';
+
   rows.forEach(d=>{
-    const tp=((d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0)).toFixed(1);
-    const tr=document.createElement('tr');
-    tr.innerHTML='<td>'+fmtTgl(d.tanggal)+'</td><td>'+esc(d.kandang)+'</td><td>'+(d.sisa_ayam||0)+'</td><td>'+(d.produksi?d.produksi.total.butir:0)+'</td><td>'+(d.produksi?d.produksi.total.kilo:0)+' kg</td><td>'+(d.produksi?d.produksi.hdp:'—')+'</td><td>'+(d.deplesi?d.deplesi.total:0)+'</td><td>'+tp+' kg</td>';
+    const pakanKg = (d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0);
+    const sisaAyam = d.sisa_ayam_calc; // Gunakan hasil kalkulasi kumulatif
+    const fi = sisaAyam > 0 ? (pakanKg * 1000 / sisaAyam) : 0;
+    
+    const prodButir = parseInt(d.produksi?.total?.butir)||0;
+    const prodKg = parseFloat(d.produksi?.total?.kilo)||0;
+    const ew = prodButir > 0 ? (prodKg * 1000 / prodButir) : 0;
+
+    // Bersihkan HDP dari % ganda jika sudah ada
+    let hdp = d.produksi?.hdp || '—';
+    if(typeof hdp === 'string' && hdp.includes('%')) hdp = hdp.replace('%', '').trim();
+
+    const tr = document.createElement('tr');
+    // Order: Tanggal | Deplesi | Sisa Ayam | Pakan (kg) | Fi (gr) | Prod. (butir) | Prod. (kg) | HDP (%) | EW (gr)
+    tr.innerHTML = `<td>${fmtTgl(d.tanggal)}</td>
+      <td>${d.deplesi?d.deplesi.total:0}</td>
+      <td>${sisaAyam}</td>
+      <td>${pakanKg.toFixed(1)}</td>
+      <td>${fi.toFixed(1)}</td>
+      <td>${prodButir}</td>
+      <td>${prodKg.toFixed(1)}</td>
+      <td>${hdp}${hdp !== '—' ? '%' : ''}</td>
+      <td>${ew.toFixed(1)}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -2237,12 +2290,41 @@ async function exportLaporan(format='csv'){
 
   if(currentLTab==='rekap'){
     title='Laporan Rekap Produksi';
-    headers=['Tanggal','Kandang','Sisa Ayam','Prod Butir','Prod kg','HDP (%)','Deplesi','Pakan kg'];
-    const data=await dbGetInput({dari,sampai,kandang});
-    data.forEach(row=>{
-      const d=row.data;if(!d)return;
-      const tp=((d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0)).toFixed(1);
-      rows.push([d.tanggal,d.kandang,d.sisa_ayam||0,d.produksi?.total?.butir||0,d.produksi?.total?.kilo||0,d.produksi?.hdp||0,d.deplesi?.total||0,tp]);
+    headers=['Tanggal','Deplesi','Sisa Ayam','Pakan (kg)','Fi (gr)','Prod (butir)','Prod (kg)','HDP (%)','EW (gr)'];
+    
+    const allRowsRaw = await dbGetInput(kandang ? {kandang} : {});
+    const sortedRows = allRowsRaw.sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+    const kandangList = cache.get('kandang_list') || await dbGetKandang();
+    const currentSisaMap = {};
+    kandangList.forEach(k => { currentSisaMap[k.nama] = parseInt(k.populasi) || 0; });
+
+    const processedRows = sortedRows.map(row => {
+      const d = { ...row.data };
+      const kName = row.kandang;
+      const depTotal = parseInt(d.deplesi?.total || 0);
+      const prevSisa = currentSisaMap[kName] || 0;
+      const newSisa = Math.max(0, prevSisa - depTotal);
+      currentSisaMap[kName] = newSisa;
+      d.sisa_ayam_calc = newSisa; 
+      return d;
+    }).filter(d => {
+      if(dari && d.tanggal < dari) return false;
+      if(sampai && d.tanggal > sampai) return false;
+      return true;
+    });
+
+    processedRows.forEach(d=>{
+      const pakanKg = (d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0);
+      const sisaAyam = d.sisa_ayam_calc;
+      const fi = sisaAyam > 0 ? (pakanKg * 1000 / sisaAyam) : 0;
+      const prodButir = parseInt(d.produksi?.total?.butir)||0;
+      const prodKg = parseFloat(d.produksi?.total?.kilo)||0;
+      const ew = prodButir > 0 ? (prodKg * 1000 / prodButir) : 0;
+      
+      let hdp = d.produksi?.hdp || 0;
+      if(typeof hdp === 'string') hdp = hdp.replace('%', '').trim();
+      
+      rows.push([d.tanggal, d.deplesi?.total||0, sisaAyam, pakanKg.toFixed(1), fi.toFixed(1), prodButir, prodKg.toFixed(1), hdp + '%', ew.toFixed(1)]);
     });
 
   } else if(currentLTab==='labarugi'){
