@@ -2553,11 +2553,13 @@ let chartHDP=null,chartPerforma=null;
 
 async function renderGrafik(){
   const {dari:dariStr, sampai:sampaiStr, kandang} = getLaporanRange();
+  const now = new Date(sampaiStr);
 
   // ── HDP + FI Chart (Dual Axis) ──
   const inputs=await dbGetInput({dari:dariStr,sampai:sampaiStr,kandang});
   
   // Cari tanggal data pertama yang ada
+  const tanggalAda = inputs.map(r=>r.tanggal).sort();
   const startDate = tanggalAda.length > 0 ? new Date(tanggalAda[0]) : new Date(dariStr);
   
   // Build map untuk HDP dan FI per tanggal
