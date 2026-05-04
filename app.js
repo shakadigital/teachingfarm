@@ -525,24 +525,17 @@ async function exportPembelian() {
     showToast('⚠️ Tidak ada akses export!');
     return;
   }
-  
   try {
     const kiriman = await dbGetKiriman({});
-    const data = kiriman.map(k => ({
-      'Tanggal': k.tanggal,
-      'Supplier': k.supplier || '',
-      'Nama Pakan': k.nama_pakan,
-      'Jumlah (kg)': k.jumlah,
-      'Harga per kg': k.harga_per_kg || 0,
-      'Total Tagihan': k.harga_total || 0,
-      'Status Bayar': k.status_bayar || 'belum',
-      'Sisa Tagihan': k.sisa_tagihan || 0,
-      'Keterangan': k.keterangan || '',
-      'User Input': k.user_input || ''
-    }));
-    
-    exportToCSV(data, `Laporan_Pembelian_${new Date().toISOString().split('T')[0]}.csv`);
-    showToast('✅ Laporan pembelian berhasil didownload!');
+    if(!kiriman.length){showToast('⚠️ Tidak ada data untuk diexport!');return;}
+    const headers=['Tanggal','Supplier','Nama Pakan','Jumlah (kg)','Harga per kg (Rp)','Total Tagihan (Rp)','Status Bayar','Sisa Tagihan (Rp)','Keterangan','User Input'];
+    const data = kiriman.map(k => [
+      k.tanggal, k.supplier||'', k.nama_pakan,
+      k.jumlah, k.harga_per_kg||0, k.harga_total||0,
+      k.status_bayar||'belum', k.sisa_tagihan||0,
+      k.keterangan||'', k.user_input||''
+    ]);
+    exportExcel('Laporan Pembelian Pakan', headers, data, `Laporan_Pembelian_${new Date().toISOString().split('T')[0]}.xlsx`);
   } catch(e) {
     showToast('❌ Gagal export: ' + e.message);
   }
@@ -596,13 +589,16 @@ async function openBayarModal(kirimanId){
   document.getElementById('mb-ref-id').value=kirimanId||'';
   document.getElementById('mb-tgl').value=new Date().toISOString().split('T')[0];
   document.getElementById('mb-jenis').value='pakan';
-  document.getElementById('mb-supplier').value='';
   document.getElementById('mb-jumlah').value='';
   document.getElementById('mb-noref').value='';
   document.getElementById('mb-ket').value='';
   document.getElementById('mb-tagihan-total').value='';
   document.getElementById('mb-sisa').value='';
   document.getElementById('mb-sisa-setelah-wrap').style.display='none';
+
+  // Populate supplier dropdown
+  await populateSupplierSelect('mb-supplier-select');
+  setSupplierValue('mb-supplier-select','mb-supplier-text','mb-supplier','');
 
   // Populate dropdown tagihan kiriman belum lunas
   const kiriman=await dbGetKiriman({});
@@ -645,7 +641,7 @@ function onTagihanSelect(){
   if(opt&&opt.value){
     document.getElementById('mb-tagihan-total').value=opt.dataset.total||0;
     document.getElementById('mb-sisa').value=opt.dataset.sisa||0;
-    document.getElementById('mb-supplier').value=opt.dataset.supplier||'';
+    setSupplierValue('mb-supplier-select','mb-supplier-text','mb-supplier',opt.dataset.supplier||'');
   } else {
     document.getElementById('mb-tagihan-total').value='';
     document.getElementById('mb-sisa').value='';
@@ -745,6 +741,66 @@ async function saveStok(){
     showToast('✅ Pakan disimpan!');}
   catch(e){showToast('❌ Gagal: '+e.message);}
 }
+// ── Helper: populate supplier dropdown + fallback text input ──
+async function populateSupplierSelect(selectId) {
+  const sel = document.getElementById(selectId);
+  if(!sel) return;
+  const suppliers = await dbGetSupplier();
+  sel.innerHTML = '<option value="">-- Pilih Supplier --</option>';
+  suppliers.filter(s => s.active !== false).forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.nama;
+    o.textContent = s.nama;
+    sel.appendChild(o);
+  });
+  // Tambah opsi "Lainnya" jika ada data master
+  if(suppliers.length) {
+    const o = document.createElement('option');
+    o.value = '__other__';
+    o.textContent = '— Lainnya (ketik manual) —';
+    sel.appendChild(o);
+  }
+}
+
+function onSupplierSelectChange(selectId, textId, hiddenId) {
+  const sel = document.getElementById(selectId);
+  const txt = document.getElementById(textId);
+  const hid = document.getElementById(hiddenId);
+  if(sel.value === '__other__') {
+    txt.style.display = 'block';
+    txt.value = '';
+    txt.focus();
+    hid.value = '';
+    txt.oninput = () => { hid.value = txt.value.trim(); };
+  } else {
+    txt.style.display = 'none';
+    txt.value = '';
+    hid.value = sel.value;
+  }
+}
+
+// Set nilai supplier pada dropdown (saat edit), fallback ke text jika tidak ada di master
+function setSupplierValue(selectId, textId, hiddenId, value) {
+  const sel = document.getElementById(selectId);
+  const txt = document.getElementById(textId);
+  const hid = document.getElementById(hiddenId);
+  if(!value) { sel.value = ''; txt.style.display='none'; hid.value=''; return; }
+  // Cek apakah value ada di options
+  const found = Array.from(sel.options).some(o => o.value === value);
+  if(found) {
+    sel.value = value;
+    txt.style.display = 'none';
+    hid.value = value;
+  } else {
+    // Tidak ada di master → tampilkan sebagai "Lainnya"
+    sel.value = '__other__';
+    txt.style.display = 'block';
+    txt.value = value;
+    hid.value = value;
+    txt.oninput = () => { hid.value = txt.value.trim(); };
+  }
+}
+
 async function openKirimanModal(){
   const pakans=await dbGetDaftarPakan();
   if(!pakans.length){showToast('⚠️ Daftarkan pakan terlebih dahulu!');return;}
@@ -756,6 +812,8 @@ async function openKirimanModal(){
   document.getElementById('mk2-harga').value='';
   document.getElementById('mk2-total').value='';
   document.getElementById('mk2-ket').value='';
+  await populateSupplierSelect('mk2-supplier-select');
+  setSupplierValue('mk2-supplier-select','mk2-supplier-text','mk2-supplier','');
   document.getElementById('modal-kiriman').style.display='flex';
 }
 function calcKirimanTotal(){
@@ -810,6 +868,8 @@ async function openKirimanEditModal(id){
   document.getElementById('mk2-harga').value=k.harga_per_kg||'';
   calcKirimanTotal();
   document.getElementById('mk2-ket').value=k.keterangan||'';
+  await populateSupplierSelect('mk2-supplier-select');
+  setSupplierValue('mk2-supplier-select','mk2-supplier-text','mk2-supplier',k.supplier||'');
   document.getElementById('modal-kiriman').style.display='flex';
 }
 
@@ -1583,41 +1643,27 @@ async function exportRekapBiaya(){
     const list=await dbGetKas({dari,sampai,kandang:kandang||undefined});
     const keluar=list.filter(k=>k.jenis==='keluar');
     if(keluar.length===0){showToast('⚠️ Tidak ada data untuk diekspor');return;}
-    let csv='Tanggal,Kategori,Keterangan,Kandang,Jumlah (Rp)\n';
-    keluar.forEach(k=>{
-      csv+=`${k.tanggal},${k.kategori||''},${k.keterangan||''},${k.kandang||''},${k.jumlah}\n`;
-    });
-    const blob=new Blob([csv],{type:'text/csv'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=`Biaya_Operasional_${bulan}${kandang?'_'+kandang:''}.csv`;
-    a.click();
-    showToast('✅ File CSV didownload!');
+    const headers=['Tanggal','Kategori','Keterangan','Kandang','Jumlah (Rp)'];
+    const data=keluar.map(k=>[k.tanggal,k.kategori||'',k.keterangan||'',k.kandang||'',k.jumlah]);
+    exportExcel(`Rekap Biaya Operasional ${bulan}${kandang?' - '+kandang:''}`,headers,data,`Biaya_Operasional_${bulan}${kandang?'_'+kandang:''}.xlsx`);
   }catch(e){showToast('❌ Gagal: '+e.message);}
 }
 
 async function exportRiwayatJual(){
   if(!can('EXPORT_LAP')){showToast('⚠️ Hanya Supervisor ke atas yang bisa download!');return;}
-  showToast('⏳ Menyiapkan CSV...');
+  showToast('⏳ Menyiapkan Excel...');
   try{
     const list=await dbGetPenjualan({});
     if(list.length===0){showToast('⚠️ Tidak ada data penjualan');return;}
-    let csv='Tanggal,Pelanggan,Grade,Butir,Kilo (kg),Harga/kg (Rp),Total (Rp),Diinput Oleh\n';
+    const headers=['Tanggal','Pelanggan','Grade','Butir','Kilo (kg)','Harga/kg (Rp)','Total (Rp)','Diinput Oleh'];
+    const data=[];
     list.forEach(p=>{
       const items=p.items||[];
       items.forEach(item=>{
-        csv+=`${p.tanggal},${item.pelanggan||''},${item.grade||''},${item.butir||0},${item.kilo||0},${item.harga||0},${item.total||0},${p.user_input||''}\n`;
+        data.push([p.tanggal,item.pelanggan||'',item.grade||'',item.butir||0,item.kilo||0,item.harga||0,item.total||0,p.user_input||'']);
       });
     });
-    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;
-    a.download=`Riwayat_Penjualan_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('✅ File CSV didownload!');
+    exportExcel('Riwayat Penjualan Telur',headers,data,`Riwayat_Penjualan_${new Date().toISOString().slice(0,10)}.xlsx`);
   }catch(e){
     console.error('Export error:',e);
     showToast('❌ Gagal export: '+e.message);
@@ -2042,29 +2088,32 @@ async function deleteKiriman(id){
 }
 
 async function exportRiwayat(){
-  let csv='';
+  const today=new Date().toISOString().split('T')[0];
   if(currentRTab==='harian'){
-    csv='Tanggal,Kandang,Sisa Ayam,Deplesi,Prod Butir,HDP,Pakan kg,Air L\n';
     const f=getRFilter();
     const rows=await dbGetInput(f);
-    rows.forEach(row=>{
-      const d=row.data;if(!d)return;
+    if(!rows.length){showToast('⚠️ Tidak ada data untuk diexport!');return;}
+    const headers=['Tanggal','Kandang','Sisa Ayam','Deplesi','Prod Butir','HDP','Pakan (kg)','Air (L)'];
+    const data=rows.map(row=>{
+      const d=row.data;if(!d)return null;
       const tp=((d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0)).toFixed(1);
-      csv+=`${d.tanggal},${d.kandang},${d.sisa_ayam||0},${d.deplesi?d.deplesi.total:0},${d.produksi?d.produksi.total.butir:0},${d.produksi?d.produksi.hdp:''},${tp},${d.air_liter||0}\n`;
-    });
+      return[d.tanggal,d.kandang,d.sisa_ayam||0,d.deplesi?d.deplesi.total:0,d.produksi?d.produksi.total.butir:0,d.produksi?d.produksi.hdp:'',tp,d.air_liter||0];
+    }).filter(Boolean);
+    exportExcel('Riwayat Harian',headers,data,'riwayat_harian_'+today+'.xlsx');
   } else if(currentRTab==='penjualan'){
-    csv='Tanggal,Pelanggan,Grade,Butir,Kilo,Harga/kg,Total\n';
     const all=await dbGetPenjualan({});
-    all.forEach(rec=>{(rec.rows||[]).forEach(r=>{csv+=`${rec.tanggal},${r.pelanggan||''},${r.grade||''},${r.butir||0},${r.kilo||0},${r.harga||0},${(r.total||'').replace(/[^0-9]/g,'')}\n`;});});
+    if(!all.length){showToast('⚠️ Tidak ada data untuk diexport!');return;}
+    const headers=['Tanggal','Pelanggan','Grade','Butir','Kilo (kg)','Harga/kg (Rp)','Total (Rp)'];
+    const data=[];
+    all.forEach(rec=>{(rec.rows||[]).forEach(r=>{data.push([rec.tanggal,r.pelanggan||'',r.grade||'',r.butir||0,r.kilo||0,r.harga||0,String(r.total||'').replace(/[^0-9]/g,'')]);});});
+    exportExcel('Riwayat Penjualan',headers,data,'riwayat_penjualan_'+today+'.xlsx');
   } else {
-    csv='Tanggal,Pakan,Jumlah kg,Harga/kg,Total,Supplier\n';
     const kiriman=await dbGetKiriman({});
-    kiriman.forEach(k=>{
-      const tot=parseFloat(k.harga_total)||0;
-      csv+=`${k.tanggal},${k.nama_pakan},${k.jumlah},${k.harga_per_kg||0},${tot},${k.keterangan||''}\n`;
-    });
+    if(!kiriman.length){showToast('⚠️ Tidak ada data untuk diexport!');return;}
+    const headers=['Tanggal','Pakan','Jumlah (kg)','Harga/kg (Rp)','Total (Rp)','Supplier','Keterangan'];
+    const data=kiriman.map(k=>[k.tanggal,k.nama_pakan,k.jumlah,k.harga_per_kg||0,parseFloat(k.harga_total)||0,k.supplier||'',k.keterangan||'']);
+    exportExcel('Riwayat Kiriman Pakan',headers,data,'riwayat_kiriman_'+today+'.xlsx');
   }
-  downloadCSV(csv,'riwayat_'+currentRTab+'_'+new Date().toISOString().split('T')[0]+'.csv');
 }
 
 // ═══ LAPORAN ═══
@@ -2846,13 +2895,27 @@ async function showRingkasanSiklus(namaKandang){
 function exportSiklus(){
   if(!_siklusData)return;
   const d=_siklusData;
-  let csv='Ringkasan Siklus,'+d.namaKandang+'\n';
-  csv+='Periode,'+d.k.chickin+'\nPopulasi Masuk,'+d.k.populasi+'\nHari Tercatat,'+d.hari+'\n\n';
-  csv+='PRODUKSI\nTotal Butir,'+d.totalButir+'\nTotal kg Telur,'+d.totalKgTelur+'\nRata-rata HDP,'+d.avgHDP+'%\n\n';
-  csv+='DEPLESI\nTotal Deplesi,'+d.totalDeplesi+'\n% Deplesi,'+d.pctDeplesi+'%\n\n';
-  csv+='PAKAN & FCR\nTotal Pakan kg,'+d.totalPakanKg+'\nFCR,'+d.fcr+'\nRating FCR,'+d.fcrRating+'\n\n';
-  csv+='KEUANGAN\nPendapatan,'+d.totalPendapatan+'\nBiaya Pakan,'+d.totalBiayaPakan+'\nBiaya Ops,'+d.totalBiayaOps+'\nLaba/Rugi,'+d.labaRugi+'\n';
-  downloadCSV(csv,'siklus_'+d.namaKandang+'_'+new Date().toISOString().split('T')[0]+'.csv');
+  const today=new Date().toISOString().split('T')[0];
+  const headers=['Kategori','Item','Nilai'];
+  const data=[
+    ['Ringkasan','Kandang',d.namaKandang],
+    ['Ringkasan','Periode',d.k.chickin],
+    ['Ringkasan','Populasi Masuk',d.k.populasi],
+    ['Ringkasan','Hari Tercatat',d.hari],
+    ['Produksi','Total Butir',d.totalButir],
+    ['Produksi','Total kg Telur',d.totalKgTelur],
+    ['Produksi','Rata-rata HDP',d.avgHDP+'%'],
+    ['Deplesi','Total Deplesi',d.totalDeplesi],
+    ['Deplesi','% Deplesi',d.pctDeplesi+'%'],
+    ['Pakan & FCR','Total Pakan (kg)',d.totalPakanKg],
+    ['Pakan & FCR','FCR',d.fcr],
+    ['Pakan & FCR','Rating FCR',d.fcrRating],
+    ['Keuangan','Pendapatan (Rp)',d.totalPendapatan],
+    ['Keuangan','Biaya Pakan (Rp)',d.totalBiayaPakan],
+    ['Keuangan','Biaya Ops (Rp)',d.totalBiayaOps],
+    ['Keuangan','Laba/Rugi (Rp)',d.labaRugi],
+  ];
+  exportExcel('Ringkasan Siklus - '+d.namaKandang,headers,data,'siklus_'+d.namaKandang+'_'+today+'.xlsx');
 }
 
 // ═══ BACKUP & RESTORE ═══
@@ -3570,7 +3633,6 @@ async function openNpKirimanModal() {
   document.getElementById('npk-jumlah').value = '';
   document.getElementById('npk-harga').value = '';
   document.getElementById('npk-total').value = '';
-  document.getElementById('npk-supplier').value = '';
   document.getElementById('npk-ket').value = '';
   document.getElementById('npk-satuan').value = cfg.satuan;
 
@@ -3591,6 +3653,10 @@ async function openNpKirimanModal() {
     const dl = document.getElementById('npk-nama-list');
     dl.innerHTML = masterList.map(m => `<option value="${esc(m.nama)}">`).join('');
   }
+
+  // Populate supplier dropdown
+  await populateSupplierSelect('npk-supplier-select');
+  setSupplierValue('npk-supplier-select','npk-supplier-text','npk-supplier','');
 
   document.getElementById('modal-np-kiriman').style.display = 'flex';
 }
@@ -3759,4 +3825,4 @@ if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded', bootApp);
 } else {
   bootApp();
-}
+}

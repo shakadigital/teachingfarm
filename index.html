@@ -877,7 +877,7 @@
         <input type="date" id="r-dari" title="Dari tanggal"/>
         <input type="date" id="r-sampai" title="Sampai tanggal"/>
         <button class="btn-export" onclick="filterRiwayat()">🔍 Filter</button>
-        <button class="btn-export" onclick="exportRiwayat()">⬇️ Export CSV</button>
+        <button class="btn-export" onclick="exportRiwayat()">📊 Export Excel</button>
       </div>
 
       <!-- Tab: Input Harian -->
@@ -1120,7 +1120,14 @@
       <div class="field" style="margin-bottom:12px"><label>Jumlah (kg)</label><input type="number" id="mk2-jumlah" min="0" step="0.1" placeholder="0" oninput="calcKirimanTotal()"/></div>
       <div class="field" style="margin-bottom:12px"><label>Harga per kg (Rp)</label><input type="number" id="mk2-harga" min="0" step="100" placeholder="0" oninput="calcKirimanTotal()"/></div>
       <div class="field" style="margin-bottom:12px"><label>Total Tagihan (Rp)</label><input type="text" id="mk2-total" readonly style="background:#fff3cd;color:#856404;font-weight:700"/></div>
-      <div class="field" style="margin-bottom:12px"><label>Supplier</label><input type="text" id="mk2-supplier" placeholder="Nama supplier..."/></div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Supplier</label>
+        <select id="mk2-supplier-select" onchange="onSupplierSelectChange('mk2-supplier-select','mk2-supplier-text','mk2-supplier')">
+          <option value="">-- Pilih Supplier --</option>
+        </select>
+        <input type="text" id="mk2-supplier-text" placeholder="Nama supplier lainnya..." style="display:none;margin-top:6px"/>
+        <input type="hidden" id="mk2-supplier"/>
+      </div>
       <div class="field"><label>Keterangan / No. Nota</label><input type="text" id="mk2-ket" placeholder="No. nota, dll."/></div>
     </div>
     <div class="modal-footer"><button class="btn-secondary" onclick="closeModal('modal-kiriman')">Batal</button><button class="btn-primary" onclick="saveKiriman()">💾 Simpan</button></div>
@@ -1183,7 +1190,11 @@
       </div>
       <div class="field" style="margin-bottom:12px">
         <label>Supplier</label>
-        <input type="text" id="npk-supplier" placeholder="Nama supplier..."/>
+        <select id="npk-supplier-select" onchange="onSupplierSelectChange('npk-supplier-select','npk-supplier-text','npk-supplier')">
+          <option value="">-- Pilih Supplier --</option>
+        </select>
+        <input type="text" id="npk-supplier-text" placeholder="Nama supplier lainnya..." style="display:none;margin-top:6px"/>
+        <input type="hidden" id="npk-supplier"/>
       </div>
       <div class="field">
         <label>Keterangan</label>
@@ -1277,7 +1288,11 @@
       </div>
       <div class="field" style="margin-bottom:12px">
         <label>Supplier</label>
-        <input type="text" id="mb-supplier" placeholder="Nama supplier..."/>
+        <select id="mb-supplier-select" onchange="onSupplierSelectChange('mb-supplier-select','mb-supplier-text','mb-supplier')">
+          <option value="">-- Pilih Supplier --</option>
+        </select>
+        <input type="text" id="mb-supplier-text" placeholder="Nama supplier lainnya..." style="display:none;margin-top:6px"/>
+        <input type="hidden" id="mb-supplier"/>
       </div>
       <!-- Pilih tagihan kiriman (untuk pakan) -->
       <div id="mb-tagihan-wrap" style="margin-bottom:12px">
@@ -1361,7 +1376,7 @@
     <div class="modal-header"><h3 id="modal-siklus-title">📋 Ringkasan Siklus</h3><button class="modal-close" onclick="closeModal('modal-siklus')">×</button></div>
     <div class="modal-body" id="modal-siklus-body"></div>
     <div class="modal-footer">
-      <button class="btn-export" onclick="exportSiklus()">⬇️ Export CSV</button>
+      <button class="btn-export" onclick="exportSiklus()">📊 Export Excel</button>
       <button class="btn-secondary" onclick="closeModal('modal-siklus')">Tutup</button>
     </div>
   </div>
