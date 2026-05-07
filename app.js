@@ -920,11 +920,22 @@ async function renderDailySummary(todayInputs, kandangList){
 
   // Populate selector kandang
   const sel=document.getElementById('ds-kandang-sel');
-  if(sel&&sel.options.length<=1){
-    sel.innerHTML='<option value="">Semua Kandang</option>';
-    kList.filter(k=>k.status==='Aktif').forEach(k=>{
-      const o=document.createElement('option');o.value=k.nama;o.textContent=k.nama;sel.appendChild(o);
-    });
+  const selectorWrapper=document.getElementById('ds-kandang-selector');
+  const activeKandangList=kList.filter(k=>k.status==='Aktif');
+  
+  // Tampilkan selector hanya jika ada lebih dari 1 kandang aktif
+  if(selectorWrapper){
+    if(activeKandangList.length>1){
+      selectorWrapper.style.display='flex';
+      if(sel&&sel.options.length<=1){
+        sel.innerHTML='<option value="">Semua Kandang</option>';
+        activeKandangList.forEach(k=>{
+          const o=document.createElement('option');o.value=k.nama;o.textContent=k.nama;sel.appendChild(o);
+        });
+      }
+    }else{
+      selectorWrapper.style.display='none';
+    }
   }
   const selectedKandang=sel?sel.value:'';
 
@@ -939,56 +950,61 @@ async function renderDailySummary(todayInputs, kandangList){
   const yd=yesterday.toISOString().split('T')[0];
   const yInputs=await dbGetInput({tanggal:yd});
 
-  // Filter per kandang jika dipilih
-  const filtered=selectedKandang?inputs.filter(r=>r.kandang===selectedKandang):inputs;
-  const yFiltered=selectedKandang?yInputs.filter(r=>r.kandang===selectedKandang):yInputs;
+  // Filter per kandang jika dipilih, atau otomatis pilih kandang pertama jika hanya ada 1
+  let targetKandang=selectedKandang;
+  if(!targetKandang&&activeKandangList.length===1){
+    targetKandang=activeKandangList[0].nama;
+  }
+  const filtered=targetKandang?inputs.filter(r=>r.kandang===targetKandang):inputs;
+  const yFiltered=targetKandang?yInputs.filter(r=>r.kandang===targetKandang):yInputs;
 
   const bodyEl=document.getElementById('ds-body');
-  if(!filtered.length){
-    bodyEl.innerHTML='<div style="color:#aaa;font-size:.85rem;text-align:center;padding:20px">Belum ada data input hari ini'+(selectedKandang?' untuk '+esc(selectedKandang):'')+'.</div>';
-    document.getElementById('ds-footer-note').textContent='Belum ada data';
-    document.getElementById('ds-hari-ke').textContent='';
-    return;
-  }
+  
+  // Jika tidak ada data, tetap tampilkan struktur dengan nilai 0/placeholder
+  const hasData = filtered.length > 0;
 
   // ── Agregat hari ini ──
   let totalButir=0,totalKg=0,totalSisa=0,totalDeplesi=0,totalPakanKg=0,totalAirL=0;
   let hdpSum=0,hdpCount=0,ewSum=0,ewCount=0,fiSum=0,fiCount=0,waterMlSum=0,waterCount=0,rasioSum=0,rasioCount=0;
 
-  filtered.forEach(r=>{
-    const d=r.data;if(!d)return;
-    totalButir+=parseInt(d.produksi?.total?.butir)||0;
-    totalKg+=parseFloat(d.produksi?.total?.kilo)||0;
-    totalSisa+=parseInt(d.sisa_ayam)||0;
-    totalDeplesi+=(parseInt(d.deplesi?.mati)||0)+(parseInt(d.deplesi?.afkir)||0);
-    const pakanRow=(d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0);
-    totalPakanKg+=pakanRow;
-    totalAirL+=parseFloat(d.air_liter)||0;
-    const hdp=parseFloat(d.produksi?.hdp)||0;
-    if(hdp>0){hdpSum+=hdp;hdpCount++;}
-    // EW (Egg Weight) = berat rata-rata per butir gram
-    const ew=parseFloat(d.produksi?.berat_rata)||0;
-    if(ew>0){ewSum+=ew;ewCount++;}
-    // FI (Feed Intake) = gr/ekor = (pakan kg * 1000) / sisa ayam
-    const sisa=parseInt(d.sisa_ayam)||0;
-    if(sisa>0&&pakanRow>0){fiSum+=(pakanRow*1000/sisa);fiCount++;}
-    // Water intake ml/ekor
-    const airMl=parseFloat(d.air_liter)*1000||0;
-    if(sisa>0&&airMl>0){waterMlSum+=(airMl/sisa);waterCount++;}
-    // Rasio air:pakan
-    const rasio=parseFloat(d.air_rasio)||0;
-    if(rasio>0){rasioSum+=rasio;rasioCount++;}
-  });
+  if(hasData){
+    filtered.forEach(r=>{
+      const d=r.data;if(!d)return;
+      totalButir+=parseInt(d.produksi?.total?.butir)||0;
+      totalKg+=parseFloat(d.produksi?.total?.kilo)||0;
+      totalSisa+=parseInt(d.sisa_ayam)||0;
+      totalDeplesi+=(parseInt(d.deplesi?.mati)||0)+(parseInt(d.deplesi?.afkir)||0);
+      const pakanRow=(d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0);
+      totalPakanKg+=pakanRow;
+      totalAirL+=parseFloat(d.air_liter)||0;
+      const hdp=parseFloat(d.produksi?.hdp)||0;
+      if(hdp>0){hdpSum+=hdp;hdpCount++;}
+      // EW (Egg Weight) = berat rata-rata per butir gram
+      const ew=parseFloat(d.produksi?.berat_rata)||0;
+      if(ew>0){ewSum+=ew;ewCount++;}
+      // FI (Feed Intake) = gr/ekor = (pakan kg * 1000) / sisa ayam
+      const sisa=parseInt(d.sisa_ayam)||0;
+      if(sisa>0&&pakanRow>0){fiSum+=(pakanRow*1000/sisa);fiCount++;}
+      // Water intake ml/ekor
+      const airMl=parseFloat(d.air_liter)*1000||0;
+      if(sisa>0&&airMl>0){waterMlSum+=(airMl/sisa);waterCount++;}
+      // Rasio air:pakan
+      const rasio=parseFloat(d.air_rasio)||0;
+      if(rasio>0){rasioSum+=rasio;rasioCount++;}
+    });
+  }
 
   // ── Agregat kemarin (untuk trend) ──
   let yDeplesi=0,yHdpSum=0,yHdpCount=0,yTotalSisa=0;
-  yFiltered.forEach(r=>{
-    const d=r.data;if(!d)return;
-    yDeplesi+=(parseInt(d.deplesi?.mati)||0)+(parseInt(d.deplesi?.afkir)||0);
-    yTotalSisa+=parseInt(d.sisa_ayam)||0;
-    const hdp=parseFloat(d.produksi?.hdp)||0;
-    if(hdp>0){yHdpSum+=hdp;yHdpCount++;}
-  });
+  if(hasData){
+    yFiltered.forEach(r=>{
+      const d=r.data;if(!d)return;
+      yDeplesi+=(parseInt(d.deplesi?.mati)||0)+(parseInt(d.deplesi?.afkir)||0);
+      yTotalSisa+=parseInt(d.sisa_ayam)||0;
+      const hdp=parseFloat(d.produksi?.hdp)||0;
+      if(hdp>0){yHdpSum+=hdp;yHdpCount++;}
+    });
+  }
 
   // ── Kalkulasi final ──
   const avgHDP=hdpCount>0?(hdpSum/hdpCount):0;
@@ -1005,12 +1021,16 @@ async function renderDailySummary(todayInputs, kandangList){
   // FCR = total pakan kg / total telur kg
   const fcr=totalKg>0?(totalPakanKg/totalKg):0;
 
-  // Umur ayam dari kandang
+  // Umur ayam dari kandang - selalu tampilkan berdasarkan kandang yang dipilih
   let umurMinggu='—',umurHari='—',hariKeProd='—';
-  const refKandang=kList.find(k=>k.nama===(selectedKandang||filtered[0]?.kandang));
-  if(refKandang?.chickin&&refKandang?.umur_masuk){
+  // Cari kandang berdasarkan targetKandang, atau kandang pertama dari data, atau kandang aktif pertama
+  let refKandangNama = targetKandang || (hasData && filtered[0]?.kandang) || (activeKandangList.length > 0 ? activeKandangList[0].nama : '');
+  const refKandang=kList.find(k=>k.nama===refKandangNama);
+  
+  if(refKandang?.chickin){
     const hariSejak=Math.floor((new Date(today)-new Date(refKandang.chickin))/86400000);
-    const totalHari=(refKandang.umur_masuk||0)+hariSejak;
+    const umurMasukVal = parseInt(refKandang.umur_masuk) || 0;
+    const totalHari=umurMasukVal+hariSejak;
     umurMinggu=Math.floor(totalHari/7)+'w';
     umurHari=(totalHari%7)+'d';
     hariKeProd='Hari ke-'+(hariSejak+1);
@@ -1035,15 +1055,21 @@ async function renderDailySummary(todayInputs, kandangList){
   const fcrClass=fcr>0?(fcr<=2.0?'val-good':fcr<=2.5?'val-warn':'val-bad'):'';
   const deplesiClass=deplesiPct<=0.05?'val-good':deplesiPct<=0.1?'val-warn':'val-bad';
 
+  // Populasi: gunakan dari data input jika ada, atau dari data kandang
+  let displayPopulasi = totalSisa;
+  if(!hasData && refKandang?.populasi_awal){
+    displayPopulasi = refKandang.populasi_awal;
+  }
+
   // ── Render tabel ──
   bodyEl.innerHTML=`
   <table class="perf-table">
     <tr class="section-head"><td colspan="3">🐔 Populasi</td></tr>
     <tr><td>Umur Ayam</td><td>${umurMinggu} ${umurHari}</td><td>minggu + hari</td></tr>
-    <tr><td>Populasi</td><td>${totalSisa.toLocaleString('id-ID')}</td><td>ekor</td></tr>
+    <tr><td>Populasi</td><td>${displayPopulasi>0?displayPopulasi.toLocaleString('id-ID'):'—'}</td><td>ekor</td></tr>
 
     <tr class="section-head"><td colspan="3">📉 Deplesi</td></tr>
-    <tr><td>Deplesi Hari Ini</td><td class="${deplesiClass}">${totalDeplesi} ekor (${deplesiPct.toFixed(3)}%)</td><td>${trendDeplesi||'—'}</td></tr>
+    <tr><td>Deplesi Hari Ini</td><td class="${deplesiClass}">${hasData?(totalDeplesi+' ekor ('+deplesiPct.toFixed(3)+'%)'):'—'}</td><td>${trendDeplesi||'—'}</td></tr>
 
     <tr class="section-head"><td colspan="3">🌾 Pakan & Air</td></tr>
     <tr><td>FI (Feed Intake)</td><td>${avgFI>0?avgFI.toFixed(1):'—'}</td><td>gr/ekor</td></tr>
@@ -1053,7 +1079,7 @@ async function renderDailySummary(todayInputs, kandangList){
     <tr class="section-head"><td colspan="3">🥚 Produksi Telur</td></tr>
     <tr><td>EW (Egg Weight)</td><td>${avgEW>0?avgEW.toFixed(1):'—'}</td><td>gr/butir</td></tr>
     <tr><td>HD% (Hen Day)</td><td class="${hdpClass}">${avgHDP>0?avgHDP.toFixed(1)+'%':'—'}</td><td>${trendHDP||'—'}</td></tr>
-    <tr><td>Total Produksi</td><td>${totalButir.toLocaleString('id-ID')} butir</td><td>${totalKg.toFixed(2)} kg</td></tr>
+    <tr><td>Total Produksi</td><td>${hasData?(totalButir.toLocaleString('id-ID')+' butir'):'—'}</td><td>${hasData?(totalKg.toFixed(2)+' kg'):'—'}</td></tr>
 
     <tr class="section-head"><td colspan="3">📊 Efisiensi</td></tr>
     <tr><td>FCR</td><td class="${fcrClass}">${fcr>0?fcr.toFixed(3):'—'}</td><td>${fcr>0?(fcr<=2.0?'✅ Baik':fcr<=2.5?'⚠️ Cukup':'❌ Buruk'):'—'}</td></tr>
@@ -1061,8 +1087,9 @@ async function renderDailySummary(todayInputs, kandangList){
 
   // Footer
   const now=new Date();
+  const displayKandang=targetKandang||(activeKandangList.length>1?'Semua Kandang':activeKandangList[0]?.nama||'—');
   document.getElementById('ds-footer-note').textContent=
-    (selectedKandang||'Semua Kandang')+' · '+new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    displayKandang+' · '+new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+(hasData?'':' · Belum ada data');
 }
 
 // ═══ CAPTURE SUMMARY ═══

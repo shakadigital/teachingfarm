@@ -2,7 +2,7 @@
 // INSTALL PROMPT - Teaching Farm UB V2.0
 // ═══════════════════════════════════════════════════
 
-const APP_VERSION = '2.8'; // Naikkan ini setiap ada update besar
+const APP_VERSION = '2.8.2'; // Naikkan ini setiap ada update besar
 
 class InstallPrompt {
   constructor() {
@@ -82,26 +82,15 @@ class InstallPrompt {
     modal.id = 'install-modal';
     modal.className = 'install-modal-overlay';
     modal.innerHTML = `
-      <div class="install-modal">
-        <div class="install-modal-header">
-          <div class="install-modal-icon">🚀</div>
-          <h3>Teaching Farm UB V${APP_VERSION}</h3>
-          <button class="install-modal-close" onclick="window.installPrompt.dismissModal()">✕</button>
-        </div>
-        <div class="install-modal-body">
-          <div class="version-badge">NEW VERSION ${APP_VERSION}</div>
-          <p class="install-modal-description">Upgrade ke versi terbaru dengan fitur-fitur canggih untuk field workers!</p>
-          <div class="features-list">
-            <div class="feature-item"><span class="feature-icon">📱</span><div class="feature-text"><strong>Mode Offline</strong><small>Input data tanpa internet, sync otomatis</small></div></div>
-            <div class="feature-item"><span class="feature-icon">👆</span><div class="feature-text"><strong>Swipe Navigation</strong><small>Navigasi cepat dengan gestur mobile</small></div></div>
-            <div class="feature-item"><span class="feature-icon">🔄</span><div class="feature-text"><strong>Pull-to-Refresh</strong><small>Tarik untuk refresh data terbaru</small></div></div>
-            <div class="feature-item"><span class="feature-icon">⚡</span><div class="feature-text"><strong>Real-time Updates</strong><small>Data ter-update secara live</small></div></div>
+      <div class="install-modal install-modal-simple">
+        <div class="install-simple-content">
+          <div class="install-simple-text">
+            <strong>Update Aplikasi</strong>
+            <span>Versi ${APP_VERSION}</span>
           </div>
+          <button class="btn-install-simple" onclick="window.installPrompt.triggerInstall()">INSTALL</button>
         </div>
-        <div class="install-modal-footer">
-          <button class="btn-secondary" onclick="window.installPrompt.dismissModal()">Nanti Saja</button>
-          <button class="btn-primary install-btn-main" onclick="window.installPrompt.triggerInstall()">📱 Install Sekarang</button>
-        </div>
+        <button class="install-simple-close" onclick="window.installPrompt.dismissModal()">✕</button>
       </div>
     `;
     document.body.appendChild(modal);

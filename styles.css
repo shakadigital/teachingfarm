@@ -241,8 +241,14 @@
       .prod-table,.sale-table{font-size:.75rem;}
       .date-bar{flex-direction:column;align-items:stretch;}
       .tbl{font-size:.8rem;}
-      .stat-grid{grid-template-columns:repeat(2,1fr);}
+      .stat-grid{grid-template-columns:repeat(4,1fr);gap:8px;}
+      .stat-card{padding:10px 8px;}
+      .stat-card .sc-icon{font-size:1.2rem;}
+      .stat-card .sc-val{font-size:1rem;}
+      .stat-card .sc-label{font-size:.6rem;}
       .summary-grid{grid-template-columns:repeat(2,1fr);}
+      /* Hide Status Kandang section on mobile */
+      #page-home .card:has(#home-kandang-list){display:none;}
     }
 
     /* ── ALERT BOX ── */
@@ -836,6 +842,69 @@
     .install-modal-overlay.show .install-modal {
       transform: scale(1);
     }
+    
+    /* ── SIMPLE INSTALL MODAL ── */
+    .install-modal-simple {
+      max-width: 360px;
+      padding: 16px 20px;
+      position: relative;
+    }
+    .install-simple-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .install-simple-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .install-simple-text strong {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1b4332;
+    }
+    .install-simple-text span {
+      font-size: 0.8rem;
+      color: #666;
+    }
+    .btn-install-simple {
+      background: linear-gradient(135deg, #2d6a4f, #40916c);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.2s;
+    }
+    .btn-install-simple:active {
+      transform: scale(0.95);
+    }
+    .install-simple-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: #888;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .install-simple-close:hover {
+      background: #f0f4f8;
+    }
+    
+    /* ── OLD MODAL STYLES (for manual install) ── */
     .install-modal-header {
       padding: 20px 20px 16px;
       text-align: center;
@@ -1007,6 +1076,12 @@
     body.dark .install-modal {
       background: #1e293b;
     }
+    body.dark .install-simple-text strong {
+      color: #86efac;
+    }
+    body.dark .install-simple-text span {
+      color: #94a3b8;
+    }
     body.dark .install-modal-header {
       border-bottom-color: #334155;
     }
@@ -1076,4 +1151,4 @@
     body.dark .perf-table tr.section-head td{background:#1b4332;color:#86efac;}
     body.dark .ds-footer{background:#1b4332;border-top-color:#2d6a4f;}
     body.dark .ds-item{background:#0f172a;}
-    body.dark .ds-item .di-val{color:#86efac;}
+    body.dark .ds-item .di-val{color:#86efac;}
