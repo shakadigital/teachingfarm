@@ -472,7 +472,10 @@ async function dbGetStandar() {
     const rows = await SB.select('app_config', `?key=eq.standar_performa&select=value`);
     if(rows && rows.length && rows[0].value) return rows[0].value;
     return null;
-  } catch { return null; }
+  } catch {
+    // Fallback ke localStorage
+    try { return JSON.parse(localStorage.getItem('standar_performa')); } catch { return null; }
+  }
 }
 
 async function dbSaveStandar(data) {
@@ -485,8 +488,9 @@ async function dbSaveStandar(data) {
     }
     cache.del('standar_performa');
   } catch(e) {
-    // Fallback: simpan ke localStorage jika tabel belum ada
+    // Fallback: simpan ke localStorage jika Supabase gagal
     localStorage.setItem('standar_performa', JSON.stringify(data));
     console.warn('dbSaveStandar fallback to localStorage:', e.message);
+    throw e; // re-throw agar UI tahu ada error
   }
 }
