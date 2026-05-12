@@ -2729,7 +2729,9 @@ async function renderGrafik(){
       const hariKe = Math.floor((tgl - chickInDate)/(1000*60*60*24));
       if(hariKe < 0) continue; // skip data sebelum chick-in
       const umurHari = umurChickIn + hariKe;
-      const minggu = Math.floor(umurHari/7)+1;
+      // Konsisten dengan period bar di input_harian.js: Math.floor(totalHari/7)
+      // Minggu 16 = hari ke 112-118, minggu 17 = hari ke 119-125, dst.
+      const minggu = Math.max(1, Math.floor(umurHari/7));
       const key = `${minggu}`;
       if(!weekMap[key]) weekMap[key]={hd:[],fi:[],ew:[],fcr:[]};
 
