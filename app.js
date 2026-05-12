@@ -2222,6 +2222,10 @@ async function renderLapRekap(){
   const currentSisaMap = {};
   kandangList.forEach(k => { currentSisaMap[k.nama] = parseInt(k.populasi) || 0; });
 
+  // Buat map kandang untuk lookup chickin & umur_masuk
+  const kandangMap = {};
+  kandangList.forEach(k => { kandangMap[k.nama] = k; });
+
   // Hitung sisa ayam secara kumulatif berdasarkan urutan tanggal
   const processedRows = sortedRows.map(row => {
     const d = { ...row.data };
@@ -2232,7 +2236,8 @@ async function renderLapRekap(){
     const newSisa = Math.max(0, prevSisa - depTotal);
     currentSisaMap[kName] = newSisa;
     
-    d.sisa_ayam_calc = newSisa; 
+    d.sisa_ayam_calc = newSisa;
+    d._kandang_nama = kName; // simpan nama kandang untuk lookup umur
     return d;
   }).filter(Boolean);
 
@@ -2265,7 +2270,7 @@ async function renderLapRekap(){
 
   rows.forEach(d=>{
     const pakanKg = (d.pakan||[]).reduce((s,p)=>s+(parseFloat(p.jumlah)||0),0);
-    const sisaAyam = d.sisa_ayam_calc; // Gunakan hasil kalkulasi kumulatif
+    const sisaAyam = d.sisa_ayam_calc;
     const fi = sisaAyam > 0 ? (pakanKg * 1000 / sisaAyam) : 0;
     
     const prodButir = parseInt(d.produksi?.total?.butir)||0;
@@ -2276,9 +2281,24 @@ async function renderLapRekap(){
     let hdp = d.produksi?.hdp || '—';
     if(typeof hdp === 'string' && hdp.includes('%')) hdp = hdp.replace('%', '').trim();
 
+    // Hitung umur ayam pada tanggal tersebut
+    let umurLabel = '—';
+    const kData = kandangMap[d._kandang_nama];
+    if(kData?.chickin){
+      const tglRow = new Date(d.tanggal); tglRow.setHours(0,0,0,0);
+      const cin = new Date(kData.chickin); cin.setHours(0,0,0,0);
+      const hariSejak = Math.floor((tglRow - cin) / 86400000);
+      if(hariSejak >= 0){
+        const totalHari = (parseInt(kData.umur_masuk)||0) + hariSejak;
+        const mg = Math.floor(totalHari / 7);
+        const hr = totalHari % 7;
+        umurLabel = mg + 'mg' + (hr > 0 ? ' ' + hr + 'hr' : '');
+      }
+    }
+
     const tr = document.createElement('tr');
-    // Order: Tanggal | Deplesi | Sisa Ayam | Pakan (kg) | Fi (gr) | Prod. (butir) | Prod. (kg) | HDP (%) | EW (gr)
-    tr.innerHTML = `<td>${fmtTgl(d.tanggal)}</td>
+    tr.innerHTML = `<td style="white-space:nowrap;color:#2d6a4f;font-weight:600;font-size:.82rem">${umurLabel}</td>
+      <td>${fmtTgl(d.tanggal)}</td>
       <td>${d.deplesi?d.deplesi.total:0}</td>
       <td>${sisaAyam}</td>
       <td>${pakanKg.toFixed(1)}</td>
