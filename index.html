@@ -657,6 +657,7 @@
         <button class="tab-btn active" id="stab-kandang" onclick="switchSTab('kandang')">🏠 Kandang</button>
         <button class="tab-btn" id="stab-user" onclick="switchSTab('user')">👤 User</button>
         <button class="tab-btn" id="stab-master" onclick="switchSTab('master')" style="display:none">🗃️ Master</button>
+        <button class="tab-btn" id="stab-standar" onclick="switchSTab('standar')" style="display:none">📊 Std. Performa</button>
         <button class="tab-btn" id="stab-backup" onclick="switchSTab('backup')">💾 Backup</button>
       </div>
 
@@ -858,6 +859,90 @@
         </div>
 
       </div><!-- end stab-content-master -->
+
+      <!-- Tab: Standar Performa (Superadmin only) -->
+      <div id="stab-content-standar" style="display:none">
+        <div class="card" style="border:2px solid #92400e">
+          <div class="card-header" style="background:linear-gradient(135deg,#92400e,#b45309);border-bottom:1px solid #b45309">
+            <div class="num" style="background:#fff;color:#92400e">📊</div>
+            <h2 style="color:#fff">Standar Performa HY-Line Brown</h2>
+            <span style="margin-left:auto;background:rgba(255,255,255,.2);color:#fff;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:10px">SUPERADMIN</span>
+          </div>
+          <div class="card-body">
+            <div class="info-box" style="margin-bottom:14px">
+              📋 Tabel standar kinerja ayam petelur sebagai acuan perbandingan performa aktual. Data ini hanya dapat diedit oleh superadmin.
+            </div>
+
+            <!-- Sub-tab Fase -->
+            <div class="tab-bar" style="margin-bottom:12px">
+              <button class="tab-btn active" id="sptab-pertumbuhan" onclick="switchSPTab('pertumbuhan')">🐣 Pertumbuhan</button>
+              <button class="tab-btn" id="sptab-produksi" onclick="switchSPTab('produksi')">🥚 Produksi</button>
+            </div>
+
+            <!-- Fase Pertumbuhan -->
+            <div id="sptab-content-pertumbuhan">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+                <div style="font-size:.78rem;color:#666">Minggu 1–17 (Masa Pertumbuhan)</div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn-add" style="margin-top:0" onclick="addStandarRow('pertumbuhan')">＋ Tambah Baris</button>
+                  <button class="btn-primary" style="padding:7px 14px;font-size:.82rem" onclick="saveStandarPerforma()">💾 Simpan Semua</button>
+                </div>
+              </div>
+              <div style="overflow-x:auto">
+                <table class="tbl" id="tbl-standar-pertumbuhan">
+                  <thead>
+                    <tr style="background:linear-gradient(135deg,#92400e,#b45309)">
+                      <th style="color:#fff;white-space:nowrap">Umur<br><small style="font-weight:400;opacity:.85">(minggu)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Kematian Kum.<br><small style="font-weight:400;opacity:.85">(%)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Berat Badan<br><small style="font-weight:400;opacity:.85">(g)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Air Minum<br><small style="font-weight:400;opacity:.85">(ml/ekor/hari)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Konsumsi Pakan<br><small style="font-weight:400;opacity:.85">(g/ekor/hari)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Kum. Konsumsi<br><small style="font-weight:400;opacity:.85">(g/ekor)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Keseragaman<br><small style="font-weight:400;opacity:.85">(%)</small></th>
+                      <th style="color:#fff"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-standar-pertumbuhan">
+                    <tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">Memuat data...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Fase Produksi -->
+            <div id="sptab-content-produksi" style="display:none">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+                <div style="font-size:.78rem;color:#666">Minggu 18+ (Masa Produksi)</div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn-add" style="margin-top:0" onclick="addStandarRow('produksi')">＋ Tambah Baris</button>
+                  <button class="btn-primary" style="padding:7px 14px;font-size:.82rem" onclick="saveStandarPerforma()">💾 Simpan Semua</button>
+                </div>
+              </div>
+              <div style="overflow-x:auto">
+                <table class="tbl" id="tbl-standar-produksi">
+                  <thead>
+                    <tr style="background:linear-gradient(135deg,#1b4332,#2d6a4f)">
+                      <th style="color:#fff;white-space:nowrap">Umur<br><small style="font-weight:400;opacity:.85">(minggu)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Kematian Kum.<br><small style="font-weight:400;opacity:.85">(%)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Berat Telur<br><small style="font-weight:400;opacity:.85">(g)</small></th>
+                      <th style="color:#fff;white-space:nowrap">HD%<br><small style="font-weight:400;opacity:.85">(%)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Massa Telur<br><small style="font-weight:400;opacity:.85">(g/ekor/hari)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Air Minum<br><small style="font-weight:400;opacity:.85">(ml/ekor/hari)</small></th>
+                      <th style="color:#fff;white-space:nowrap">Konsumsi Pakan<br><small style="font-weight:400;opacity:.85">(g/ekor/hari)</small></th>
+                      <th style="color:#fff;white-space:nowrap">FCR<br><small style="font-weight:400;opacity:.85"></small></th>
+                      <th style="color:#fff"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-standar-produksi">
+                    <tr><td colspan="9" style="text-align:center;color:#aaa;padding:20px">Memuat data...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- end stab-content-standar -->
 
     </div>
   </div>

@@ -464,3 +464,29 @@ async function dbGetStokNonPakan(kategori) {
     harga: v.harga
   }));
 }
+
+// ── STANDAR PERFORMA ───────────────────────────────
+// Disimpan sebagai satu record JSON di tabel app_config
+async function dbGetStandar() {
+  try {
+    const rows = await SB.select('app_config', `?key=eq.standar_performa&select=value`);
+    if(rows && rows.length && rows[0].value) return rows[0].value;
+    return null;
+  } catch { return null; }
+}
+
+async function dbSaveStandar(data) {
+  try {
+    const existing = await SB.select('app_config', `?key=eq.standar_performa`);
+    if(existing && existing.length) {
+      await SB.update('app_config', { value: data, updated_at: new Date().toISOString() }, `?key=eq.standar_performa`);
+    } else {
+      await SB.insert('app_config', { id: crypto.randomUUID(), key: 'standar_performa', value: data, created_at: new Date().toISOString() });
+    }
+    cache.del('standar_performa');
+  } catch(e) {
+    // Fallback: simpan ke localStorage jika tabel belum ada
+    localStorage.setItem('standar_performa', JSON.stringify(data));
+    console.warn('dbSaveStandar fallback to localStorage:', e.message);
+  }
+}

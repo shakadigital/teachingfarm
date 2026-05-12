@@ -1152,3 +1152,50 @@
     body.dark .ds-footer{background:#1b4332;border-top-color:#2d6a4f;}
     body.dark .ds-item{background:#0f172a;}
     body.dark .ds-item .di-val{color:#86efac;}
+
+    /* ── STANDAR PERFORMA TABLE ── */
+    .sp-inp {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 5px;
+      padding: 5px 6px;
+      font-size: .82rem;
+      color: #1a202c;
+      background: #fff;
+      text-align: center;
+      transition: border-color .15s;
+    }
+    .sp-inp:focus {
+      outline: none;
+      border-color: #92400e;
+      background: #fffbeb;
+    }
+    #tbl-standar-pertumbuhan th,
+    #tbl-standar-produksi th {
+      white-space: nowrap;
+      font-size: .75rem;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    #tbl-standar-pertumbuhan td,
+    #tbl-standar-produksi td {
+      padding: 5px 6px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    #tbl-standar-pertumbuhan tr:nth-child(even),
+    #tbl-standar-produksi tr:nth-child(even) {
+      background: #fafaf9;
+    }
+    body.dark .sp-inp {
+      background: #0f172a;
+      border-color: #334155;
+      color: #e2e8f0;
+    }
+    body.dark .sp-inp:focus {
+      border-color: #b45309;
+      background: #1c1008;
+    }
+    body.dark #tbl-standar-pertumbuhan tr:nth-child(even),
+    body.dark #tbl-standar-produksi tr:nth-child(even) {
+      background: #1a2234;
+    }

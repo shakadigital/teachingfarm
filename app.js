@@ -1134,6 +1134,10 @@ function renderSettings(){
   const tabMaster = document.getElementById('stab-master');
   if(tabMaster) tabMaster.style.display = isManager ? '' : 'none';
 
+  // Tab Standar Performa — superadmin only
+  const tabStandar = document.getElementById('stab-standar');
+  if(tabStandar) tabStandar.style.display = isSuperadmin ? '' : 'none';
+
   // Tab Backup — superadmin only
   const tabBackup = document.getElementById('stab-backup');
   if(tabBackup) tabBackup.style.display = isSuperadmin ? '' : 'none';
@@ -1144,7 +1148,7 @@ function renderSettings(){
 let currentSTab='kandang';
 function switchSTab(tab){
   currentSTab=tab;
-  ['kandang','user','master','backup'].forEach(t=>{
+  ['kandang','user','master','standar','backup'].forEach(t=>{
     const btn = document.getElementById('stab-'+t);
     const content = document.getElementById('stab-content-'+t);
     if(btn) btn.classList.toggle('active',t===tab);
@@ -1153,6 +1157,7 @@ function switchSTab(tab){
   if(tab==='kandang') renderKandangTable();
   if(tab==='user') renderUserTable();
   if(tab==='master') renderMaster();
+  if(tab==='standar') renderStandarPerforma();
   if(tab==='backup') loadCacheInfo();
 }
 
@@ -3858,4 +3863,206 @@ if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded', bootApp);
 } else {
   bootApp();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ STANDAR PERFORMA HY-LINE BROWN (Superadmin Only) ═══
+// ═══════════════════════════════════════════════════════════════
+
+// Data default standar HY-Line Brown Max Pro
+const STANDAR_DEFAULT = {
+  pertumbuhan: [
+    {umur:1,  kematian_kum:0.40, berat_badan:'68–72',   air_minum:'18–28',  konsumsi_pakan:'12–14',  kum_konsumsi:'80–100',    keseragaman:'>85%'},
+    {umur:2,  kematian_kum:0.55, berat_badan:'118–124',  air_minum:'26–42',  konsumsi_pakan:'17–21',  kum_konsumsi:'200–250',   keseragaman:''},
+    {umur:3,  kematian_kum:0.65, berat_badan:'184–194',  air_minum:'33–54',  konsumsi_pakan:'22–27',  kum_konsumsi:'360–430',   keseragaman:''},
+    {umur:4,  kematian_kum:0.75, berat_badan:'263–278',  air_minum:'41–64',  konsumsi_pakan:'27–32',  kum_konsumsi:'550–660',   keseragaman:''},
+    {umur:5,  kematian_kum:0.85, berat_badan:'353–373',  air_minum:'45–78',  konsumsi_pakan:'30–39',  kum_konsumsi:'760–930',   keseragaman:'>80%'},
+    {umur:6,  kematian_kum:0.95, berat_badan:'451–477',  air_minum:'53–88',  konsumsi_pakan:'35–44',  kum_konsumsi:'1000–1240', keseragaman:''},
+    {umur:7,  kematian_kum:1.05, berat_badan:'555–586',  air_minum:'62–98',  konsumsi_pakan:'41–49',  kum_konsumsi:'1290–1580', keseragaman:''},
+    {umur:8,  kematian_kum:1.15, berat_badan:'660–698',  air_minum:'71–112', konsumsi_pakan:'47–56',  kum_konsumsi:'1620–1970', keseragaman:''},
+    {umur:9,  kematian_kum:1.25, berat_badan:'764–807',  air_minum:'77–120', konsumsi_pakan:'51–60',  kum_konsumsi:'1970–2390', keseragaman:''},
+    {umur:10, kematian_kum:1.35, berat_badan:'862–911',  air_minum:'81–124', konsumsi_pakan:'54–62',  kum_konsumsi:'2350–2830', keseragaman:''},
+    {umur:11, kematian_kum:1.45, berat_badan:'952–1007', air_minum:'87–134', konsumsi_pakan:'58–67',  kum_konsumsi:'2760–3300', keseragaman:'>85%'},
+    {umur:12, kematian_kum:1.55, berat_badan:'1034–1093',air_minum:'90–140', konsumsi_pakan:'60–70',  kum_konsumsi:'3180–3790', keseragaman:''},
+    {umur:13, kematian_kum:1.63, berat_badan:'1107–1171',air_minum:'93–144', konsumsi_pakan:'62–72',  kum_konsumsi:'3610–4290', keseragaman:''},
+    {umur:14, kematian_kum:1.70, berat_badan:'1173–1240',air_minum:'96–148', konsumsi_pakan:'64–74',  kum_konsumsi:'4060–4810', keseragaman:''},
+    {umur:15, kematian_kum:1.78, berat_badan:'1232–1303',air_minum:'99–154', konsumsi_pakan:'66–77',  kum_konsumsi:'4520–5350', keseragaman:''},
+    {umur:16, kematian_kum:1.85, berat_badan:'1288–1361',air_minum:'102–158',konsumsi_pakan:'68–79',  kum_konsumsi:'5000–5900', keseragaman:''},
+    {umur:17, kematian_kum:2.00, berat_badan:'1342–1418',air_minum:'108–170',konsumsi_pakan:'72–85',  kum_konsumsi:'5500–6500', keseragaman:'>90%'},
+  ],
+  produksi: [
+    {umur:18, kematian_kum:2.10, berat_telur:'50.0', hdp:'5',   massa_telur:'2.5',  air_minum:'115–180', konsumsi_pakan:'76–90',  fcr:''},
+    {umur:19, kematian_kum:2.20, berat_telur:'52.0', hdp:'30',  massa_telur:'15.6', air_minum:'120–185', konsumsi_pakan:'80–95',  fcr:''},
+    {umur:20, kematian_kum:2.30, berat_telur:'54.0', hdp:'60',  massa_telur:'32.4', air_minum:'130–195', konsumsi_pakan:'85–100', fcr:''},
+    {umur:21, kematian_kum:2.40, berat_telur:'55.5', hdp:'80',  massa_telur:'44.4', air_minum:'140–205', konsumsi_pakan:'90–105', fcr:'2.10'},
+    {umur:22, kematian_kum:2.50, berat_telur:'56.5', hdp:'88',  massa_telur:'49.7', air_minum:'145–210', konsumsi_pakan:'92–108', fcr:'1.95'},
+    {umur:23, kematian_kum:2.60, berat_telur:'57.5', hdp:'91',  massa_telur:'52.3', air_minum:'148–215', konsumsi_pakan:'93–110', fcr:'1.88'},
+    {umur:24, kematian_kum:2.70, berat_telur:'58.0', hdp:'93',  massa_telur:'54.0', air_minum:'150–218', konsumsi_pakan:'94–112', fcr:'1.85'},
+    {umur:25, kematian_kum:2.80, berat_telur:'58.5', hdp:'94',  massa_telur:'55.0', air_minum:'152–220', konsumsi_pakan:'95–113', fcr:'1.83'},
+    {umur:30, kematian_kum:3.20, berat_telur:'60.0', hdp:'93',  massa_telur:'55.8', air_minum:'155–225', konsumsi_pakan:'96–114', fcr:'1.82'},
+    {umur:35, kematian_kum:3.70, berat_telur:'61.0', hdp:'92',  massa_telur:'56.1', air_minum:'155–225', konsumsi_pakan:'96–114', fcr:'1.83'},
+    {umur:40, kematian_kum:4.30, berat_telur:'62.0', hdp:'91',  massa_telur:'56.4', air_minum:'155–225', konsumsi_pakan:'96–114', fcr:'1.85'},
+    {umur:45, kematian_kum:5.00, berat_telur:'62.5', hdp:'90',  massa_telur:'56.3', air_minum:'155–225', konsumsi_pakan:'96–114', fcr:'1.87'},
+    {umur:50, kematian_kum:5.80, berat_telur:'63.0', hdp:'88',  massa_telur:'55.4', air_minum:'153–222', konsumsi_pakan:'95–113', fcr:'1.90'},
+    {umur:55, kematian_kum:6.70, berat_telur:'63.5', hdp:'86',  massa_telur:'54.6', air_minum:'150–218', konsumsi_pakan:'94–112', fcr:'1.93'},
+    {umur:60, kematian_kum:7.70, berat_telur:'64.0', hdp:'84',  massa_telur:'53.8', air_minum:'148–215', konsumsi_pakan:'93–110', fcr:'1.96'},
+    {umur:65, kematian_kum:8.80, berat_telur:'64.0', hdp:'82',  massa_telur:'52.5', air_minum:'145–210', konsumsi_pakan:'92–108', fcr:'2.00'},
+    {umur:70, kematian_kum:10.0, berat_telur:'64.0', hdp:'80',  massa_telur:'51.2', air_minum:'142–207', konsumsi_pakan:'90–107', fcr:'2.05'},
+  ]
+};
+
+let _standarData = null; // cache in-memory
+
+async function loadStandarPerforma() {
+  if(_standarData) return _standarData;
+  try {
+    const saved = await dbGetStandar();
+    if(saved && saved.pertumbuhan && saved.produksi) {
+      _standarData = saved;
+    } else {
+      _standarData = JSON.parse(JSON.stringify(STANDAR_DEFAULT));
+    }
+  } catch(e) {
+    _standarData = JSON.parse(JSON.stringify(STANDAR_DEFAULT));
+  }
+  return _standarData;
+}
+
+let _currentSPTab = 'pertumbuhan';
+
+function switchSPTab(tab) {
+  _currentSPTab = tab;
+  ['pertumbuhan','produksi'].forEach(t => {
+    document.getElementById('sptab-'+t)?.classList.toggle('active', t===tab);
+    const c = document.getElementById('sptab-content-'+t);
+    if(c) c.style.display = t===tab ? 'block' : 'none';
+  });
+}
+
+async function renderStandarPerforma() {
+  if(currentUser?.role !== 'superadmin') return;
+  const data = await loadStandarPerforma();
+  renderStandarTable('pertumbuhan', data.pertumbuhan);
+  renderStandarTable('produksi', data.produksi);
+}
+
+function renderStandarTable(fase, rows) {
+  const tbody = document.getElementById('tbody-standar-'+fase);
+  if(!tbody) return;
+  tbody.innerHTML = '';
+
+  if(!rows || !rows.length) {
+    const cols = fase === 'pertumbuhan' ? 8 : 9;
+    tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#aaa;padding:20px">Belum ada data. Klik "＋ Tambah Baris".</td></tr>`;
+    return;
+  }
+
+  rows.forEach((row, idx) => {
+    const tr = document.createElement('tr');
+    tr.dataset.idx = idx;
+    tr.dataset.fase = fase;
+
+    // Highlight baris milestone (bold)
+    const isMilestone = fase==='pertumbuhan'
+      ? [5,10,15,17].includes(row.umur)
+      : [21,25,30,40,50,60,70].includes(row.umur);
+    if(isMilestone) tr.style.fontWeight = '700';
+
+    if(fase === 'pertumbuhan') {
+      tr.innerHTML = `
+        <td><input type="number" class="sp-inp" value="${row.umur}" min="1" max="17" style="width:50px" data-field="umur"/></td>
+        <td><input type="number" class="sp-inp" value="${row.kematian_kum}" step="0.01" style="width:60px" data-field="kematian_kum"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.berat_badan}" style="width:90px" data-field="berat_badan"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.air_minum}" style="width:80px" data-field="air_minum"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.konsumsi_pakan}" style="width:80px" data-field="konsumsi_pakan"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.kum_konsumsi}" style="width:100px" data-field="kum_konsumsi"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.keseragaman||''}" style="width:70px" placeholder="—" data-field="keseragaman"/></td>
+        <td><button class="btn-del" onclick="deleteStandarRow('${fase}',${idx})" title="Hapus baris">🗑</button></td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td><input type="number" class="sp-inp" value="${row.umur}" min="18" style="width:50px" data-field="umur"/></td>
+        <td><input type="number" class="sp-inp" value="${row.kematian_kum}" step="0.01" style="width:60px" data-field="kematian_kum"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.berat_telur||''}" style="width:60px" data-field="berat_telur"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.hdp||''}" style="width:60px" data-field="hdp"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.massa_telur||''}" style="width:70px" data-field="massa_telur"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.air_minum||''}" style="width:80px" data-field="air_minum"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.konsumsi_pakan||''}" style="width:80px" data-field="konsumsi_pakan"/></td>
+        <td><input type="text"   class="sp-inp" value="${row.fcr||''}" style="width:60px" placeholder="—" data-field="fcr"/></td>
+        <td><button class="btn-del" onclick="deleteStandarRow('${fase}',${idx})" title="Hapus baris">🗑</button></td>
+      `;
+    }
+    tbody.appendChild(tr);
+  });
+}
+
+function addStandarRow(fase) {
+  if(!_standarData) return;
+  const rows = _standarData[fase];
+  const lastUmur = rows.length ? rows[rows.length-1].umur : (fase==='pertumbuhan' ? 0 : 17);
+  if(fase === 'pertumbuhan') {
+    rows.push({umur: lastUmur+1, kematian_kum:0, berat_badan:'', air_minum:'', konsumsi_pakan:'', kum_konsumsi:'', keseragaman:''});
+  } else {
+    rows.push({umur: lastUmur+1, kematian_kum:0, berat_telur:'', hdp:'', massa_telur:'', air_minum:'', konsumsi_pakan:'', fcr:''});
+  }
+  renderStandarTable(fase, rows);
+  // Scroll ke baris baru
+  const tbody = document.getElementById('tbody-standar-'+fase);
+  if(tbody) tbody.lastElementChild?.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function deleteStandarRow(fase, idx) {
+  if(!_standarData) return;
+  _standarData[fase].splice(idx, 1);
+  renderStandarTable(fase, _standarData[fase]);
+  showToast('🗑 Baris dihapus. Klik Simpan untuk menyimpan perubahan.');
+}
+
+function collectStandarFromTable(fase) {
+  const tbody = document.getElementById('tbody-standar-'+fase);
+  if(!tbody) return [];
+  const rows = [];
+  tbody.querySelectorAll('tr[data-idx]').forEach(tr => {
+    const row = {};
+    tr.querySelectorAll('.sp-inp').forEach(inp => {
+      const field = inp.dataset.field;
+      const val = inp.value.trim();
+      row[field] = inp.type === 'number' ? (parseFloat(val)||0) : val;
+    });
+    rows.push(row);
+  });
+  return rows;
+}
+
+async function saveStandarPerforma() {
+  if(currentUser?.role !== 'superadmin') {
+    showToast('⛔ Hanya superadmin yang bisa menyimpan standar performa!');
+    return;
+  }
+  // Kumpulkan data dari tabel yang sedang aktif
+  const pertumbuhan = collectStandarFromTable('pertumbuhan');
+  const produksi    = collectStandarFromTable('produksi');
+
+  // Sort berdasarkan umur
+  pertumbuhan.sort((a,b) => a.umur - b.umur);
+  produksi.sort((a,b) => a.umur - b.umur);
+
+  const payload = { pertumbuhan, produksi, updated_at: new Date().toISOString(), updated_by: currentUser.username };
+
+  try {
+    showToast('⏳ Menyimpan standar performa...');
+    await dbSaveStandar(payload);
+    _standarData = payload;
+    renderStandarTable('pertumbuhan', pertumbuhan);
+    renderStandarTable('produksi', produksi);
+    showToast('✅ Standar performa berhasil disimpan!');
+    await dbSaveLog('UPDATE','standar_performa',null,null,{fase:'all'},'Update standar performa HY-Line Brown');
+  } catch(e) {
+    showToast('❌ Gagal menyimpan: '+e.message);
+  }
+}
+
+// Fungsi publik untuk mengambil standar (digunakan di laporan/grafik)
+async function getStandarPerforma() {
+  return await loadStandarPerforma();
 }
