@@ -2704,22 +2704,28 @@ async function renderGrafik(){
   });
 
   // ── Performa Mingguan Chart (HD, FI, EW, FCR) ──
-  // Ambil semua data kandang yang dipilih, group per minggu umur ayam
+  // Group per minggu umur ayam, gunakan data yang sudah difilter (inputs)
   const semuaKandang = await dbGetKandang();
   const allKandangs = kandang ? semuaKandang.filter(k=>k.nama===kandang||k.id===kandang) : semuaKandang;
-  const weekMap = {}; // key: "Minggu X", value: {hd:[], fi:[], ew:[], fcr:[]}
+  const weekMap = {}; // key: nomor minggu, value: {hd:[], fi:[], ew:[], fcr:[]}
 
   for(const k of allKandangs){
-    if(!k || k.status==='selesai') continue;
+    if(!k || !k.chickin) continue;
     const chickInDate = new Date(k.chickin);
+    chickInDate.setHours(0,0,0,0);
     const umurChickIn = parseInt(k.umur_masuk)||0;
-    const allInputs = await dbGetInput({kandang: k.nama});
-    for(const r of allInputs){
+
+    // Gunakan inputs yang sudah difilter dari-sampai, bukan semua input
+    const kandangInputs = inputs.filter(r => r.kandang === k.nama);
+
+    for(const r of kandangInputs){
       const tgl = new Date(r.tanggal);
+      tgl.setHours(0,0,0,0);
       const hariKe = Math.floor((tgl - chickInDate)/(1000*60*60*24));
+      if(hariKe < 0) continue; // skip data sebelum chick-in
       const umurHari = umurChickIn + hariKe;
       const minggu = Math.floor(umurHari/7)+1;
-      const key = `${minggu}`; // Label X axis: angka minggu saja (13, 14, 15...)
+      const key = `${minggu}`;
       if(!weekMap[key]) weekMap[key]={hd:[],fi:[],ew:[],fcr:[]};
 
       const hdp = parseFloat(r.data?.produksi?.hdp)||null;
