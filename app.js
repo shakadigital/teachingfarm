@@ -2762,38 +2762,75 @@ async function renderGrafik(){
   const hdData  = weekKeys.map(k=>avg(weekMap[k].hd));
   const wFiData  = weekKeys.map(k=>avg(weekMap[k].fi));
 
+  // ── Standar HY-Line: ambil nilai tengah dari range per minggu ──
+  const standar = await loadStandarPerforma();
+  // Gabungkan pertumbuhan + produksi jadi satu map: minggu → {fi, hd}
+  const stdMap = {};
+  const parseMid = str => {
+    if(!str) return null;
+    const s = String(str).replace(/\s/g,'');
+    // Format "12–14" atau "12-14" → ambil rata-rata
+    const m = s.match(/^([\d.]+)[–\-]([\d.]+)$/);
+    if(m) return (parseFloat(m[1])+parseFloat(m[2]))/2;
+    const n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  };
+  (standar.pertumbuhan||[]).forEach(r => {
+    stdMap[r.umur] = { fi: parseMid(r.konsumsi_pakan), hd: null };
+  });
+  (standar.produksi||[]).forEach(r => {
+    const hdVal = parseMid(r.hdp);
+    stdMap[r.umur] = { fi: parseMid(r.konsumsi_pakan), hd: hdVal };
+  });
+
+  // Petakan ke label minggu yang ada di grafik aktual
+  const stdFiData = weekKeys.map(k => stdMap[parseInt(k)]?.fi ?? null);
+  const stdHdData = weekKeys.map(k => stdMap[parseInt(k)]?.hd ?? null);
+
+  const hasStdFi = stdFiData.some(v => v !== null);
+  const hasStdHd = stdHdData.some(v => v !== null);
+
   const ctxP=document.getElementById('chart-performa').getContext('2d');
   if(chartPerforma)chartPerforma.destroy();
+
+  const datasets = [
+    {label:'FI Aktual (g/ekor)', data:wFiData,  borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.08)', borderWidth:2.5, tension:.4, fill:false, pointRadius:3, pointHoverRadius:5, spanGaps:true},
+    {label:'HD% Aktual',         data:hdData,   borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.08)',  borderWidth:2.5, tension:.4, fill:false, pointRadius:3, pointHoverRadius:5, spanGaps:true},
+  ];
+  if(hasStdFi) datasets.push(
+    {label:'FI Standar (g/ekor)', data:stdFiData, borderColor:'#93c5fd', borderWidth:1.5, borderDash:[5,4], tension:.3, fill:false, pointRadius:0, pointHoverRadius:4, spanGaps:true}
+  );
+  if(hasStdHd) datasets.push(
+    {label:'HD% Standar',         data:stdHdData, borderColor:'#86efac', borderWidth:1.5, borderDash:[5,4], tension:.3, fill:false, pointRadius:0, pointHoverRadius:4, spanGaps:true}
+  );
+
   chartPerforma=new Chart(ctxP,{
     type:'line',
     data:{
       labels:wLabels,
-      datasets:[
-        {label:'FI (g/ekor)',data:wFiData,borderColor:'#2563eb',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true},
-        {label:'HD / HDP (%)',data:hdData,borderColor:'#16a34a',borderWidth:2,tension:.4,fill:false,pointRadius:3,pointHoverRadius:5,spanGaps:true}
-      ]
+      datasets
     },
     options:{
       responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{position:'bottom',labels:{usePointStyle:true,pointStyle:'line',padding:16}},
+        legend:{position:'bottom',labels:{usePointStyle:true,pointStyle:'line',padding:16,
+          filter: item => !item.text.includes('Standar') || item.text.includes('Standar')
+        }},
         tooltip:{callbacks:{
           label:ctx=>{
             const v=ctx.parsed.y;
             if(v===null||v===undefined)return null;
-            const units={
-              'FI (g/ekor)':'g/ekor',
-              'HD / HDP (%)':'%'
-            };
-            const u=units[ctx.dataset.label]||'';
-            return `${ctx.dataset.label}: ${v}${u}`;
+            const lbl = ctx.dataset.label||'';
+            const u = lbl.includes('HD%') ? '%' : 'g/ekor';
+            const prefix = lbl.includes('Standar') ? '📏 ' : '📊 ';
+            return `${prefix}${lbl}: ${v}${u}`;
           }
         }}
       },
       scales:{
         y:{
-          title:{display:true,text:'FI (g) / HD (%)'},
+          title:{display:true,text:'FI (g/ekor) / HD (%)'},
           min:0,
           grid:{color:'rgba(0,0,0,.06)'},
           ticks:{color:'#374151'}
